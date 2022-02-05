@@ -18,7 +18,14 @@ for (let i = 0; i < chars.length; i++) {
 // Provide a fallback for older environments.
 const td =
   typeof TextDecoder !== 'undefined'
-    ? new TextDecoder('utf8')
+    ? new TextDecoder()
+    : typeof Buffer !== 'undefined'
+    ? {
+        decode(buf: Uint8Array) {
+          const out = Buffer.from(buf.buffer, buf.byteOffset, buf.byteLength);
+          return out.toString();
+        },
+      }
     : {
         decode(buf: Uint8Array) {
           let out = '';
