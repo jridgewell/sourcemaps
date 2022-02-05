@@ -1,61 +1,65 @@
 {
-  "name": "sourcemap-codec",
-  "version": "1.4.8",
+  "name": "@jridgewell/sourcemap-codec",
+  "version": "1.4.9",
   "description": "Encode/decode sourcemap mappings",
+  "keywords": [
+    "sourcemap",
+    "vlq"
+  ],
   "main": "dist/sourcemap-codec.umd.js",
-  "module": "dist/sourcemap-codec.es.js",
-  "types": "dist/types/sourcemap-codec.d.ts",
+  "module": "dist/sourcemap-codec.mjs",
+  "typings": "dist/types/sourcemap-codec.d.ts",
+  "files": [
+    "dist"
+  ],
   "exports": {
     ".": {
       "browser": "./dist/sourcemap-codec.umd.js",
       "import": "./dist/sourcemap-codec.mjs",
       "require": "./dist/sourcemap-codec.umd.js"
     },
-    "./package.json": "./package.json",
-    "./": "./"
+    "./package.json": "./package.json"
   },
   "scripts": {
-    "test": "mocha",
-    "build": "rm -rf dist && rollup -c && tsc",
-    "pretest": "npm run build",
-    "prepublish": "npm test",
-    "lint": "eslint src",
-    "pretest-coverage": "npm run build",
-    "test-coverage": "rm -rf coverage/* && istanbul cover --report json node_modules/.bin/_mocha -- -u exports -R spec test/test.js",
-    "posttest-coverage": "remap-istanbul -i coverage/coverage-final.json -o coverage/coverage-remapped.json -b dist && remap-istanbul -i coverage/coverage-final.json -o coverage/coverage-remapped.lcov -t lcovonly -b dist && remap-istanbul -i coverage/coverage-final.json -o coverage/coverage-remapped -t html -b dist",
-    "ci": "npm run test-coverage && codecov < coverage/coverage-remapped.lcov"
+    "build": "run-s -n build:*",
+    "build:rollup": "rollup -c rollup.config.js",
+    "build:ts": "tsc --project tsconfig.build.json",
+    "lint": "run-s -n lint:*",
+    "lint:prettier": "npm run test:lint:prettier -- --write",
+    "lint:ts": "npm run test:lint:ts -- --fix",
+    "prebuild": "rm -rf dist",
+    "prepublishOnly": "npm run preversion",
+    "preversion": "run-s test build",
+    "test": "run-s -n test:lint test:only",
+    "test:debug": "mocha --inspect-brk",
+    "test:lint": "run-s -n test:lint:*",
+    "test:lint:prettier": "prettier --check '{src,test}/**/*.ts'",
+    "test:lint:ts": "eslint '{src,test}/**/*.ts'",
+    "test:only": "c8 mocha",
+    "test:watch": "mocha --watch"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Rich-Harris/sourcemap-codec"
+    "url": "git+https://github.com/jridgewell/sourcemap-codec.git"
   },
-  "keywords": [
-    "sourcemap",
-    "vlq"
-  ],
   "author": "Rich Harris",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/Rich-Harris/sourcemap-codec/issues"
-  },
-  "homepage": "https://github.com/Rich-Harris/sourcemap-codec",
   "devDependencies": {
-    "codecov.io": "^0.1.6",
-    "console-group": "^0.3.3",
-    "eslint": "^6.0.1",
-    "eslint-plugin-import": "^2.18.0",
-    "istanbul": "^0.4.5",
-    "mocha": "^6.1.4",
-    "remap-istanbul": "^0.13.0",
-    "rollup": "^1.16.4",
-    "rollup-plugin-node-resolve": "^5.2.0",
-    "rollup-plugin-typescript": "^1.0.1",
-    "typescript": "^3.5.2"
-  },
-  "files": [
-    "dist/*.js",
-    "dist/*.js.map",
-    "dist/**/*.d.ts",
-    "README.md"
-  ]
+    "@rollup/plugin-typescript": "8.3.0",
+    "@typescript-eslint/eslint-plugin": "5.10.0",
+    "@typescript-eslint/parser": "5.10.0",
+    "benchmark": "2.1.4",
+    "c8": "7.11.0",
+    "esbuild": "0.14.14",
+    "esbuild-node-loader": "0.6.4",
+    "eslint": "8.7.0",
+    "eslint-config-prettier": "8.3.0",
+    "mocha": "9.2.0",
+    "npm-run-all": "4.1.5",
+    "prettier": "2.5.1",
+    "rollup": "2.64.0",
+    "source-map": "0.6.1",
+    "source-map-js": "1.0.2",
+    "typescript": "4.5.4"
+  }
 }

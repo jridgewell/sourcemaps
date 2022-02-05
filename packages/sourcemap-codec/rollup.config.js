@@ -1,30 +1,29 @@
-import typescript from 'rollup-plugin-typescript';
-import resolve from 'rollup-plugin-node-resolve';
+import typescript from '@rollup/plugin-typescript';
 
-const pkg = require( './package.json' );
+function configure(esm) {
+  return {
+    input: 'src/sourcemap-codec.ts',
+    output: esm
+      ? {
+          format: 'es',
+          dir: 'dist',
+          entryFileNames: '[name].mjs',
+          sourcemap: true,
+          exports: 'named',
+        }
+      : {
+          format: 'umd',
+          name: 'sourcemapCodec',
+          dir: 'dist',
+          entryFileNames: '[name].umd.js',
+          sourcemap: true,
+          exports: 'named',
+        },
+    plugins: [typescript({ tsconfig: './tsconfig.build.json' })],
+    watch: {
+      include: 'src/**',
+    },
+  };
+}
 
-export default {
-	input: 'src/sourcemap-codec.ts',
-	plugins: [
-		typescript({
-			exclude: 'node_modules/**',
-			typescript: require('typescript')
-		}),
-		resolve({ jsnext: true })
-	],
-	output: [{
-		file: pkg.main,
-		format: 'umd',
-		name: 'sourcemapCodec',
-		sourcemap: true
-	}, {
-		file: pkg.module,
-		format: 'es',
-		sourcemap: true
-	},
-	{
-		file: pkg.exports['.'].import,
-		format: 'es',
-		sourcemap: true
-	}]
-};
+export default [configure(false), configure(true)];
