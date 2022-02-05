@@ -42,6 +42,8 @@ export function decode(mappings: string): SourceMapMappings {
   const state: [number, number, number, number, number] = new Int32Array(5) as any;
   const decoded: SourceMapMappings = [];
   let line: SourceMapLine = [];
+  let sorted = true;
+  let lastCol = 0;
 
   for (let i = 0; i < mappings.length; ) {
     const c = mappings.charCodeAt(i);
@@ -49,15 +51,20 @@ export function decode(mappings: string): SourceMapMappings {
     if (c === comma) {
       i++;
     } else if (c === semicolon) {
-      state[0] = 0;
+      state[0] = lastCol = 0;
+      if (!sorted) sort(line);
+      sorted = true;
       decoded.push(line);
       line = [];
       i++;
     } else {
       i = decodeInteger(mappings, i, state, 0); // generatedCodeColumn
+      const col = state[0];
+      if (col < lastCol) sorted = false;
+      lastCol = col;
 
       if (!hasMoreSegments(mappings, i)) {
-        line.push([state[0]]);
+        line.push([col]);
         continue;
       }
 
@@ -66,15 +73,16 @@ export function decode(mappings: string): SourceMapMappings {
       i = decodeInteger(mappings, i, state, 3); // sourceCodeColumn
 
       if (!hasMoreSegments(mappings, i)) {
-        line.push([state[0], state[1], state[2], state[3]]);
+        line.push([col, state[1], state[2], state[3]]);
         continue;
       }
 
       i = decodeInteger(mappings, i, state, 4); // nameIndex
-      line.push([state[0], state[1], state[2], state[3], state[4]]);
+      line.push([col, state[1], state[2], state[3], state[4]]);
     }
   }
 
+  if (!sorted) sort(line);
   decoded.push(line);
 
   return decoded;
@@ -109,6 +117,14 @@ function hasMoreSegments(mappings: string, i: number): boolean {
   const c = mappings.charCodeAt(i);
   if (c === comma || c === semicolon) return false;
   return true;
+}
+
+function sort(line: SourceMapSegment[]) {
+  line.sort(sortComparator);
+}
+
+function sortComparator(a: SourceMapSegment, b: SourceMapSegment): number {
+  return a[0] - b[0];
 }
 
 export function encode(decoded: SourceMapMappings): string {

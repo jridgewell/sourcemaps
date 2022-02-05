@@ -40,34 +40,6 @@ describe('sourcemap-codec', () => {
     },
     {
       encoded:
-        'aAAA,IAAIA,eAAW,oCAAoCC,cACpC,aACdC,OAAOC,MAAOH,eAAU,GCFzB,5PAAIA,iBAAW,sBAAsBC,cACtB,aACdC,OAAOC,MAAOH,iBAAU,GCCzBI,IACAC',
-      decoded: [
-        [
-          [13, 0, 0, 0],
-          [17, 0, 0, 4, 0],
-          [32, 0, 0, 15],
-          [68, 0, 0, 51, 1],
-          [82, 0, 1, 15],
-          [95, 0, 2, 1, 2],
-          [102, 0, 2, 8, 3],
-          [108, 0, 2, 15, 0],
-          [123, 0, 2, 25],
-          [126, 1, 0, 0],
-          [-126, 1, 0, 4, 0],
-          [-109, 1, 0, 15],
-          [-87, 1, 0, 37, 1],
-          [-73, 1, 1, 15],
-          [-60, 1, 2, 1, 2],
-          [-53, 1, 2, 8, 3],
-          [-47, 1, 2, 15, 0],
-          [-30, 1, 2, 25],
-          [-27, 2, 3, 0, 4],
-          [-23, 2, 4, 0, 5],
-        ],
-      ],
-    },
-    {
-      encoded:
         'AAAA,aAEA,IAAIA,eAAiB,oCAAoCC,cACzD,SAASC,IACRC,OAAOC,MAAOJ,eAAgB,GAG/B,IAAIK,iBAAmB,sBAAsBJ,cAC7C,SAASK,IACRH,OAAOC,MAAOC,iBAAkB,GAGjCH,IACAI',
       decoded: [
         [
@@ -175,6 +147,25 @@ describe('sourcemap-codec', () => {
       it('decodes sample ' + i, () => {
         assert.deepEqual(decode(test.encoded), test.decoded);
       });
+    });
+
+    it('sorts during decoding', () => {
+      const mappings = [
+        [[1], [2], [3]],
+        [[1], [3], [2]],
+        [[2], [1], [3]],
+        [[2], [3], [1]],
+        [[3], [1], [2]],
+        [[3], [2], [1]],
+      ];
+      mappings.sort(() => (Math.random() < 0.5 ? 1 : -1));
+
+      const decoded = decode(encode(mappings));
+      const expected = mappings.map(() => {
+        return [[1], [2], [3]];
+      });
+
+      assert.deepEqual(decoded, expected);
     });
   });
 
