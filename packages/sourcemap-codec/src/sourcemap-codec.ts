@@ -37,7 +37,7 @@ const td =
       };
 
 export function decode(mappings: string): SourceMapMappings {
-  const state = new Int32Array(5) as any;
+  const state: [number, number, number, number, number] = new Int32Array(5) as any;
   const decoded: SourceMapMappings = [];
   let line: SourceMapLine = [];
 
@@ -112,7 +112,7 @@ function hasMoreSegments(mappings: string, i: number): boolean {
 }
 
 export function encode(decoded: SourceMapMappings): string {
-  const state: SourceMapSegment = new Int32Array(5) as any;
+  const state: [number, number, number, number, number] = new Int32Array(5) as any;
   let buf = new Uint8Array(1000);
   let pos = 0;
 
