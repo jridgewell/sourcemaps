@@ -19,7 +19,12 @@ function configure(esm) {
           sourcemap: true,
           exports: 'named',
         },
-    plugins: [typescript({ tsconfig: './tsconfig.build.json' })],
+    plugins: [
+      typescript({
+        tsconfig: './tsconfig.build.json',
+        tslib: './throw-when-needed',
+      }),
+    ],
     watch: {
       include: 'src/**',
     },

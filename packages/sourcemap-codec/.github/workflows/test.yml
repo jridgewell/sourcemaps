@@ -23,6 +23,7 @@ jobs:
           npm run build
           npm test
           npm run test:coverage
+          npm run benchmark:only
       - name: Switch to Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v1
         with:
@@ -31,5 +32,6 @@ jobs:
         run: |
           npm install mocha@6.2.3
           npm run test:only
+          npm run benchmark:only
         env:
           CI: true

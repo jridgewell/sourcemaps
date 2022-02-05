@@ -21,6 +21,8 @@
     "./package.json": "./package.json"
   },
   "scripts": {
+    "benchmark": "run-s build:rollup benchmark:only",
+    "benchmark:only": "node benchmark/index.js",
     "build": "run-s -n build:*",
     "build:rollup": "rollup -c rollup.config.js",
     "build:ts": "tsc --project tsconfig.build.json",
@@ -60,6 +62,7 @@
     "rollup": "2.64.0",
     "source-map": "0.6.1",
     "source-map-js": "1.0.2",
+    "sourcemap-codec": "1.4.8",
     "typescript": "4.5.4"
   }
 }
