@@ -1,5 +1,10 @@
 # sourcemap-codec changelog
 
+## 1.4.9
+
+* Performance boost ([#86](https://github.com/Rich-Harris/sourcemap-codec/pull/86))
+* Add native ESM entry point ([#85](https://github.com/Rich-Harris/sourcemap-codec/pull/85))
+
 ## 1.4.8
 
 * Performance boost ([#80](https://github.com/Rich-Harris/sourcemap-codec/pull/80))
