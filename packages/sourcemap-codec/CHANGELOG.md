@@ -1,5 +1,9 @@
 # sourcemap-codec changelog
 
+## 1.4.10
+
+* Sort mappings during decode ([f9d1b33f](https://github.com/jridgewell/sourcemap-codec/commit/f9d1b33f))
+
 ## 1.4.9
 
 * Performance boost ([#86](https://github.com/Rich-Harris/sourcemap-codec/pull/86))
