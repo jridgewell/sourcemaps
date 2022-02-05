@@ -9,7 +9,7 @@ jobs:
     strategy:
       matrix:
         latest-node-version: [16.x]
-        node-version: [6.x, 8.x, 10.x, 12.x, 14.x]
+        node-version: [6.x, 8.x, 10.x, 12.x, 14.x, 16.x]
 
     steps:
       - uses: actions/checkout@v1
@@ -21,17 +21,17 @@ jobs:
         run: |
           npm install
           npm run build
-          npm test
           npm run test:coverage
-          npm run benchmark:only
       - name: Switch to Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
-      - name: test legacy node
+      - name: Test legacy node
         run: |
           npm install mocha@6.2.3
           npm run test:only
+      - name: Benchmark
+        run: |
           npm run benchmark:only
         env:
           CI: true

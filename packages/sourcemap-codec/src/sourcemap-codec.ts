@@ -5,6 +5,8 @@ export type SourceMapSegment =
 export type SourceMapLine = SourceMapSegment[];
 export type SourceMapMappings = SourceMapLine[];
 
+const comma = 44;
+const semicolon = 59;
 const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
 const intToChar = new Uint8Array(65); // 65 possible chars.
 const charToInteger = new Uint8Array(123); // z is 122 in ASCII
@@ -44,11 +46,9 @@ export function decode(mappings: string): SourceMapMappings {
   for (let i = 0; i < mappings.length; ) {
     const c = mappings.charCodeAt(i);
 
-    if (c === 44) {
-      // ","
+    if (c === comma) {
       i++;
-    } else if (c === 59) {
-      // ";"
+    } else if (c === semicolon) {
       state[0] = 0;
       decoded.push(line);
       line = [];
@@ -107,7 +107,7 @@ function hasMoreSegments(mappings: string, i: number): boolean {
   if (i >= mappings.length) return false;
 
   const c = mappings.charCodeAt(i);
-  if (c === 44 || c === 59) return false;
+  if (c === comma || c === semicolon) return false;
   return true;
 }
 
@@ -120,7 +120,7 @@ export function encode(decoded: SourceMapMappings): string {
     const line = decoded[i];
     if (i > 0) {
       buf = reserve(buf, pos, 1);
-      buf[pos++] = 59; // ";"
+      buf[pos++] = semicolon;
     }
     if (line.length === 0) continue;
 
@@ -131,7 +131,7 @@ export function encode(decoded: SourceMapMappings): string {
       // We can push up to 5 ints, each int can take at most 7 chars, and we
       // may push a comma.
       buf = reserve(buf, pos, 36);
-      if (j > 0) buf[pos++] = 44; // ","
+      if (j > 0) buf[pos++] = comma;
 
       pos = encodeInteger(buf, pos, state, segment, 0); // generatedCodeColumn
 
