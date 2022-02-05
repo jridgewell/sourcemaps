@@ -18,7 +18,7 @@ for (let i = 0; i < chars.length; i++) {
 // Provide a fallback for older environments.
 const td =
   typeof TextDecoder !== 'undefined'
-    ? new TextDecoder('ascii')
+    ? new TextDecoder('utf8')
     : {
         decode(buf: Uint8Array) {
           let out = '';
