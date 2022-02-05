@@ -30,13 +30,14 @@
     "prebuild": "rm -rf dist",
     "prepublishOnly": "npm run preversion",
     "preversion": "run-s test build",
+    "pretest": "run-s build:rollup",
     "test": "run-s -n test:lint test:only",
     "test:debug": "mocha --inspect-brk",
     "test:lint": "run-s -n test:lint:*",
     "test:lint:prettier": "prettier --check '{src,test}/**/*.ts'",
     "test:lint:ts": "eslint '{src,test}/**/*.ts'",
-    "pretest:only": "run-s build:rollup",
-    "test:only": "c8 mocha",
+    "test:only": "mocha",
+    "test:coverage": "c8 mocha",
     "test:watch": "mocha --watch"
   },
   "repository": {
