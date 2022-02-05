@@ -35,6 +35,7 @@
     "test:lint": "run-s -n test:lint:*",
     "test:lint:prettier": "prettier --check '{src,test}/**/*.ts'",
     "test:lint:ts": "eslint '{src,test}/**/*.ts'",
+    "pretest:only": "run-s build:rollup",
     "test:only": "c8 mocha",
     "test:watch": "mocha --watch"
   },
