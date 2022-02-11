@@ -5,8 +5,8 @@ export type SourceMapSegment =
 export type SourceMapLine = SourceMapSegment[];
 export type SourceMapMappings = SourceMapLine[];
 
-const comma = 44;
-const semicolon = 59;
+const comma = ','.charCodeAt(0);
+const semicolon = ';'.charCodeAt(0);
 const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 const intToChar = new Uint8Array(64); // 64 possible chars.
 const charToInteger = new Uint8Array(128); // z is 122 in ASCII
