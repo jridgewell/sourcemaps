@@ -7,8 +7,8 @@ export type SourceMapMappings = SourceMapLine[];
 
 const comma = 44;
 const semicolon = 59;
-const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
-const intToChar = new Uint8Array(65); // 65 possible chars.
+const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+const intToChar = new Uint8Array(64); // 64 possible chars.
 const charToInteger = new Uint8Array(123); // z is 122 in ASCII
 
 for (let i = 0; i < chars.length; i++) {
