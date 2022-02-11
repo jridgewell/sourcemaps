@@ -104,7 +104,7 @@ function decodeInteger(mappings: string, pos: number, state: SourceMapSegment, j
   value >>>= 1;
 
   if (shouldNegate) {
-    value = value === 0 ? -0x80000000 : -value;
+    value = -0x80000000 | -value;
   }
 
   state[j] += value;
@@ -185,9 +185,9 @@ function encodeInteger(
 
   num = num < 0 ? (-num << 1) | 1 : num << 1;
   do {
-    let clamped = num & 31;
+    let clamped = num & 0b011111;
     num >>>= 5;
-    if (num > 0) clamped |= 32;
+    if (num > 0) clamped |= 0b100000;
     buf[pos++] = intToChar[clamped];
   } while (num > 0);
 
