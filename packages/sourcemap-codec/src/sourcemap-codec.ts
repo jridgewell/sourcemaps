@@ -9,7 +9,7 @@ const comma = 44;
 const semicolon = 59;
 const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 const intToChar = new Uint8Array(64); // 64 possible chars.
-const charToInteger = new Uint8Array(123); // z is 122 in ASCII
+const charToInteger = new Uint8Array(128); // z is 122 in ASCII
 
 for (let i = 0; i < chars.length; i++) {
   const c = chars.charCodeAt(i);
@@ -129,7 +129,7 @@ function sortComparator(a: SourceMapSegment, b: SourceMapSegment): number {
 
 export function encode(decoded: SourceMapMappings): string {
   const state: [number, number, number, number, number] = new Int32Array(5) as any;
-  let buf = new Uint8Array(1000);
+  let buf = new Uint8Array(1024);
   let pos = 0;
 
   for (let i = 0; i < decoded.length; i++) {
