@@ -32,6 +32,7 @@ jobs:
           npm run test:only
       - name: Benchmark
         run: |
+          npm run benchmark:install
           npm run benchmark:only
         env:
           CI: true
