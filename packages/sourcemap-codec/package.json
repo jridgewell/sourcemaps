@@ -21,7 +21,8 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "benchmark": "run-s build:rollup benchmark:only",
+    "benchmark": "run-s build:rollup benchmark:*",
+    "benchmark:install": "cd benchmark && npm install",
     "benchmark:only": "node benchmark/index.js",
     "build": "run-s -n build:*",
     "build:rollup": "rollup -c rollup.config.js",

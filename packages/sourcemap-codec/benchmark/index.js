@@ -3,22 +3,35 @@
 const { readdirSync, readFileSync } = require('fs');
 const { dirname, join, relative } = require('path');
 const Benchmark = require('benchmark');
-const latest = require('../');
-const sourcemapCodec = require('sourcemap-codec');
+const sourcemapCodec = require('../');
+const originalSourcemapCodec = require('sourcemap-codec');
+const sourceMap061 = require('source-map');
+const sourceMapWasm = require('source-map-wasm');
 
 const dir = relative(process.cwd(), __dirname);
 
-function bench(file) {
+console.log(`node ${process.version}\n`);
+
+async function bench(file) {
   const map = JSON.parse(readFileSync(join(dir, file)));
   const encoded = map.mappings;
-  const decoded = latest.decode(encoded);
+  const decoded = sourcemapCodec.decode(encoded);
+  const consumer061 = new sourceMap061.SourceMapConsumer(map);
+  const consumerWasm = await new sourceMapWasm.SourceMapConsumer(map);
 
   new Benchmark.Suite()
-    .add('decode (latest)         ', () => {
-      latest.decode(encoded);
-    })
-    .add('decode (sourcemap-codec)', () => {
+    .add('decode: @jridgewell/sourcemap-codec', () => {
       sourcemapCodec.decode(encoded);
+    })
+    .add('decode: sourcemap-codec', () => {
+      originalSourcemapCodec.decode(encoded);
+    })
+    .add('decode: source-map-0.6.1', () => {
+      consumer061._parseMappings(encoded, '');
+    })
+    .add('decode: source-map-0.8.0', () => {
+      consumerWasm._parseMappings(encoded, '');
+      consumerWasm.destroy();
     })
     // add listeners
     .on('error', ({ error }) => console.error(error))
@@ -32,12 +45,23 @@ function bench(file) {
 
   console.log('');
 
+  const generator061 = sourceMap061.SourceMapGenerator.fromSourceMap(consumer061);
+  const generatorWasm = sourceMapWasm.SourceMapGenerator.fromSourceMap(
+    await new sourceMapWasm.SourceMapConsumer(map),
+  );
+
   new Benchmark.Suite()
-    .add('encode (latest)         ', () => {
-      latest.encode(decoded);
-    })
-    .add('encode (sourcemap-codec)', () => {
+    .add('encode: @jridgewell/sourcemap-codec', () => {
       sourcemapCodec.encode(decoded);
+    })
+    .add('encode: sourcemap-codec', () => {
+      originalSourcemapCodec.encode(decoded);
+    })
+    .add('encode: source-map-0.6.1', () => {
+      generator061._serializeMappings();
+    })
+    .add('encode: source-map-0.8.0', () => {
+      generatorWasm._serializeMappings();
     })
     // add listeners
     .on('error', ({ error }) => console.error(error))
@@ -50,15 +74,17 @@ function bench(file) {
     .run({});
 }
 
-const files = readdirSync(dir);
-let first = true;
-for (let i = 0; i < files.length; i++) {
-  const file = files[i];
-  if (!file.endsWith('.map')) continue;
+(async () => {
+  const files = readdirSync(dir);
+  let first = true;
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    if (!file.endsWith('.map')) continue;
 
-  if (!first) console.log('\n***\n');
-  first = false;
+    if (!first) console.log('\n***\n');
+    first = false;
 
-  console.log(file);
-  bench(file);
-}
+    console.log(file);
+    await bench(file);
+  }
+})();

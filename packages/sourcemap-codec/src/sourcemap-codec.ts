@@ -58,7 +58,7 @@ export function decode(mappings: string): SourceMapMappings {
       line = [];
       i++;
     } else {
-      i = decodeInteger(mappings, i, state, 0); // generatedCodeColumn
+      i = decodeInteger(mappings, i, state, 0); // genColumn
       const col = state[0];
       if (col < lastCol) sorted = false;
       lastCol = col;
@@ -68,16 +68,16 @@ export function decode(mappings: string): SourceMapMappings {
         continue;
       }
 
-      i = decodeInteger(mappings, i, state, 1); // sourceFileIndex
-      i = decodeInteger(mappings, i, state, 2); // sourceCodeLine
-      i = decodeInteger(mappings, i, state, 3); // sourceCodeColumn
+      i = decodeInteger(mappings, i, state, 1); // sourcesIndex
+      i = decodeInteger(mappings, i, state, 2); // sourceLine
+      i = decodeInteger(mappings, i, state, 3); // sourceColumn
 
       if (!hasMoreSegments(mappings, i)) {
         line.push([col, state[1], state[2], state[3]]);
         continue;
       }
 
-      i = decodeInteger(mappings, i, state, 4); // nameIndex
+      i = decodeInteger(mappings, i, state, 4); // namesIndex
       line.push([col, state[1], state[2], state[3], state[4]]);
     }
   }
@@ -149,15 +149,15 @@ export function encode(decoded: SourceMapMappings): string {
       buf = reserve(buf, pos, 36);
       if (j > 0) buf[pos++] = comma;
 
-      pos = encodeInteger(buf, pos, state, segment, 0); // generatedCodeColumn
+      pos = encodeInteger(buf, pos, state, segment, 0); // genColumn
 
       if (segment.length === 1) continue;
-      pos = encodeInteger(buf, pos, state, segment, 1); // sourceFileIndex
-      pos = encodeInteger(buf, pos, state, segment, 2); // sourceCodeLine
-      pos = encodeInteger(buf, pos, state, segment, 3); // sourceCodeColumn
+      pos = encodeInteger(buf, pos, state, segment, 1); // sourcesIndex
+      pos = encodeInteger(buf, pos, state, segment, 2); // sourceLine
+      pos = encodeInteger(buf, pos, state, segment, 3); // sourceColumn
 
       if (segment.length === 4) continue;
-      pos = encodeInteger(buf, pos, state, segment, 4); // nameIndex
+      pos = encodeInteger(buf, pos, state, segment, 4); // namesIndex
     }
   }
 
