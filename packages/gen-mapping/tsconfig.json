@@ -13,6 +13,7 @@
     "outDir": "dist/lib",
     "noUnusedLocals": true,
     "noUnusedParameters": true,
+    "checkJs": true
   },
   "exclude": [
     "dist"

@@ -6,6 +6,11 @@ import type { DecodedSourceMap, EncodedSourceMap, Pos, Mapping } from './types';
 
 export type { DecodedSourceMap, EncodedSourceMap, Mapping };
 
+export type Options = {
+  file?: string | null;
+  sourceRoot?: string | null;
+};
+
 export let addSegment: {
   (
     map: GenMapping,
@@ -72,6 +77,9 @@ export let decodedMap: (map: GenMapping) => DecodedSourceMap;
 export let encodedMap: (map: GenMapping) => EncodedSourceMap;
 export let allMappings: (map: GenMapping) => Mapping[];
 
+/**
+ * Provides the state to generate a sourcemap.
+ */
 export class GenMapping {
   private _names = new SetArray();
   private _sources = new SetArray();
@@ -80,7 +88,7 @@ export class GenMapping {
   declare file: string | null | undefined;
   declare sourceRoot: string | null | undefined;
 
-  constructor(file?: string | null, sourceRoot?: string | null) {
+  constructor({ file, sourceRoot }: Options = {}) {
     this.file = file;
     this.sourceRoot = sourceRoot;
   }
@@ -97,8 +105,8 @@ export class GenMapping {
       const line = getLine(mappings, genLine);
       if (source == null) {
         const seg: SourceMapSegment = [genColumn];
-        insert(line, getColumnIndex(line, genColumn, seg), seg);
-        return;
+        const index = getColumnIndex(line, genColumn, seg);
+        return insert(line, index, seg);
       }
 
       // Sigh, TypeScript can't figure out sourceLine and sourceColumn aren't nullish if source
@@ -109,8 +117,8 @@ export class GenMapping {
       const seg: SourceMapSegment = name
         ? [genColumn, sourcesIndex, sourceLine, sourceColumn, put(names, name)]
         : [genColumn, sourcesIndex, sourceLine, sourceColumn];
-      const index = getColumnIndex(line, genColumn, seg);
 
+      const index = getColumnIndex(line, genColumn, seg);
       if (sourcesIndex === sourcesContent.length) sourcesContent[sourcesIndex] = null;
       insert(line, index, seg);
     };
@@ -212,8 +220,8 @@ function getColumnIndex(line: SourceMapSegment[], column: number, seg: SourceMap
     if (col < column) break;
 
     const cmp = compare(current, seg);
-    if (cmp === 0) return -1;
-    if (cmp > 0) break;
+    if (cmp === 0) return index;
+    if (cmp < 0) break;
   }
   return index;
 }
