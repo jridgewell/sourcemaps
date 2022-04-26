@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "moduleResolution": "node",
+    "target": "es2015",
+    "module":"es2015",
+    "lib": ["es2015", "dom"],
+    "strict": true,
+    "sourceMap": true,
+    "inlineSources": true,
+    "declaration": true,
+    "allowSyntheticDefaultImports": true,
+    "declarationDir": "dist/types",
+    "outDir": "dist/lib",
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+  },
+  "exclude": [
+    "dist"
+  ],
+  "include": [
+    "src",
+    "test"
+  ]
+}
