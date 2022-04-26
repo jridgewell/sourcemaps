@@ -9,18 +9,18 @@ const comma = ','.charCodeAt(0);
 const semicolon = ';'.charCodeAt(0);
 const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 const intToChar = new Uint8Array(64); // 64 possible chars.
-const charToInteger = new Uint8Array(128); // z is 122 in ASCII
+const charToInt = new Uint8Array(128); // z is 122 in ASCII
 
 for (let i = 0; i < chars.length; i++) {
   const c = chars.charCodeAt(i);
-  charToInteger[c] = i;
   intToChar[i] = c;
+  charToInt[c] = i;
 }
 
 // Provide a fallback for older environments.
 const td =
   typeof TextDecoder !== 'undefined'
-    ? new TextDecoder()
+    ? /* #__PURE__ */ new TextDecoder()
     : typeof Buffer !== 'undefined'
     ? {
         decode(buf: Uint8Array) {
@@ -95,7 +95,7 @@ function decodeInteger(mappings: string, pos: number, state: SourceMapSegment, j
 
   do {
     const c = mappings.charCodeAt(pos++);
-    integer = charToInteger[c];
+    integer = charToInt[c];
     value |= (integer & 31) << shift;
     shift += 5;
   } while (integer & 32);
@@ -127,7 +127,9 @@ function sortComparator(a: SourceMapSegment, b: SourceMapSegment): number {
   return a[0] - b[0];
 }
 
-export function encode(decoded: SourceMapMappings): string {
+export function encode(decoded: SourceMapMappings): string;
+export function encode(decoded: Readonly<SourceMapMappings>): string;
+export function encode(decoded: Readonly<SourceMapMappings>): string {
   const state: [number, number, number, number, number] = new Int32Array(5) as any;
   let buf = new Uint8Array(1024);
   let pos = 0;
