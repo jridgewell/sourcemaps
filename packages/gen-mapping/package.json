@@ -27,6 +27,9 @@
     "node": ">=6.0.0"
   },
   "scripts": {
+    "benchmark": "run-s build:rollup benchmark:*",
+    "benchmark:install": "cd benchmark && npm install",
+    "benchmark:only": "node benchmark/index.mjs",
     "prebuild": "rm -rf dist",
     "build": "run-s -n build:*",
     "build:rollup": "rollup -c rollup.config.js",
@@ -52,6 +55,7 @@
     "@types/node": "17.0.28",
     "@typescript-eslint/eslint-plugin": "5.10.0",
     "@typescript-eslint/parser": "5.10.0",
+    "benchmark": "2.1.4",
     "c8": "7.11.0",
     "eslint": "8.7.0",
     "eslint-config-prettier": "8.3.0",
