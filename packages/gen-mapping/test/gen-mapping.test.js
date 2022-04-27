@@ -6,6 +6,7 @@ const {
   decodedMap,
   encodedMap,
   allMappings,
+  fromMap,
 } = require('..');
 const assert = require('assert');
 
@@ -428,6 +429,126 @@ describe('GenMapping', () => {
           name: undefined,
         },
       ]);
+    });
+  });
+
+  describe('fromMap', () => {
+    it('copies version', () => {
+      const input = /** @type {import('@jridgewell/trace-mapping').DecodedSourceMap} */ ({
+        version: 3,
+        names: [],
+        sources: ['input.js'],
+        sourcesContent: [],
+        mappings: [],
+      });
+      const map = fromMap(input);
+
+      assert.strictEqual(decodedMap(map).version, 3);
+    });
+
+    it('copies file name', () => {
+      const input = /** @type {import('@jridgewell/trace-mapping').DecodedSourceMap} */ ({
+        version: 3,
+        file: 'output.js',
+        names: [],
+        sources: ['input.js'],
+        sourcesContent: [],
+        mappings: [],
+      });
+      const map = fromMap(input);
+
+      assert.strictEqual(decodedMap(map).file, 'output.js');
+    });
+
+    it('copies sourceRoot', () => {
+      const input = /** @type {import('@jridgewell/trace-mapping').DecodedSourceMap} */ ({
+        version: 3,
+        names: [],
+        sourceRoot: 'foo/',
+        sources: ['input.js'],
+        sourcesContent: [],
+        mappings: [],
+      });
+      const map = fromMap(input);
+
+      assert.strictEqual(decodedMap(map).sourceRoot, 'foo/');
+    });
+
+    it('copies sources', () => {
+      const input = /** @type {import('@jridgewell/trace-mapping').DecodedSourceMap} */ ({
+        version: 3,
+        names: [],
+        sources: ['input.js'],
+        sourcesContent: [],
+        mappings: [],
+      });
+      const map = fromMap(input);
+
+      assert.deepEqual(decodedMap(map).sources, ['input.js']);
+    });
+
+    it('copies sourcesContent', () => {
+      const input = /** @type {import('@jridgewell/trace-mapping').DecodedSourceMap} */ ({
+        version: 3,
+        names: [],
+        sources: ['input.js'],
+        sourcesContent: ['input'],
+        mappings: [],
+      });
+      const map = fromMap(input);
+
+      assert.deepEqual(decodedMap(map).sourcesContent, ['input']);
+    });
+
+    it('creates sourcesContent', () => {
+      const input = /** @type {import('@jridgewell/trace-mapping').DecodedSourceMap} */ ({
+        version: 3,
+        names: [],
+        sources: ['input.js'],
+        mappings: [],
+      });
+      const map = fromMap(input);
+
+      assert.deepEqual(decodedMap(map).sourcesContent, [null]);
+    });
+
+    it('copies names', () => {
+      const input = /** @type {import('@jridgewell/trace-mapping').DecodedSourceMap} */ ({
+        version: 3,
+        names: ['foo'],
+        sources: ['input.js'],
+        sourcesContent: [],
+        mappings: [[[0, 0, 0, 0, 0]]],
+      });
+      const map = fromMap(input);
+
+      assert.deepEqual(decodedMap(map).names, ['foo']);
+    });
+
+    it('copies decoded mappings', () => {
+      const input = /** @type {import('@jridgewell/trace-mapping').DecodedSourceMap} */ ({
+        version: 3,
+        names: [],
+        sources: ['input.js'],
+        sourcesContent: [],
+        mappings: [[[1, 0, 2, 3, 0]]],
+      });
+      const map = fromMap(input);
+
+      assert.deepEqual(decodedMap(map).mappings, [[[1, 0, 2, 3, 0]]]);
+    });
+
+    it('copies encoded mappings', () => {
+      const input = /** @type {import('@jridgewell/trace-mapping').DecodedSourceMap} */ ({
+        version: 3,
+        names: [],
+        sources: ['input.js'],
+        sourcesContent: [],
+        mappings: 'CAEGA',
+      });
+      const map = fromMap(input);
+
+      assert.deepEqual(decodedMap(map).mappings, [[[1, 0, 2, 3, 0]]]);
     });
   });
 });

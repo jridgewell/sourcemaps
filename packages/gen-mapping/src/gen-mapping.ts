@@ -1,6 +1,8 @@
 import { SetArray, put } from '@jridgewell/set-array';
 import { encode } from '@jridgewell/sourcemap-codec';
+import { TraceMap, decodedMappings } from '@jridgewell/trace-mapping';
 
+import type { SourceMapInput } from '@jridgewell/trace-mapping';
 import type { SourceMapSegment } from './sourcemap-segment';
 import type { DecodedSourceMap, EncodedSourceMap, Pos, Mapping } from './types';
 
@@ -97,6 +99,11 @@ export let decodedMap: (map: GenMapping) => DecodedSourceMap;
 export let encodedMap: (map: GenMapping) => EncodedSourceMap;
 
 /**
+ * Constructs a new GenMapping, using the already present mappings of the input.
+ */
+export let fromMap: (input: SourceMapInput) => GenMapping;
+
+/**
  * Returns an array of high-level mapping objects for every recorded segment, which could then be
  * passed to the `source-map` library.
  */
@@ -128,7 +135,7 @@ export class GenMapping {
       } = map;
 
       const line = getLine(mappings, genLine);
-      if (source == null) {
+      if (!source) {
         const seg: SourceMapSegment = [genColumn];
         const index = getColumnIndex(line, genColumn, seg);
         return insert(line, index, seg);
@@ -222,6 +229,18 @@ export class GenMapping {
 
       return out;
     };
+
+    fromMap = (input) => {
+      const map = new TraceMap(input);
+      const gen = new GenMapping({ file: map.file, sourceRoot: map.sourceRoot });
+
+      putAll(gen._names, map.names);
+      putAll(gen._sources, map.sources as string[]);
+      gen._sourcesContent = map.sourcesContent || map.sources.map(() => null);
+      gen._mappings = decodedMappings(map) as GenMapping['_mappings'];
+
+      return gen;
+    };
   }
 }
 
@@ -274,9 +293,12 @@ function compareNum(a: number, b: number): number {
 }
 
 function insert<T>(array: T[], index: number, value: T) {
-  if (index === -1) return;
   for (let i = array.length; i > index; i--) {
     array[i] = array[i - 1];
   }
   array[index] = value;
+}
+
+function putAll(strarr: SetArray, array: string[]) {
+  for (let i = 0; i < array.length; i++) put(strarr, array[i]);
 }

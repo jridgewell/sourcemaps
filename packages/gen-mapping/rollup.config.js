@@ -14,6 +14,7 @@ function configure(esm) {
           globals: {
             '@jridgewell/set-array': 'setArray',
             '@jridgewell/sourcemap-codec': 'sourcemapCodec',
+            '@jridgewell/trace-mapping': 'traceMapping',
           },
         },
     plugins: [
