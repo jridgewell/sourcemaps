@@ -62,7 +62,7 @@
     "typescript": "4.5.5"
   },
   "dependencies": {
-    "@jridgewell/set-array": "1.0.0",
+    "@jridgewell/set-array": "^1.0.0",
     "@jridgewell/sourcemap-codec": "^1.4.10"
   }
 }
