@@ -3,107 +3,107 @@ const {
   addSegment,
   addMapping,
   setSourceContent,
-  decodedMap,
-  encodedMap,
+  toDecodedMap,
+  toEncodedMap,
   allMappings,
   fromMap,
 } = require('..');
 const assert = require('assert');
 
 describe('GenMapping', () => {
-  describe('decodedMap', () => {
+  describe('toDecodedMap', () => {
     it('has version', () => {
       const map = new GenMapping({ file: 'output.js' });
 
-      assert.strictEqual(decodedMap(map).version, 3);
+      assert.strictEqual(toDecodedMap(map).version, 3);
     });
 
     it('has file name', () => {
       const map = new GenMapping({ file: 'output.js' });
 
-      assert.strictEqual(decodedMap(map).file, 'output.js');
+      assert.strictEqual(toDecodedMap(map).file, 'output.js');
     });
 
     it('has sourceRoot', () => {
       const map = new GenMapping({ sourceRoot: 'foo/' });
 
-      assert.strictEqual(decodedMap(map).sourceRoot, 'foo/');
+      assert.strictEqual(toDecodedMap(map).sourceRoot, 'foo/');
     });
 
     it('has sources', () => {
       const map = new GenMapping();
       addSegment(map, 0, 0, 'input.js', 0, 0, 'foo');
 
-      assert.deepEqual(decodedMap(map).sources, ['input.js']);
+      assert.deepEqual(toDecodedMap(map).sources, ['input.js']);
     });
 
     it('has sourcesContent', () => {
       const map = new GenMapping();
       setSourceContent(map, 'input.js', 'input');
 
-      assert.deepEqual(decodedMap(map).sourcesContent, ['input']);
+      assert.deepEqual(toDecodedMap(map).sourcesContent, ['input']);
     });
 
     it('has names', () => {
       const map = new GenMapping();
       addSegment(map, 0, 0, 'input.js', 0, 0, 'foo');
 
-      assert.deepEqual(decodedMap(map).names, ['foo']);
+      assert.deepEqual(toDecodedMap(map).names, ['foo']);
     });
 
     it('has mappings', () => {
       const map = new GenMapping();
       addSegment(map, 0, 1, 'input.js', 2, 3, 'foo');
 
-      assert.deepEqual(decodedMap(map).mappings, [[[1, 0, 2, 3, 0]]]);
+      assert.deepEqual(toDecodedMap(map).mappings, [[[1, 0, 2, 3, 0]]]);
     });
   });
 
-  describe('encodedMap', () => {
+  describe('toEncodedMap', () => {
     it('has version', () => {
       const map = new GenMapping({ file: 'output.js' });
 
-      assert.strictEqual(encodedMap(map).version, 3);
+      assert.strictEqual(toEncodedMap(map).version, 3);
     });
 
     it('has file name', () => {
       const map = new GenMapping({ file: 'output.js' });
 
-      assert.strictEqual(encodedMap(map).file, 'output.js');
+      assert.strictEqual(toEncodedMap(map).file, 'output.js');
     });
 
     it('has sourceRoot', () => {
       const map = new GenMapping({ sourceRoot: 'foo/' });
 
-      assert.strictEqual(encodedMap(map).sourceRoot, 'foo/');
+      assert.strictEqual(toEncodedMap(map).sourceRoot, 'foo/');
     });
 
     it('has sources', () => {
       const map = new GenMapping();
       addSegment(map, 0, 0, 'input.js', 0, 0, 'foo');
 
-      assert.deepEqual(encodedMap(map).sources, ['input.js']);
+      assert.deepEqual(toEncodedMap(map).sources, ['input.js']);
     });
 
     it('has sourcesContent', () => {
       const map = new GenMapping();
       setSourceContent(map, 'input.js', 'input');
 
-      assert.deepEqual(encodedMap(map).sourcesContent, ['input']);
+      assert.deepEqual(toEncodedMap(map).sourcesContent, ['input']);
     });
 
     it('has names', () => {
       const map = new GenMapping();
       addSegment(map, 0, 0, 'input.js', 0, 0, 'foo');
 
-      assert.deepEqual(encodedMap(map).names, ['foo']);
+      assert.deepEqual(toEncodedMap(map).names, ['foo']);
     });
 
     it('has mappings', () => {
       const map = new GenMapping();
       addSegment(map, 0, 1, 'input.js', 2, 3, 'foo');
 
-      assert.deepEqual(encodedMap(map).mappings, 'CAEGA');
+      assert.deepEqual(toEncodedMap(map).mappings, 'CAEGA');
     });
   });
 
@@ -112,28 +112,28 @@ describe('GenMapping', () => {
       const map = new GenMapping();
       addSegment(map, 0, 0);
 
-      assert.deepEqual(decodedMap(map).mappings, [[[0]]]);
+      assert.deepEqual(toDecodedMap(map).mappings, [[[0]]]);
     });
 
     it('records nameless source segment', () => {
       const map = new GenMapping();
       addSegment(map, 0, 0, 'input.js', 0, 0);
 
-      assert.deepEqual(decodedMap(map).mappings, [[[0, 0, 0, 0]]]);
+      assert.deepEqual(toDecodedMap(map).mappings, [[[0, 0, 0, 0]]]);
     });
 
     it('records named source segment', () => {
       const map = new GenMapping();
       addSegment(map, 0, 0, 'input.js', 0, 0, 'foo');
 
-      assert.deepEqual(decodedMap(map).mappings, [[[0, 0, 0, 0, 0]]]);
+      assert.deepEqual(toDecodedMap(map).mappings, [[[0, 0, 0, 0, 0]]]);
     });
 
     it('uses 0-based line', () => {
       const map = new GenMapping();
       addSegment(map, 1, 0, 'input.js', 1, 0, 'foo');
 
-      assert.deepEqual(decodedMap(map).mappings, [[], [[0, 0, 1, 0, 0]]]);
+      assert.deepEqual(toDecodedMap(map).mappings, [[], [[0, 0, 1, 0, 0]]]);
     });
 
     it('can skip back and forth in generated lines', () => {
@@ -142,7 +142,7 @@ describe('GenMapping', () => {
       addSegment(map, 2, 0, 'input.js', 2, 0);
       addSegment(map, 0, 0, 'input.js', 0, 0);
 
-      assert.deepEqual(decodedMap(map).mappings, [[[0, 0, 0, 0]], [[0, 0, 1, 0]], [[0, 0, 2, 0]]]);
+      assert.deepEqual(toDecodedMap(map).mappings, [[[0, 0, 0, 0]], [[0, 0, 1, 0]], [[0, 0, 2, 0]]]);
     });
 
     it('sorts generated column', () => {
@@ -151,7 +151,7 @@ describe('GenMapping', () => {
       addSegment(map, 0, 2, 'input.js', 0, 0);
       addSegment(map, 0, 0, 'input.js', 0, 0);
 
-      assert.deepEqual(decodedMap(map).mappings, [
+      assert.deepEqual(toDecodedMap(map).mappings, [
         [
           [0, 0, 0, 0],
           [1, 0, 0, 0],
@@ -167,7 +167,7 @@ describe('GenMapping', () => {
       addSegment(map, 0, 0, 'input.js', 0, 0);
       addSegment(map, 0, 0, 'foo.js', 0, 0);
 
-      assert.deepEqual(decodedMap(map).mappings, [
+      assert.deepEqual(toDecodedMap(map).mappings, [
         [
           [0, 0, 0, 0],
           [0, 1, 0, 0],
@@ -183,7 +183,7 @@ describe('GenMapping', () => {
       addSegment(map, 0, 0, 'input.js', 2, 0);
       addSegment(map, 0, 0, 'input.js', 0, 0);
 
-      assert.deepEqual(decodedMap(map).mappings, [
+      assert.deepEqual(toDecodedMap(map).mappings, [
         [
           [0, 0, 0, 0],
           [0, 0, 1, 0],
@@ -199,7 +199,7 @@ describe('GenMapping', () => {
       addSegment(map, 0, 0, 'input.js', 0, 2);
       addSegment(map, 0, 0, 'input.js', 0, 0);
 
-      assert.deepEqual(decodedMap(map).mappings, [
+      assert.deepEqual(toDecodedMap(map).mappings, [
         [
           [0, 0, 0, 0],
           [0, 0, 0, 1],
@@ -215,7 +215,7 @@ describe('GenMapping', () => {
       addSegment(map, 0, 0, 'input.js', 0, 0, 'bar');
       addSegment(map, 0, 0, 'input.js', 0, 0, 'foo');
 
-      assert.deepEqual(decodedMap(map).mappings, [
+      assert.deepEqual(toDecodedMap(map).mappings, [
         [
           [0, 0, 0, 0, 0],
           [0, 0, 0, 0, 1],
@@ -230,7 +230,7 @@ describe('GenMapping', () => {
       addSegment(map, 0, 0, 'input.js', 0, 0);
       addSegment(map, 0, 0);
 
-      assert.deepEqual(decodedMap(map).mappings, [[[0], [0, 0, 0, 0]]]);
+      assert.deepEqual(toDecodedMap(map).mappings, [[[0], [0, 0, 0, 0]]]);
     });
 
     it('sorts sourceless segment before named segment', () => {
@@ -239,7 +239,7 @@ describe('GenMapping', () => {
       addSegment(map, 0, 0, 'input.js', 0, 0, 'foo');
       addSegment(map, 0, 0);
 
-      assert.deepEqual(decodedMap(map).mappings, [[[0], [0, 0, 0, 0, 0]]]);
+      assert.deepEqual(toDecodedMap(map).mappings, [[[0], [0, 0, 0, 0, 0]]]);
     });
 
     it('sorts source segment before named segment', () => {
@@ -248,7 +248,7 @@ describe('GenMapping', () => {
       addSegment(map, 0, 0, 'input.js', 0, 0, 'foo');
       addSegment(map, 0, 0, 'input.js', 0, 0);
 
-      assert.deepEqual(decodedMap(map).mappings, [
+      assert.deepEqual(toDecodedMap(map).mappings, [
         [
           [0, 0, 0, 0],
           [0, 0, 0, 0, 0],
@@ -263,7 +263,7 @@ describe('GenMapping', () => {
       addSegment(map, 1, 0);
       addSegment(map, 0, 0);
 
-      assert.deepEqual(decodedMap(map).mappings, [[[0], [0]], [[0]]]);
+      assert.deepEqual(toDecodedMap(map).mappings, [[[0], [0]], [[0]]]);
     });
 
     it('skips equivalent source segment', () => {
@@ -273,7 +273,7 @@ describe('GenMapping', () => {
       addSegment(map, 1, 0, 'input.js', 0, 0);
       addSegment(map, 0, 0, 'input.js', 0, 0);
 
-      assert.deepEqual(decodedMap(map).mappings, [
+      assert.deepEqual(toDecodedMap(map).mappings, [
         [
           [0, 0, 0, 0],
           [0, 0, 0, 0],
@@ -289,7 +289,7 @@ describe('GenMapping', () => {
       addSegment(map, 1, 0, 'input.js', 0, 0, 'foo');
       addSegment(map, 0, 0, 'input.js', 0, 0, 'foo');
 
-      assert.deepEqual(decodedMap(map).mappings, [
+      assert.deepEqual(toDecodedMap(map).mappings, [
         [
           [0, 0, 0, 0, 0],
           [0, 0, 0, 0, 0],
@@ -308,7 +308,7 @@ describe('GenMapping', () => {
       setSourceContent(map, 'bar.js', 'bar');
       setSourceContent(map, 'input.js', 'input');
 
-      assert.deepEqual(decodedMap(map).sourcesContent, ['input', null, 'bar']);
+      assert.deepEqual(toDecodedMap(map).sourcesContent, ['input', null, 'bar']);
     });
   });
 
@@ -317,7 +317,7 @@ describe('GenMapping', () => {
       const map = new GenMapping();
       addMapping(map, { generated: { line: 1, column: 0 } });
 
-      assert.deepEqual(decodedMap(map).mappings, [[[0]]]);
+      assert.deepEqual(toDecodedMap(map).mappings, [[[0]]]);
     });
 
     it('records nameless source segment', () => {
@@ -328,7 +328,7 @@ describe('GenMapping', () => {
         original: { line: 1, column: 0 },
       });
 
-      assert.deepEqual(decodedMap(map).mappings, [[[0, 0, 0, 0]]]);
+      assert.deepEqual(toDecodedMap(map).mappings, [[[0, 0, 0, 0]]]);
     });
 
     it('records named source segment', () => {
@@ -340,7 +340,7 @@ describe('GenMapping', () => {
         name: 'foo',
       });
 
-      assert.deepEqual(decodedMap(map).mappings, [[[0, 0, 0, 0, 0]]]);
+      assert.deepEqual(toDecodedMap(map).mappings, [[[0, 0, 0, 0, 0]]]);
     });
 
     it('uses 1-based line', () => {
@@ -352,7 +352,7 @@ describe('GenMapping', () => {
         name: 'foo',
       });
 
-      assert.deepEqual(decodedMap(map).mappings, [[], [[0, 0, 1, 0, 0]]]);
+      assert.deepEqual(toDecodedMap(map).mappings, [[], [[0, 0, 1, 0, 0]]]);
     });
   });
 
@@ -443,7 +443,7 @@ describe('GenMapping', () => {
       });
       const map = fromMap(input);
 
-      assert.strictEqual(decodedMap(map).version, 3);
+      assert.strictEqual(toDecodedMap(map).version, 3);
     });
 
     it('copies file name', () => {
@@ -457,7 +457,7 @@ describe('GenMapping', () => {
       });
       const map = fromMap(input);
 
-      assert.strictEqual(decodedMap(map).file, 'output.js');
+      assert.strictEqual(toDecodedMap(map).file, 'output.js');
     });
 
     it('copies sourceRoot', () => {
@@ -471,7 +471,7 @@ describe('GenMapping', () => {
       });
       const map = fromMap(input);
 
-      assert.strictEqual(decodedMap(map).sourceRoot, 'foo/');
+      assert.strictEqual(toDecodedMap(map).sourceRoot, 'foo/');
     });
 
     it('copies sources', () => {
@@ -484,7 +484,7 @@ describe('GenMapping', () => {
       });
       const map = fromMap(input);
 
-      assert.deepEqual(decodedMap(map).sources, ['input.js']);
+      assert.deepEqual(toDecodedMap(map).sources, ['input.js']);
     });
 
     it('copies sourcesContent', () => {
@@ -497,7 +497,7 @@ describe('GenMapping', () => {
       });
       const map = fromMap(input);
 
-      assert.deepEqual(decodedMap(map).sourcesContent, ['input']);
+      assert.deepEqual(toDecodedMap(map).sourcesContent, ['input']);
     });
 
     it('creates sourcesContent', () => {
@@ -509,7 +509,7 @@ describe('GenMapping', () => {
       });
       const map = fromMap(input);
 
-      assert.deepEqual(decodedMap(map).sourcesContent, [null]);
+      assert.deepEqual(toDecodedMap(map).sourcesContent, [null]);
     });
 
     it('copies names', () => {
@@ -522,7 +522,7 @@ describe('GenMapping', () => {
       });
       const map = fromMap(input);
 
-      assert.deepEqual(decodedMap(map).names, ['foo']);
+      assert.deepEqual(toDecodedMap(map).names, ['foo']);
     });
 
     it('copies decoded mappings', () => {
@@ -535,11 +535,11 @@ describe('GenMapping', () => {
       });
       const map = fromMap(input);
 
-      assert.deepEqual(decodedMap(map).mappings, [[[1, 0, 2, 3, 0]]]);
+      assert.deepEqual(toDecodedMap(map).mappings, [[[1, 0, 2, 3, 0]]]);
     });
 
     it('copies encoded mappings', () => {
-      const input = /** @type {import('@jridgewell/trace-mapping').DecodedSourceMap} */ ({
+      const input = /** @type {import('@jridgewell/trace-mapping').EncodedSourceMap} */ ({
         version: 3,
         names: [],
         sources: ['input.js'],
@@ -548,7 +548,7 @@ describe('GenMapping', () => {
       });
       const map = fromMap(input);
 
-      assert.deepEqual(decodedMap(map).mappings, [[[1, 0, 2, 3, 0]]]);
+      assert.deepEqual(toDecodedMap(map).mappings, [[[1, 0, 2, 3, 0]]]);
     });
   });
 });

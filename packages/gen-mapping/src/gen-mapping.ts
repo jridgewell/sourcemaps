@@ -90,13 +90,13 @@ export let setSourceContent: (map: GenMapping, source: string, content: string |
  * Returns a sourcemap object (with decoded mappings) suitable for passing to a library that expects
  * a sourcemap, or to JSON.stringify.
  */
-export let decodedMap: (map: GenMapping) => DecodedSourceMap;
+export let toDecodedMap: (map: GenMapping) => DecodedSourceMap;
 
 /**
  * Returns a sourcemap object (with encoded mappings) suitable for passing to a library that expects
  * a sourcemap, or to JSON.stringify.
  */
-export let encodedMap: (map: GenMapping) => EncodedSourceMap;
+export let toEncodedMap: (map: GenMapping) => EncodedSourceMap;
 
 /**
  * Constructs a new GenMapping, using the already present mappings of the input.
@@ -173,7 +173,7 @@ export class GenMapping {
       sourcesContent[put(sources, source)] = content;
     };
 
-    decodedMap = (map) => {
+    toDecodedMap = (map) => {
       const {
         file,
         sourceRoot,
@@ -194,8 +194,8 @@ export class GenMapping {
       };
     };
 
-    encodedMap = (map) => {
-      const decoded = decodedMap(map);
+    toEncodedMap = (map) => {
+      const decoded = toDecodedMap(map);
       return {
         ...decoded,
         mappings: encode(decoded.mappings as SourceMapSegment[][]),

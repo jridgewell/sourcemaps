@@ -9,8 +9,8 @@ import {
   GenMapping,
   addSegment,
   addMapping,
-  encodedMap,
-  decodedMap,
+  toEncodedMap,
+  toDecodedMap,
   fromMap,
 } from '../dist/gen-mapping.mjs';
 import { SourceMapGenerator as SourceMapGeneratorJs, SourceMapConsumer } from 'source-map-js';
@@ -150,10 +150,10 @@ async function bench(file) {
 
   new Benchmark.Suite()
     .add('gen-mapping:      decoded output', () => {
-      decodedMap(genmap);
+      toDecodedMap(genmap);
     })
     .add('gen-mapping:      encoded output', () => {
-      encodedMap(genmap);
+      toEncodedMap(genmap);
     })
     .add('source-map-js:    encoded output', () => {
       smgjs.toJSON();
