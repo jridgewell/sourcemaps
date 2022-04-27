@@ -1,8 +1,13 @@
 # @jridgewell/gen-mapping
 
-> TODO
+> Generate source maps
 
-TODO
+`gen-mapping` allows you to generate a source map during transpilation or minification.
+With a source map, you're able to trace the original location in the source file, either in Chrome's
+DevTools or using a library like [`@jridgewell/trace-mapping`][trace-mapping].
+
+You may already be familiar with the [`source-map`][source-map] package's `SourceMapGenerator`. This
+provides the same `addMapping` and `setSourceContent` API.
 
 ## Installation
 
@@ -12,19 +17,40 @@ npm install @jridgewell/gen-mapping
 
 ## Usage
 
-```js
-import { SetArray, get, put } from '@jridgewell/gen-mapping';
+```typescript
+import { GenMapping, addMapping, setSourceContent, encodedMap } from '@jridgewell/gen-mapping';
 
-const sa = new SetArray();
+const map = new GenMapping({
+  file: 'output.js',
+  sourceRoot: 'https://example.com/',
+});
 
-let index = put(sa, 'first');
-assert.strictEqual(index, 0);
+setSourceContent(map, 'input.js', `function foo() {}`);
 
-index = put(sa, 'second');
-assert.strictEqual(index, 1);
+addMapping(map, {
+  // Lines start at line 1, columns at column 0.
+  generated: { line: 1, column: 0 },
+  source: 'input.js',
+  original: { line: 1, column: 0 },
+});
 
-assert.deepEqual(sa.array, [ 'first', 'second' ]);
+addMapping(map, {
+  generated: { line: 1, column: 9 },
+  source: 'input.js',
+  original: { line: 1, column: 9 },
+  name: 'foo',
+});
 
-index = get(sa, 'first');
-assert.strictEqual(index, 0);
+assert.deepEqual(encodedMap(map), {
+  version: 3,
+  file: 'output.js',
+  names: ['foo'],
+  sourceRoot: 'https://example.com/',
+  sources: ['input.js'],
+  sourcesContent: ['function foo() {}'],
+  mappings: 'AAAA,SAASA',
+});
 ```
+
+[source-map]: https://www.npmjs.com/package/source-map
+[trace-mapping]: https://github.com/jridgewell/trace-mapping

@@ -1,8 +1,11 @@
 {
   "name": "@jridgewell/gen-mapping",
   "version": "0.0.0",
-  "description": "TODO",
-  "keywords": [],
+  "description": "Generate source maps",
+  "keywords": [
+    "source",
+    "map"
+  ],
   "author": "Justin Ridgewell <justin@ridgewell.name>",
   "license": "MIT",
   "repository": "https://github.com/jridgewell/gen-mapping",
