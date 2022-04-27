@@ -58,69 +58,69 @@ assert.deepEqual(encodedMap(map), {
 node v18.0.0
 
 amp.js.map
-gen-mapping:      addSegment x 462 ops/sec ±1.53% (91 runs sampled)
-gen-mapping:      addMapping x 471 ops/sec ±0.77% (93 runs sampled)
-source-map-js:    addMapping x 178 ops/sec ±1.14% (84 runs sampled)
-source-map-0.6.1: addMapping x 178 ops/sec ±1.21% (84 runs sampled)
-source-map-0.8.0: addMapping x 177 ops/sec ±1.21% (83 runs sampled)
-Fastest is gen-mapping:      addMapping,gen-mapping:      addSegment
+gen-mapping:      addSegment x 450 ops/sec ±1.16% (87 runs sampled)
+gen-mapping:      addMapping x 430 ops/sec ±0.90% (90 runs sampled)
+source-map-js:    addMapping x 178 ops/sec ±1.06% (84 runs sampled)
+source-map-0.6.1: addMapping x 177 ops/sec ±1.07% (84 runs sampled)
+source-map-0.8.0: addMapping x 178 ops/sec ±0.98% (84 runs sampled)
+Fastest is gen-mapping:      addSegment
 
-gen-mapping:      decoded output x 157,499,812 ops/sec ±0.25% (100 runs sampled)
-gen-mapping:      encoded output x 625 ops/sec ±1.95% (88 runs sampled)
-source-map-js:    encoded output x 162 ops/sec ±0.37% (84 runs sampled)
-source-map-0.6.1: encoded output x 161 ops/sec ±0.51% (84 runs sampled)
-source-map-0.8.0: encoded output x 191 ops/sec ±0.12% (90 runs sampled)
+gen-mapping:      decoded output x 157,549,649 ops/sec ±0.14% (97 runs sampled)
+gen-mapping:      encoded output x 669 ops/sec ±1.34% (95 runs sampled)
+source-map-js:    encoded output x 160 ops/sec ±0.64% (83 runs sampled)
+source-map-0.6.1: encoded output x 161 ops/sec ±0.47% (84 runs sampled)
+source-map-0.8.0: encoded output x 190 ops/sec ±0.28% (90 runs sampled)
 Fastest is gen-mapping:      decoded output
 
 ***
 
 babel.min.js.map
-gen-mapping:      addSegment x 35.38 ops/sec ±4.48% (48 runs sampled)
-gen-mapping:      addMapping x 29.93 ops/sec ±5.03% (55 runs sampled)
-source-map-js:    addMapping x 22.19 ops/sec ±3.39% (41 runs sampled)
-source-map-0.6.1: addMapping x 22.57 ops/sec ±2.90% (41 runs sampled)
-source-map-0.8.0: addMapping x 22.73 ops/sec ±2.84% (41 runs sampled)
+gen-mapping:      addSegment x 51.09 ops/sec ±4.58% (56 runs sampled)
+gen-mapping:      addMapping x 39.38 ops/sec ±4.40% (54 runs sampled)
+source-map-js:    addMapping x 21.65 ops/sec ±3.34% (40 runs sampled)
+source-map-0.6.1: addMapping x 21.90 ops/sec ±3.59% (41 runs sampled)
+source-map-0.8.0: addMapping x 21.89 ops/sec ±3.10% (41 runs sampled)
 Fastest is gen-mapping:      addSegment
 
-gen-mapping:      decoded output x 157,767,591 ops/sec ±0.10% (99 runs sampled)
-gen-mapping:      encoded output x 97.06 ops/sec ±1.69% (73 runs sampled)
-source-map-js:    encoded output x 17.51 ops/sec ±2.27% (37 runs sampled)
-source-map-0.6.1: encoded output x 17.40 ops/sec ±4.61% (35 runs sampled)
-source-map-0.8.0: encoded output x 17.83 ops/sec ±4.85% (36 runs sampled)
+gen-mapping:      decoded output x 154,505,123 ops/sec ±0.45% (100 runs sampled)
+gen-mapping:      encoded output x 84.17 ops/sec ±5.44% (66 runs sampled)
+source-map-js:    encoded output x 17.57 ops/sec ±4.55% (33 runs sampled)
+source-map-0.6.1: encoded output x 16.43 ops/sec ±7.03% (34 runs sampled)
+source-map-0.8.0: encoded output x 16.60 ops/sec ±6.44% (32 runs sampled)
 Fastest is gen-mapping:      decoded output
 
 ***
 
 preact.js.map
-gen-mapping:      addSegment x 13,516 ops/sec ±0.27% (98 runs sampled)
-gen-mapping:      addMapping x 12,117 ops/sec ±0.25% (97 runs sampled)
-source-map-js:    addMapping x 4,285 ops/sec ±1.53% (98 runs sampled)
-source-map-0.6.1: addMapping x 4,482 ops/sec ±0.20% (100 runs sampled)
-source-map-0.8.0: addMapping x 4,482 ops/sec ±0.28% (99 runs sampled)
+gen-mapping:      addSegment x 11,643 ops/sec ±3.36% (91 runs sampled)
+gen-mapping:      addMapping x 10,921 ops/sec ±0.63% (87 runs sampled)
+source-map-js:    addMapping x 4,534 ops/sec ±0.25% (98 runs sampled)
+source-map-0.6.1: addMapping x 4,572 ops/sec ±0.18% (99 runs sampled)
+source-map-0.8.0: addMapping x 4,519 ops/sec ±0.27% (99 runs sampled)
 Fastest is gen-mapping:      addSegment
 
-gen-mapping:      decoded output x 157,769,691 ops/sec ±0.06% (92 runs sampled)
-gen-mapping:      encoded output x 18,610 ops/sec ±1.03% (93 runs sampled)
-source-map-js:    encoded output x 5,397 ops/sec ±0.38% (97 runs sampled)
-source-map-0.6.1: encoded output x 5,422 ops/sec ±0.16% (100 runs sampled)
-source-map-0.8.0: encoded output x 5,595 ops/sec ±0.11% (100 runs sampled)
+gen-mapping:      decoded output x 157,554,436 ops/sec ±0.09% (98 runs sampled)
+gen-mapping:      encoded output x 17,673 ops/sec ±1.11% (87 runs sampled)
+source-map-js:    encoded output x 5,526 ops/sec ±0.63% (93 runs sampled)
+source-map-0.6.1: encoded output x 5,679 ops/sec ±0.21% (98 runs sampled)
+source-map-0.8.0: encoded output x 5,911 ops/sec ±0.14% (101 runs sampled)
 Fastest is gen-mapping:      decoded output
 
 ***
 
 react.js.map
-gen-mapping:      addSegment x 5,058 ops/sec ±0.27% (100 runs sampled)
-gen-mapping:      addMapping x 4,352 ops/sec ±0.13% (97 runs sampled)
-source-map-js:    addMapping x 1,569 ops/sec ±0.19% (99 runs sampled)
-source-map-0.6.1: addMapping x 1,550 ops/sec ±0.31% (97 runs sampled)
-source-map-0.8.0: addMapping x 1,560 ops/sec ±0.18% (99 runs sampled)
+gen-mapping:      addSegment x 4,168 ops/sec ±1.08% (81 runs sampled)
+gen-mapping:      addMapping x 3,842 ops/sec ±1.27% (84 runs sampled)
+source-map-js:    addMapping x 1,510 ops/sec ±1.63% (95 runs sampled)
+source-map-0.6.1: addMapping x 1,537 ops/sec ±0.34% (97 runs sampled)
+source-map-0.8.0: addMapping x 1,546 ops/sec ±0.29% (98 runs sampled)
 Fastest is gen-mapping:      addSegment
 
-gen-mapping:      decoded output x 157,479,701 ops/sec ±0.14% (99 runs sampled)
-gen-mapping:      encoded output x 6,392 ops/sec ±1.03% (94 runs sampled)
-source-map-js:    encoded output x 2,213 ops/sec ±0.36% (99 runs sampled)
-source-map-0.6.1: encoded output x 2,238 ops/sec ±0.23% (100 runs sampled)
-source-map-0.8.0: encoded output x 2,304 ops/sec ±0.20% (100 runs sampled)
+gen-mapping:      decoded output x 157,136,960 ops/sec ±0.13% (92 runs sampled)
+gen-mapping:      encoded output x 6,494 ops/sec ±0.56% (96 runs sampled)
+source-map-js:    encoded output x 2,206 ops/sec ±0.25% (100 runs sampled)
+source-map-0.6.1: encoded output x 2,188 ops/sec ±0.51% (99 runs sampled)
+source-map-0.8.0: encoded output x 2,254 ops/sec ±0.27% (100 runs sampled)
 Fastest is gen-mapping:      decoded output
 ```
 

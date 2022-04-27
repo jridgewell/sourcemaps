@@ -11,6 +11,7 @@ import {
   addMapping,
   encodedMap,
   decodedMap,
+  fromMap,
 } from '../dist/gen-mapping.mjs';
 import { SourceMapGenerator as SourceMapGeneratorJs, SourceMapConsumer } from 'source-map-js';
 import { SourceMapGenerator as SourceMapGenerator061 } from 'source-map';
@@ -32,9 +33,15 @@ async function bench(file) {
         const line = mappings[i];
         for (let j = 0; j < line.length; j++) {
           const seg = line[j];
-          if (seg.length === 1) addSegment(map, i, seg[0]);
-          else if (seg.length === 4) addSegment(map, i, seg[0], sources[seg[1]], seg[2], seg[3]);
-          else addSegment(map, i, seg[0], sources[seg[1]], seg[2], seg[3], names[seg[4]]);
+          let source, sourceLine, sourceColumn, name;
+          const genColumn = seg[0];
+          if (seg.length !== 1) {
+            source = sources[seg[1]];
+            sourceLine = seg[2];
+            sourceColumn = seg[3];
+            if (seg.length === 5) name = names[seg[4]];
+          }
+          addSegment(map, i, genColumn, source, sourceLine, sourceColumn, name);
         }
       }
     })
@@ -44,28 +51,18 @@ async function bench(file) {
         const line = mappings[i];
         for (let j = 0; j < line.length; j++) {
           const seg = line[j];
-          if (seg.length === 1) {
-            addMapping(map, {
-              generated: { line: i + 1, column: seg[0] },
-              source: seg.length === 1 ? undefined : sources[seg[1]],
-              original: seg.length === 1 ? undefined : { line: seg[2] + 1, column: seg[3] },
-              name: seg.length !== 5 ? undefined : names[seg[4]],
-            });
-          } else if (seg.length === 4) {
-            addMapping(map, {
-              generated: { line: i + 1, column: seg[0] },
-              source: sources[seg[1]],
-              original: { line: seg[2] + 1, column: seg[3] },
-              name: undefined,
-            });
-          } else {
-            addMapping(map, {
-              generated: { line: i + 1, column: seg[0] },
-              source: sources[seg[1]],
-              original: { line: seg[2] + 1, column: seg[3] },
-              name: names[seg[4]],
-            });
+          const mapping = {
+            generated: { line: i + 1, column: seg[0] },
+            source: undefined,
+            original: undefined,
+            name: undefined,
+          };
+          if (seg.length !== 1) {
+            mapping.source = sources[seg[1]];
+            mapping.original = { line: seg[2] + 1, column: seg[3] };
+            if (seg.length === 5) mapping.name = names[seg[4]];
           }
+          addMapping(map, mapping);
         }
       }
     })
@@ -75,28 +72,18 @@ async function bench(file) {
         const line = mappings[i];
         for (let j = 0; j < line.length; j++) {
           const seg = line[j];
-          if (seg.length === 1) {
-            map.addMapping({
-              generated: { line: i + 1, column: seg[0] },
-              source: seg.length === 1 ? undefined : sources[seg[1]],
-              original: seg.length === 1 ? undefined : { line: seg[2] + 1, column: seg[3] },
-              name: seg.length !== 5 ? undefined : names[seg[4]],
-            });
-          } else if (seg.length === 4) {
-            map.addMapping({
-              generated: { line: i + 1, column: seg[0] },
-              source: sources[seg[1]],
-              original: { line: seg[2] + 1, column: seg[3] },
-              name: undefined,
-            });
-          } else {
-            map.addMapping({
-              generated: { line: i + 1, column: seg[0] },
-              source: sources[seg[1]],
-              original: { line: seg[2] + 1, column: seg[3] },
-              name: names[seg[4]],
-            });
+          const mapping = {
+            generated: { line: i + 1, column: seg[0] },
+            source: undefined,
+            original: undefined,
+            name: undefined,
+          };
+          if (seg.length !== 1) {
+            mapping.source = sources[seg[1]];
+            mapping.original = { line: seg[2] + 1, column: seg[3] };
+            if (seg.length === 5) mapping.name = names[seg[4]];
           }
+          map.addMapping(mapping);
         }
       }
     })
@@ -106,28 +93,18 @@ async function bench(file) {
         const line = mappings[i];
         for (let j = 0; j < line.length; j++) {
           const seg = line[j];
-          if (seg.length === 1) {
-            map.addMapping({
-              generated: { line: i + 1, column: seg[0] },
-              source: seg.length === 1 ? undefined : sources[seg[1]],
-              original: seg.length === 1 ? undefined : { line: seg[2] + 1, column: seg[3] },
-              name: seg.length !== 5 ? undefined : names[seg[4]],
-            });
-          } else if (seg.length === 4) {
-            map.addMapping({
-              generated: { line: i + 1, column: seg[0] },
-              source: sources[seg[1]],
-              original: { line: seg[2] + 1, column: seg[3] },
-              name: undefined,
-            });
-          } else {
-            map.addMapping({
-              generated: { line: i + 1, column: seg[0] },
-              source: sources[seg[1]],
-              original: { line: seg[2] + 1, column: seg[3] },
-              name: names[seg[4]],
-            });
+          const mapping = {
+            generated: { line: i + 1, column: seg[0] },
+            source: undefined,
+            original: undefined,
+            name: undefined,
+          };
+          if (seg.length !== 1) {
+            mapping.source = sources[seg[1]];
+            mapping.original = { line: seg[2] + 1, column: seg[3] };
+            if (seg.length === 5) mapping.name = names[seg[4]];
           }
+          map.addMapping(mapping);
         }
       }
     })
@@ -137,34 +114,24 @@ async function bench(file) {
         const line = mappings[i];
         for (let j = 0; j < line.length; j++) {
           const seg = line[j];
-          if (seg.length === 1) {
-            map.addMapping({
-              generated: { line: i + 1, column: seg[0] },
-              source: seg.length === 1 ? undefined : sources[seg[1]],
-              original: seg.length === 1 ? undefined : { line: seg[2] + 1, column: seg[3] },
-              name: seg.length !== 5 ? undefined : names[seg[4]],
-            });
-          } else if (seg.length === 4) {
-            map.addMapping({
-              generated: { line: i + 1, column: seg[0] },
-              source: sources[seg[1]],
-              original: { line: seg[2] + 1, column: seg[3] },
-              name: undefined,
-            });
-          } else {
-            map.addMapping({
-              generated: { line: i + 1, column: seg[0] },
-              source: sources[seg[1]],
-              original: { line: seg[2] + 1, column: seg[3] },
-              name: names[seg[4]],
-            });
+          const mapping = {
+            generated: { line: i + 1, column: seg[0] },
+            source: undefined,
+            original: undefined,
+            name: undefined,
+          };
+          if (seg.length !== 1) {
+            mapping.source = sources[seg[1]];
+            mapping.original = { line: seg[2] + 1, column: seg[3] };
+            if (seg.length === 5) mapping.name = names[seg[4]];
           }
+          map.addMapping(mapping);
         }
       }
     })
 
     // add listeners
-    .on('error', ({ error }) => console.error(error))
+    .on('error', (event) => console.error(event.target.error))
     .on('cycle', (event) => {
       console.log(String(event.target));
     })
@@ -176,19 +143,10 @@ async function bench(file) {
   console.log('');
 
   const consumer = new SourceMapConsumer(map);
+  const genmap = fromMap(map);
   const smgjs = SourceMapGeneratorJs.fromSourceMap(consumer);
   const smg061 = SourceMapGenerator061.fromSourceMap(consumer);
   const smgWasm = SourceMapGeneratorWasm.fromSourceMap(consumer);
-  const genmap = new GenMapping({ file: map.file, sourceRoot: map.sourceRoot });
-  for (let i = 0; i < mappings.length; i++) {
-    const line = mappings[i];
-    for (let j = 0; j < line.length; j++) {
-      const seg = line[j];
-      if (seg.length === 1) addSegment(genmap, i, seg[0]);
-      else if (seg.length === 4) addSegment(genmap, i, seg[0], sources[seg[1]], seg[2], seg[3]);
-      else addSegment(genmap, i, seg[0], sources[seg[1]], seg[2], seg[3], names[seg[4]]);
-    }
-  }
 
   new Benchmark.Suite()
     .add('gen-mapping:      decoded output', () => {
@@ -207,7 +165,7 @@ async function bench(file) {
       smgWasm.toJSON();
     })
     // add listeners
-    .on('error', ({ error }) => console.error(error))
+    .on('error', (event) => console.error(event.target.error))
     .on('cycle', (event) => {
       console.log(String(event.target));
     })
