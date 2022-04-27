@@ -11,6 +11,10 @@ export type Options = {
   sourceRoot?: string | null;
 };
 
+/**
+ * A low-level API to associate a generated position with an original source position. Line and
+ * column here are 0-based, unlike `addMapping`.
+ */
 export let addSegment: {
   (
     map: GenMapping,
@@ -41,6 +45,10 @@ export let addSegment: {
   ): void;
 };
 
+/**
+ * A high-level API to associate a generated position with an original source position. Line is
+ * 1-based, but column is 0-based, due to legacy behavior in `source-map` library.
+ */
 export let addMapping: {
   (
     map: GenMapping,
@@ -71,10 +79,27 @@ export let addMapping: {
   ): void;
 };
 
+/**
+ * Adds/removes the content of the source file to the source map.
+ */
 export let setSourceContent: (map: GenMapping, source: string, content: string | null) => void;
 
+/**
+ * Returns a sourcemap object (with decoded mappings) suitable for passing to a library that expects
+ * a sourcemap, or to JSON.stringify.
+ */
 export let decodedMap: (map: GenMapping) => DecodedSourceMap;
+
+/**
+ * Returns a sourcemap object (with encoded mappings) suitable for passing to a library that expects
+ * a sourcemap, or to JSON.stringify.
+ */
 export let encodedMap: (map: GenMapping) => EncodedSourceMap;
+
+/**
+ * Returns an array of high-level mapping objects for every recorded segment, which could then be
+ * passed to the `source-map` library.
+ */
 export let allMappings: (map: GenMapping) => Mapping[];
 
 /**
