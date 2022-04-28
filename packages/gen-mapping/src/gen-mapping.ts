@@ -2,6 +2,14 @@ import { SetArray, put } from '@jridgewell/set-array';
 import { encode } from '@jridgewell/sourcemap-codec';
 import { TraceMap, decodedMappings } from '@jridgewell/trace-mapping';
 
+import {
+  COLUMN,
+  SOURCES_INDEX,
+  SOURCE_LINE,
+  SOURCE_COLUMN,
+  NAMES_INDEX,
+} from './sourcemap-segment';
+
 import type { SourceMapInput } from '@jridgewell/trace-mapping';
 import type { SourceMapSegment } from './sourcemap-segment';
 import type { DecodedSourceMap, EncodedSourceMap, Pos, Mapping } from './types';
@@ -81,7 +89,18 @@ export let addMapping: {
   ): void;
 };
 
+/**
+ * Same as `addSegment`, but will only add the segment if it generates useful information in the
+ * resulting map. This only works correctly if segments are added **in order**, meaning you should
+ * not add a segment with a lower generated line/column than one that came before.
+ */
 export let maybeAddSegment: typeof addSegment;
+
+/**
+ * Same as `addMapping`, but will only add the mapping if it generates useful information in the
+ * resulting map. This only works correctly if mappings are added **in order**, meaning you should
+ * not add a mapping with a lower generated line/column than one that came before.
+ */
 export let maybeAddMapping: typeof addMapping;
 
 /**
@@ -122,17 +141,6 @@ let addSegmentInternal: <S extends string | null | undefined>(
   sourceLine: S extends string ? number : null | undefined,
   sourceColumn: S extends string ? number : null | undefined,
   name: S extends string ? string | null | undefined : null | undefined,
-) => void;
-
-let addMappingInternal: <S extends string | null | undefined>(
-  skipable: boolean,
-  map: GenMapping,
-  mapping: {
-    generated: Pos;
-    source: S;
-    original: S extends string ? Pos : null | undefined;
-    name: S extends string ? string | null | undefined : null | undefined;
-  },
 ) => void;
 
 /**
@@ -186,7 +194,7 @@ export class GenMapping {
 
       return {
         version: 3,
-        file,
+        file: file || undefined,
         names: names.array,
         sourceRoot: sourceRoot || undefined,
         sources: sources.array,
@@ -212,16 +220,16 @@ export class GenMapping {
         for (let j = 0; j < line.length; j++) {
           const seg = line[j];
 
-          const generated = { line: i + 1, column: seg[0] };
+          const generated = { line: i + 1, column: seg[COLUMN] };
           let source: string | undefined = undefined;
           let original: Pos | undefined = undefined;
           let name: string | undefined = undefined;
 
           if (seg.length !== 1) {
-            source = sources.array[seg[1]];
-            original = { line: seg[2] + 1, column: seg[3] };
+            source = sources.array[seg[SOURCES_INDEX]];
+            original = { line: seg[SOURCE_LINE] + 1, column: seg[SOURCE_COLUMN] };
 
-            if (seg.length === 5) name = names.array[seg[4]];
+            if (seg.length === 5) name = names.array[seg[NAMES_INDEX]];
           }
 
           out.push({ generated, source, original, name } as Mapping);
@@ -287,34 +295,6 @@ export class GenMapping {
           : [genColumn, sourcesIndex, sourceLine, sourceColumn],
       );
     };
-
-    addMappingInternal = (skipable, map, mapping) => {
-      const { generated, source, original, name } = mapping;
-      if (!source) {
-        return addSegmentInternal(
-          skipable,
-          map,
-          generated.line - 1,
-          generated.column,
-          null,
-          null,
-          null,
-          null,
-        );
-      }
-      const s: string = source;
-      assert<Pos>(original);
-      addSegmentInternal(
-        skipable,
-        map,
-        generated.line - 1,
-        generated.column,
-        s,
-        original.line - 1,
-        original.column,
-        name,
-      );
-    };
   }
 }
 
@@ -329,13 +309,11 @@ function getLine(mappings: SourceMapSegment[][], index: number): SourceMapSegmen
   return mappings[index];
 }
 
-function getColumnIndex(line: SourceMapSegment[], column: number): number {
+function getColumnIndex(line: SourceMapSegment[], genColumn: number): number {
   let index = line.length;
-  for (let i = index - 1; i >= 0; i--, index--) {
+  for (let i = index - 1; i >= 0; index = i--) {
     const current = line[i];
-    const col = current[0];
-    if (col > column) continue;
-    break;
+    if (genColumn >= current[COLUMN]) break;
   }
   return index;
 }
@@ -366,7 +344,6 @@ function skipSourceless(line: SourceMapSegment[], index: number): boolean {
   if (index === 0) return true;
 
   const prev = line[index - 1];
-
   // If the previous segment is also sourceless, then adding another sourceless segment doesn't
   // genrate any new information. Else, this segment will end the source/named segment and point to
   // a sourceless position, which is useful.
@@ -386,5 +363,46 @@ function skipSource(
   const prev = line[index - 1];
   // If the previous segment maps to the exact same source position, then this segment doesn't
   // provide any new position information.
-  return sourcesIndex === prev[1] && sourceLine === prev[2] && sourceColumn === prev[3];
+  return (
+    sourcesIndex === prev[SOURCES_INDEX] &&
+    sourceLine === prev[SOURCE_LINE] &&
+    sourceColumn === prev[SOURCE_COLUMN]
+  );
+}
+
+function addMappingInternal<S extends string | null | undefined>(
+  skipable: boolean,
+  map: GenMapping,
+  mapping: {
+    generated: Pos;
+    source: S;
+    original: S extends string ? Pos : null | undefined;
+    name: S extends string ? string | null | undefined : null | undefined;
+  },
+) {
+  const { generated, source, original, name } = mapping;
+  if (!source) {
+    return addSegmentInternal(
+      skipable,
+      map,
+      generated.line - 1,
+      generated.column,
+      null,
+      null,
+      null,
+      null,
+    );
+  }
+  const s: string = source;
+  assert<Pos>(original);
+  addSegmentInternal(
+    skipable,
+    map,
+    generated.line - 1,
+    generated.column,
+    s,
+    original.line - 1,
+    original.column,
+    name,
+  );
 }
