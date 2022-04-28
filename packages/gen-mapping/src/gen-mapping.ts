@@ -81,6 +81,9 @@ export let addMapping: {
   ): void;
 };
 
+export let maybeAddSegment: typeof addSegment;
+export let maybeAddMapping: typeof addMapping;
+
 /**
  * Adds/removes the content of the source file to the source map.
  */
@@ -109,6 +112,29 @@ export let fromMap: (input: SourceMapInput) => GenMapping;
  */
 export let allMappings: (map: GenMapping) => Mapping[];
 
+// This split declaration is only so that terser can elminiate the static initialization block.
+let addSegmentInternal: <S extends string | null | undefined>(
+  skipable: boolean,
+  map: GenMapping,
+  genLine: number,
+  genColumn: number,
+  source: S,
+  sourceLine: S extends string ? number : null | undefined,
+  sourceColumn: S extends string ? number : null | undefined,
+  name: S extends string ? string | null | undefined : null | undefined,
+) => void;
+
+let addMappingInternal: <S extends string | null | undefined>(
+  skipable: boolean,
+  map: GenMapping,
+  mapping: {
+    generated: Pos;
+    source: S;
+    original: S extends string ? Pos : null | undefined;
+    name: S extends string ? string | null | undefined : null | undefined;
+  },
+) => void;
+
 /**
  * Provides the state to generate a sourcemap.
  */
@@ -127,45 +153,19 @@ export class GenMapping {
 
   static {
     addSegment = (map, genLine, genColumn, source, sourceLine, sourceColumn, name) => {
-      const {
-        _mappings: mappings,
-        _sources: sources,
-        _sourcesContent: sourcesContent,
-        _names: names,
-      } = map;
+      addSegmentInternal(false, map, genLine, genColumn, source, sourceLine, sourceColumn, name);
+    };
 
-      const line = getLine(mappings, genLine);
-      if (!source) {
-        const seg: SourceMapSegment = [genColumn];
-        const index = getColumnIndex(line, genColumn, seg);
-        return insert(line, index, seg);
-      }
-
-      // Sigh, TypeScript can't figure out sourceLine and sourceColumn aren't nullish if source
-      // isn't nullish.
-      assert<number>(sourceLine);
-      assert<number>(sourceColumn);
-      const sourcesIndex = put(sources, source);
-      const seg: SourceMapSegment = name
-        ? [genColumn, sourcesIndex, sourceLine, sourceColumn, put(names, name)]
-        : [genColumn, sourcesIndex, sourceLine, sourceColumn];
-
-      const index = getColumnIndex(line, genColumn, seg);
-      if (sourcesIndex === sourcesContent.length) sourcesContent[sourcesIndex] = null;
-      insert(line, index, seg);
+    maybeAddSegment = (map, genLine, genColumn, source, sourceLine, sourceColumn, name) => {
+      addSegmentInternal(true, map, genLine, genColumn, source, sourceLine, sourceColumn, name);
     };
 
     addMapping = (map, mapping) => {
-      const { generated, source, original, name } = mapping;
-      return (addSegment as any)(
-        map,
-        generated.line - 1,
-        generated.column,
-        source,
-        original == null ? undefined : original.line - 1,
-        original?.column,
-        name,
-      );
+      return addMappingInternal(false, map, mapping as Parameters<typeof addMappingInternal>[2]);
+    };
+
+    maybeAddMapping = (map, mapping) => {
+      return addMappingInternal(true, map, mapping as Parameters<typeof addMappingInternal>[2]);
     };
 
     setSourceContent = (map, source, content) => {
@@ -182,6 +182,7 @@ export class GenMapping {
         _sourcesContent: sourcesContent,
         _names: names,
       } = map;
+      removeEmptyFinalLines(mappings);
 
       return {
         version: 3,
@@ -241,6 +242,79 @@ export class GenMapping {
 
       return gen;
     };
+
+    // Internal helpers
+    addSegmentInternal = (
+      skipable,
+      map,
+      genLine,
+      genColumn,
+      source,
+      sourceLine,
+      sourceColumn,
+      name,
+    ) => {
+      const {
+        _mappings: mappings,
+        _sources: sources,
+        _sourcesContent: sourcesContent,
+        _names: names,
+      } = map;
+      const line = getLine(mappings, genLine);
+      const index = getColumnIndex(line, genColumn);
+
+      if (!source) {
+        if (skipable && skipSourceless(line, index)) return;
+        return insert(line, index, [genColumn]);
+      }
+
+      // Sigh, TypeScript can't figure out sourceLine and sourceColumn aren't nullish if source
+      // isn't nullish.
+      assert<number>(sourceLine);
+      assert<number>(sourceColumn);
+
+      const sourcesIndex = put(sources, source);
+      const namesIndex = name ? put(names, name) : -1;
+      if (sourcesIndex === sourcesContent.length) sourcesContent[sourcesIndex] = null;
+
+      if (skipable && skipSource(line, index, sourcesIndex, sourceLine, sourceColumn)) return;
+
+      insert(
+        line,
+        index,
+        name
+          ? [genColumn, sourcesIndex, sourceLine, sourceColumn, namesIndex]
+          : [genColumn, sourcesIndex, sourceLine, sourceColumn],
+      );
+    };
+
+    addMappingInternal = (skipable, map, mapping) => {
+      const { generated, source, original, name } = mapping;
+      if (!source) {
+        return addSegmentInternal(
+          skipable,
+          map,
+          generated.line - 1,
+          generated.column,
+          null,
+          null,
+          null,
+          null,
+        );
+      }
+      const s: string = source;
+      assert<Pos>(original);
+      addSegmentInternal(
+        skipable,
+        map,
+        generated.line - 1,
+        generated.column,
+        s,
+        original.line - 1,
+        original.column,
+        name,
+      );
+    };
   }
 }
 
@@ -255,41 +329,15 @@ function getLine(mappings: SourceMapSegment[][], index: number): SourceMapSegmen
   return mappings[index];
 }
 
-function getColumnIndex(line: SourceMapSegment[], column: number, seg: SourceMapSegment): number {
+function getColumnIndex(line: SourceMapSegment[], column: number): number {
   let index = line.length;
   for (let i = index - 1; i >= 0; i--, index--) {
     const current = line[i];
     const col = current[0];
     if (col > column) continue;
-    if (col < column) break;
-
-    const cmp = compare(current, seg);
-    if (cmp === 0) return index;
-    if (cmp < 0) break;
+    break;
   }
   return index;
-}
-
-function compare(a: SourceMapSegment, b: SourceMapSegment): number {
-  let cmp = compareNum(a.length, b.length);
-  if (cmp !== 0) return cmp;
-
-  // We've already checked genColumn
-  if (a.length === 1) return 0;
-
-  cmp = compareNum(a[1], b[1]!);
-  if (cmp !== 0) return cmp;
-  cmp = compareNum(a[2], b[2]!);
-  if (cmp !== 0) return cmp;
-  cmp = compareNum(a[3], b[3]!);
-  if (cmp !== 0) return cmp;
-
-  if (a.length === 4) return 0;
-  return compareNum(a[4], b[4]!);
-}
-
-function compareNum(a: number, b: number): number {
-  return a - b;
 }
 
 function insert<T>(array: T[], index: number, value: T) {
@@ -299,6 +347,44 @@ function insert<T>(array: T[], index: number, value: T) {
   array[index] = value;
 }
 
+function removeEmptyFinalLines(mappings: SourceMapSegment[][]) {
+  const { length } = mappings;
+  let len = length;
+  for (let i = len - 1; i >= 0; len = i, i--) {
+    if (mappings[i].length > 0) break;
+  }
+  if (len < length) mappings.length = len;
+}
+
 function putAll(strarr: SetArray, array: string[]) {
   for (let i = 0; i < array.length; i++) put(strarr, array[i]);
+}
+
+function skipSourceless(line: SourceMapSegment[], index: number): boolean {
+  // The start of a line is already sourceless, so adding a sourceless segment to the beginning
+  // doesn't generate any useful information.
+  if (index === 0) return true;
+
+  const prev = line[index - 1];
+
+  // If the previous segment is also sourceless, then adding another sourceless segment doesn't
+  // genrate any new information. Else, this segment will end the source/named segment and point to
+  // a sourceless position, which is useful.
+  return prev.length === 1;
+}
+
+function skipSource(
+  line: SourceMapSegment[],
+  index: number,
+  sourcesIndex: number,
+  sourceLine: number,
+  sourceColumn: number,
+): boolean {
+  // A source/named segment at the start of a line gives position at that genColumn
+  if (index === 0) return false;
+
+  const prev = line[index - 1];
+  // If the previous segment maps to the exact same source position, then this segment doesn't
+  // provide any new position information.
+  return sourcesIndex === prev[1] && sourceLine === prev[2] && sourceColumn === prev[3];
 }
