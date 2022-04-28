@@ -161,11 +161,29 @@ export class GenMapping {
 
   static {
     addSegment = (map, genLine, genColumn, source, sourceLine, sourceColumn, name) => {
-      addSegmentInternal(false, map, genLine, genColumn, source, sourceLine, sourceColumn, name);
+      return addSegmentInternal(
+        false,
+        map,
+        genLine,
+        genColumn,
+        source,
+        sourceLine,
+        sourceColumn,
+        name,
+      );
     };
 
     maybeAddSegment = (map, genLine, genColumn, source, sourceLine, sourceColumn, name) => {
-      addSegmentInternal(true, map, genLine, genColumn, source, sourceLine, sourceColumn, name);
+      return addSegmentInternal(
+        true,
+        map,
+        genLine,
+        genColumn,
+        source,
+        sourceLine,
+        sourceColumn,
+        name,
+      );
     };
 
     addMapping = (map, mapping) => {
@@ -287,7 +305,7 @@ export class GenMapping {
 
       if (skipable && skipSource(line, index, sourcesIndex, sourceLine, sourceColumn)) return;
 
-      insert(
+      return insert(
         line,
         index,
         name
@@ -395,7 +413,7 @@ function addMappingInternal<S extends string | null | undefined>(
   }
   const s: string = source;
   assert<Pos>(original);
-  addSegmentInternal(
+  return addSegmentInternal(
     skipable,
     map,
     generated.line - 1,
