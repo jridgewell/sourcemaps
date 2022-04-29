@@ -21,6 +21,8 @@ export type Options = {
   sourceRoot?: string | null;
 };
 
+const NO_NAME = -1;
+
 /**
  * A low-level API to associate a generated position with an original source position. Line and
  * column here are 0-based, unlike `addMapping`.
@@ -300,11 +302,12 @@ export class GenMapping {
       assert<number>(sourceColumn);
 
       const sourcesIndex = put(sources, source);
-      const namesIndex = name ? put(names, name) : -1;
+      const namesIndex = name ? put(names, name) : NO_NAME;
       if (sourcesIndex === sourcesContent.length) sourcesContent[sourcesIndex] = null;
 
-      if (skipable && skipSource(line, index, sourcesIndex, sourceLine, sourceColumn, namesIndex))
+      if (skipable && skipSource(line, index, sourcesIndex, sourceLine, sourceColumn, namesIndex)) {
         return;
+      }
 
       return insert(
         line,
@@ -381,13 +384,17 @@ function skipSource(
   if (index === 0) return false;
 
   const prev = line[index - 1];
+
+  // If the previous segment is sourceless, then we're transitioning to a source.
+  if (prev.length === 1) return false;
+
   // If the previous segment maps to the exact same source position, then this segment doesn't
   // provide any new position information.
   return (
     sourcesIndex === prev[SOURCES_INDEX] &&
     sourceLine === prev[SOURCE_LINE] &&
     sourceColumn === prev[SOURCE_COLUMN] &&
-    namesIndex === (prev.length === 5 ? prev[4] : -1)
+    namesIndex === (prev.length === 5 ? prev[NAMES_INDEX] : NO_NAME)
   );
 }
 
