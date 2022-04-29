@@ -655,6 +655,43 @@ describe('GenMapping', () => {
         assert.deepEqual(toDecodedMap(map).mappings, [[[0, 0, 0, 0]]]);
       });
 
+      it('skips runs of matching named segment', () => {
+        const map = new GenMapping();
+
+        maybeAddSegment(map, 0, 0, 'input.js', 0, 0, 'foo');
+        maybeAddSegment(map, 0, 1, 'input.js', 0, 0, 'foo');
+
+        assert.deepEqual(toDecodedMap(map).mappings, [[[0, 0, 0, 0, 0]]]);
+      });
+
+      it('keeps runs of matching source segment to named segment', () => {
+        const map = new GenMapping();
+
+        maybeAddSegment(map, 0, 0, 'input.js', 0, 0);
+        maybeAddSegment(map, 0, 1, 'input.js', 0, 0, 'foo');
+
+        assert.deepEqual(toDecodedMap(map).mappings, [
+          [
+            [0, 0, 0, 0],
+            [1, 0, 0, 0, 0],
+          ],
+        ]);
+      });
+
+      it('keeps runs of matching named segment to source segment', () => {
+        const map = new GenMapping();
+
+        maybeAddSegment(map, 0, 0, 'input.js', 0, 0, 'foo');
+        maybeAddSegment(map, 0, 1, 'input.js', 0, 0);
+
+        assert.deepEqual(toDecodedMap(map).mappings, [
+          [
+            [0, 0, 0, 0, 0],
+            [1, 0, 0, 0],
+          ],
+        ]);
+      });
+
       it('keeps source segment pointing to different source file', () => {
         const map = new GenMapping();
 

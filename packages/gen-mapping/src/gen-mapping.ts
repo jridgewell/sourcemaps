@@ -303,7 +303,8 @@ export class GenMapping {
       const namesIndex = name ? put(names, name) : -1;
       if (sourcesIndex === sourcesContent.length) sourcesContent[sourcesIndex] = null;
 
-      if (skipable && skipSource(line, index, sourcesIndex, sourceLine, sourceColumn)) return;
+      if (skipable && skipSource(line, index, sourcesIndex, sourceLine, sourceColumn, namesIndex))
+        return;
 
       return insert(
         line,
@@ -374,6 +375,7 @@ function skipSource(
   sourcesIndex: number,
   sourceLine: number,
   sourceColumn: number,
+  namesIndex: number,
 ): boolean {
   // A source/named segment at the start of a line gives position at that genColumn
   if (index === 0) return false;
@@ -384,7 +386,8 @@ function skipSource(
   return (
     sourcesIndex === prev[SOURCES_INDEX] &&
     sourceLine === prev[SOURCE_LINE] &&
-    sourceColumn === prev[SOURCE_COLUMN]
+    sourceColumn === prev[SOURCE_COLUMN] &&
+    namesIndex === (prev.length === 5 ? prev[4] : -1)
   );
 }
 
