@@ -12,6 +12,29 @@ const dir = relative(process.cwd(), __dirname);
 
 console.log(`node ${process.version}\n`);
 
+function track(label, results, cb) {
+  if (global.gc) global.gc();
+  const before = process.memoryUsage();
+  const ret = cb();
+  const after = process.memoryUsage();
+  const d = delta(before, after);
+  console.log(
+    `${label.padEnd(30, ' ')} ${String(d.heapUsed + d.external).padStart(10, ' ')} bytes`,
+  );
+  results.push({ label, delta: d.heapUsed + d.external });
+  return ret;
+}
+
+function delta(before, after) {
+  return {
+    rss: after.rss - before.rss,
+    heapTotal: after.heapTotal - before.heapTotal,
+    heapUsed: after.heapUsed - before.heapUsed,
+    external: after.external - before.external,
+    arrayBuffers: after.arrayBuffers - before.arrayBuffers,
+  };
+}
+
 async function bench(file) {
   const map = JSON.parse(readFileSync(join(dir, file)));
   const encoded = map.mappings;
@@ -19,6 +42,40 @@ async function bench(file) {
   const consumer061 = new sourceMap061.SourceMapConsumer(map);
   const consumerWasm = await new sourceMapWasm.SourceMapConsumer(map);
 
+  const segments = decoded.reduce((cur, line) => {
+    return cur + line.length;
+  }, 0);
+  console.log(file, `- ${segments} segments`);
+  console.log('');
+
+  {
+    console.log('Decode Memory Usage:');
+    const results = [];
+    track('@jridgewell/sourcemap-codec', results, () => {
+      return sourcemapCodec.decode(encoded);
+    });
+    track('sourcemap-codec', results, () => {
+      return originalSourcemapCodec.decode(encoded);
+    });
+    track('source-map-0.6.1', results, () => {
+      consumer061._parseMappings(encoded, '');
+      return consumer061;
+    });
+    track('source-map-0.8.0', results, () => {
+      consumerWasm.destroy();
+      consumerWasm._parseMappings(encoded, '');
+      return consumerWasm;
+    });
+    const winner = results.reduce((min, cur) => {
+      if (cur.delta < min.delta) return cur;
+      return min;
+    });
+    console.log(`Smallest memory usage is ${winner.label}`);
+  }
+
+  console.log('');
+
+  console.log('Decode speed:');
   new Benchmark.Suite()
     .add('decode: @jridgewell/sourcemap-codec', () => {
       sourcemapCodec.decode(encoded);
@@ -30,8 +87,8 @@ async function bench(file) {
       consumer061._parseMappings(encoded, '');
     })
     .add('decode: source-map-0.8.0', () => {
-      consumerWasm._parseMappings(encoded, '');
       consumerWasm.destroy();
+      consumerWasm._parseMappings(encoded, '');
     })
     // add listeners
     .on('error', ({ error }) => console.error(error))
@@ -50,6 +107,31 @@ async function bench(file) {
     await new sourceMapWasm.SourceMapConsumer(map),
   );
 
+  {
+    console.log('Encode Memory Usage:');
+    const results = [];
+    track('@jridgewell/sourcemap-codec', results, () => {
+      return sourcemapCodec.encode(decoded);
+    });
+    track('sourcemap-codec', results, () => {
+      return originalSourcemapCodec.encode(decoded);
+    });
+    track('source-map-0.6.1', results, () => {
+      return generator061._serializeMappings();
+    });
+    track('source-map-0.8.0', results, () => {
+      return generatorWasm._serializeMappings();
+    });
+    const winner = results.reduce((min, cur) => {
+      if (cur.delta < min.delta) return cur;
+      return min;
+    });
+    console.log(`Smallest memory usage is ${winner.label}`);
+  }
+
+  console.log('');
+
+  console.log('Encode speed:');
   new Benchmark.Suite()
     .add('encode: @jridgewell/sourcemap-codec', () => {
       sourcemapCodec.encode(decoded);
@@ -81,10 +163,9 @@ async function bench(file) {
     const file = files[i];
     if (!file.endsWith('.map')) continue;
 
-    if (!first) console.log('\n***\n');
+    if (!first) console.log('\n\n***\n\n');
     first = false;
 
-    console.log(file);
     await bench(file);
   }
 })();

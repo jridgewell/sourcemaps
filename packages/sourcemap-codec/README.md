@@ -62,62 +62,136 @@ assert.equal( encoded, ';EAEEA,EAAE,EAAC,CAAE;ECQY,UACC' );
 ```
 node v18.0.0
 
-amp.js.map
-decode: @jridgewell/sourcemap-codec x 513 ops/sec ±1.04% (91 runs sampled)
-decode: sourcemap-codec x 439 ops/sec ±0.91% (91 runs sampled)
-decode: source-map-0.6.1 x 37.27 ops/sec ±1.31% (49 runs sampled)
-decode: source-map-0.8.0 x 365 ops/sec ±0.11% (95 runs sampled)
+amp.js.map - 45120 segments
+
+Decode Memory Usage:
+@jridgewell/sourcemap-codec       5433795 bytes
+sourcemap-codec                   5485360 bytes
+source-map-0.6.1                 13464992 bytes
+source-map-0.8.0                  6418968 bytes
+Smallest memory usage is @jridgewell/sourcemap-codec
+
+Decode speed:
+decode: @jridgewell/sourcemap-codec x 465 ops/sec ±1.49% (89 runs sampled)
+decode: sourcemap-codec x 416 ops/sec ±1.37% (89 runs sampled)
+decode: source-map-0.6.1 x 34.08 ops/sec ±1.47% (47 runs sampled)
+decode: source-map-0.8.0 x 357 ops/sec ±0.09% (97 runs sampled)
 Fastest is decode: @jridgewell/sourcemap-codec
 
-encode: @jridgewell/sourcemap-codec x 695 ops/sec ±0.32% (96 runs sampled)
-encode: sourcemap-codec x 238 ops/sec ±0.75% (88 runs sampled)
-encode: source-map-0.6.1 x 162 ops/sec ±0.52% (84 runs sampled)
-encode: source-map-0.8.0 x 193 ops/sec ±0.33% (83 runs sampled)
+Encode Memory Usage:
+@jridgewell/sourcemap-codec       2251428 bytes
+sourcemap-codec                   8712368 bytes
+source-map-0.6.1                  8444280 bytes
+source-map-0.8.0                  8517648 bytes
+Smallest memory usage is @jridgewell/sourcemap-codec
+
+Encode speed:
+encode: @jridgewell/sourcemap-codec x 634 ops/sec ±0.40% (95 runs sampled)
+encode: sourcemap-codec x 229 ops/sec ±1.04% (88 runs sampled)
+encode: source-map-0.6.1 x 155 ops/sec ±0.41% (82 runs sampled)
+encode: source-map-0.8.0 x 181 ops/sec ±0.36% (85 runs sampled)
 Fastest is encode: @jridgewell/sourcemap-codec
+
 
 ***
 
-babel.min.js.map
-decode: @jridgewell/sourcemap-codec x 41.15 ops/sec ±4.18% (55 runs sampled)
-decode: sourcemap-codec x 37.94 ops/sec ±3.43% (51 runs sampled)
-decode: source-map-0.6.1 x 4.39 ops/sec ±3.50% (16 runs sampled)
-decode: source-map-0.8.0 x 59.29 ops/sec ±0.06% (78 runs sampled)
+
+babel.min.js.map - 347793 segments
+
+Decode Memory Usage:
+@jridgewell/sourcemap-codec      35364008 bytes
+sourcemap-codec                  35640904 bytes
+source-map-0.6.1                 62298080 bytes
+source-map-0.8.0                 44101904 bytes
+Smallest memory usage is @jridgewell/sourcemap-codec
+
+Decode speed:
+decode: @jridgewell/sourcemap-codec x 34.52 ops/sec ±6.23% (49 runs sampled)
+decode: sourcemap-codec x 32.06 ops/sec ±6.48% (45 runs sampled)
+decode: source-map-0.6.1 x 4.14 ops/sec ±4.52% (15 runs sampled)
+decode: source-map-0.8.0 x 57.60 ops/sec ±0.34% (75 runs sampled)
 Fastest is decode: source-map-0.8.0
 
-encode: @jridgewell/sourcemap-codec x 106 ops/sec ±0.46% (79 runs sampled)
-encode: sourcemap-codec x 30.06 ops/sec ±3.12% (54 runs sampled)
-encode: source-map-0.6.1 x 19.81 ops/sec ±2.40% (37 runs sampled)
-encode: source-map-0.8.0 x 19.86 ops/sec ±2.68% (37 runs sampled)
+Encode Memory Usage:
+@jridgewell/sourcemap-codec      17767216 bytes
+sourcemap-codec                   8133588 bytes
+source-map-0.6.1                 25127904 bytes
+source-map-0.8.0                 25261096 bytes
+Smallest memory usage is sourcemap-codec
+
+Encode speed:
+encode: @jridgewell/sourcemap-codec x 92.47 ops/sec ±3.95% (69 runs sampled)
+encode: sourcemap-codec x 26.38 ops/sec ±6.39% (49 runs sampled)
+encode: source-map-0.6.1 x 18.85 ops/sec ±3.09% (35 runs sampled)
+encode: source-map-0.8.0 x 18.82 ops/sec ±4.12% (36 runs sampled)
 Fastest is encode: @jridgewell/sourcemap-codec
+
 
 ***
 
-preact.js.map
-decode: @jridgewell/sourcemap-codec x 15,740 ops/sec ±0.22% (100 runs sampled)
-decode: sourcemap-codec x 11,709 ops/sec ±0.14% (100 runs sampled)
-decode: source-map-0.6.1 x 1,258 ops/sec ±1.68% (97 runs sampled)
-decode: source-map-0.8.0 x 9,852 ops/sec ±0.06% (101 runs sampled)
+
+preact.js.map - 1992 segments
+
+Decode Memory Usage:
+@jridgewell/sourcemap-codec        244912 bytes
+sourcemap-codec                    252480 bytes
+source-map-0.6.1                   971224 bytes
+source-map-0.8.0                    12824 bytes
+Smallest memory usage is source-map-0.8.0
+
+Decode speed:
+decode: @jridgewell/sourcemap-codec x 15,535 ops/sec ±0.14% (96 runs sampled)
+decode: sourcemap-codec x 11,760 ops/sec ±0.11% (102 runs sampled)
+decode: source-map-0.6.1 x 1,220 ops/sec ±0.12% (100 runs sampled)
+decode: source-map-0.8.0 x 9,565 ops/sec ±0.06% (99 runs sampled)
 Fastest is decode: @jridgewell/sourcemap-codec
 
-encode: @jridgewell/sourcemap-codec x 19,019 ops/sec ±0.61% (97 runs sampled)
-encode: sourcemap-codec x 6,979 ops/sec ±0.15% (100 runs sampled)
-encode: source-map-0.6.1 x 4,680 ops/sec ±0.09% (101 runs sampled)
-encode: source-map-0.8.0 x 5,319 ops/sec ±0.14% (102 runs sampled)
+Encode Memory Usage:
+@jridgewell/sourcemap-codec         76218 bytes
+sourcemap-codec                    327752 bytes
+source-map-0.6.1                   359904 bytes
+source-map-0.8.0                   359576 bytes
+Smallest memory usage is @jridgewell/sourcemap-codec
+
+Encode speed:
+encode: @jridgewell/sourcemap-codec x 16,670 ops/sec ±1.19% (90 runs sampled)
+encode: sourcemap-codec x 6,739 ops/sec ±0.22% (99 runs sampled)
+encode: source-map-0.6.1 x 4,679 ops/sec ±0.10% (100 runs sampled)
+encode: source-map-0.8.0 x 5,355 ops/sec ±0.18% (98 runs sampled)
 Fastest is encode: @jridgewell/sourcemap-codec
+
 
 ***
 
-react.js.map
-decode: @jridgewell/sourcemap-codec x 5,682 ops/sec ±0.23% (100 runs sampled)
-decode: sourcemap-codec x 4,446 ops/sec ±0.06% (100 runs sampled)
-decode: source-map-0.6.1 x 442 ops/sec ±0.38% (95 runs sampled)
-decode: source-map-0.8.0 x 3,429 ops/sec ±0.16% (102 runs sampled)
+
+react.js.map - 5726 segments
+
+Decode Memory Usage:
+@jridgewell/sourcemap-codec        681704 bytes
+sourcemap-codec                    729464 bytes
+source-map-0.6.1                  2331368 bytes
+source-map-0.8.0                   723616 bytes
+Smallest memory usage is @jridgewell/sourcemap-codec
+
+Decode speed:
+decode: @jridgewell/sourcemap-codec x 5,531 ops/sec ±0.12% (99 runs sampled)
+decode: sourcemap-codec x 4,377 ops/sec ±0.29% (100 runs sampled)
+decode: source-map-0.6.1 x 417 ops/sec ±0.40% (93 runs sampled)
+decode: source-map-0.8.0 x 3,325 ops/sec ±0.18% (100 runs sampled)
 Fastest is decode: @jridgewell/sourcemap-codec
 
-encode: @jridgewell/sourcemap-codec x 6,067 ops/sec ±0.37% (96 runs sampled)
-encode: sourcemap-codec x 2,529 ops/sec ±0.14% (101 runs sampled)
-encode: source-map-0.6.1 x 2,261 ops/sec ±0.09% (101 runs sampled)
-encode: source-map-0.8.0 x 2,319 ops/sec ±0.17% (101 runs sampled)
+Encode Memory Usage:
+@jridgewell/sourcemap-codec        244368 bytes
+sourcemap-codec                    853992 bytes
+source-map-0.6.1                  1107776 bytes
+source-map-0.8.0                  1107864 bytes
+Smallest memory usage is @jridgewell/sourcemap-codec
+
+Encode speed:
+encode: @jridgewell/sourcemap-codec x 5,545 ops/sec ±1.09% (90 runs sampled)
+encode: sourcemap-codec x 2,445 ops/sec ±0.39% (99 runs sampled)
+encode: source-map-0.6.1 x 2,179 ops/sec ±0.14% (99 runs sampled)
+encode: source-map-0.8.0 x 2,224 ops/sec ±0.29% (99 runs sampled)
 Fastest is encode: @jridgewell/sourcemap-codec
 ```
 
