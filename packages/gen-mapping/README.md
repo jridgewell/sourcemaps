@@ -18,7 +18,7 @@ npm install @jridgewell/gen-mapping
 ## Usage
 
 ```typescript
-import { GenMapping, addMapping, setSourceContent, encodedMap } from '@jridgewell/gen-mapping';
+import { GenMapping, addMapping, setSourceContent, toEncodedMap, toDecodedMap } from '@jridgewell/gen-mapping';
 
 const map = new GenMapping({
   file: 'output.js',
@@ -41,7 +41,19 @@ addMapping(map, {
   name: 'foo',
 });
 
-assert.deepEqual(encodedMap(map), {
+assert.deepEqual(toDecodedMap(map), {
+  version: 3,
+  file: 'output.js',
+  names: ['foo'],
+  sourceRoot: 'https://example.com/',
+  sources: ['input.js'],
+  sourcesContent: ['function foo() {}'],
+  mappings: [
+    [ [0, 0, 0, 0], [9, 0, 0, 9, 0] ]
+  ],
+});
+
+assert.deepEqual(toEncodedMap(map), {
   version: 3,
   file: 'output.js',
   names: ['foo'],
@@ -60,7 +72,7 @@ intelligently determine if this marking adds useful information. If not, the mar
 skipped.
 
 ```typescript
-import { GenMapping, encodedMap, maybeAddMapping } from '@jridgewell/gen-mapping';
+import { maybeAddMapping } from '@jridgewell/gen-mapping';
 
 const map = new GenMapping();
 
@@ -84,7 +96,7 @@ maybeAddMapping(map, {
   original: { line: 1, column: 0 },
 });
 
-assert.deepEqual(encodedMap(map), {
+assert.deepEqual(toEncodedMap(map), {
   version: 3,
   names: [],
   sources: ['input.js'],
