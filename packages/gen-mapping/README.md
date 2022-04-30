@@ -52,6 +52,47 @@ assert.deepEqual(encodedMap(map), {
 });
 ```
 
+### Smaller Sourcemaps
+
+Not everything needs to be added to a sourcemap, and needless markings can cause signficantly
+larger file sizes. `gen-mapping` exposes `maybeAddSegment`/`maybeAddMapping` APIs that will
+intelligently determine if this marking adds useful information. If not, the marking will be
+skipped.
+
+```typescript
+import { GenMapping, encodedMap, maybeAddMapping } from '@jridgewell/gen-mapping';
+
+const map = new GenMapping();
+
+// Adding a sourceless marking at the beginning of a line isn't useful.
+maybeAddMapping(map, {
+  generated: { line: 1, column: 0 },
+});
+
+// Adding a new source marking is useful.
+maybeAddMapping(map, {
+  generated: { line: 1, column: 0 },
+  source: 'input.js',
+  original: { line: 1, column: 0 },
+});
+
+// But adding another marking pointing to the exact same original location isn't, even if the
+// generated column changed.
+maybeAddMapping(map, {
+  generated: { line: 1, column: 9 },
+  source: 'input.js',
+  original: { line: 1, column: 0 },
+});
+
+assert.deepEqual(encodedMap(map), {
+  version: 3,
+  names: [],
+  sources: ['input.js'],
+  sourcesContent: [null],
+  mappings: 'AAAA',
+});
+```
+
 ## Benchmarks
 
 ```
