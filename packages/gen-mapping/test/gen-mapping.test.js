@@ -316,6 +316,33 @@ describe('GenMapping', () => {
 
       assert.deepEqual(toDecodedMap(map).sourcesContent, ['input', null, 'bar']);
     });
+
+    it('can set content when adding', () => {
+      const map = new GenMapping();
+
+      addSegment(map, 0, 0, 'input.js', 0, 0, '', 'input');
+      addSegment(map, 1, 0, 'foo.js', 0, 0, '', undefined);
+
+      assert.deepEqual(toDecodedMap(map).sourcesContent, ['input', null]);
+    });
+
+    it('only sets content during initial source add', () => {
+      const map = new GenMapping();
+
+      addSegment(map, 0, 0, 'input.js', 0, 0, '', 'first');
+      addSegment(map, 1, 0, 'input.js', 0, 0, '', 'second');
+
+      assert.deepEqual(toDecodedMap(map).sourcesContent, ['first']);
+    });
+
+    it('ignores content when sourceless', () => {
+      const map = new GenMapping();
+
+      addSegment(map, 0, 0, 'input.js', 0, 0);
+      addSegment(map, 0, 1, '', 0, 0, '', 'foo');
+
+      assert.deepEqual(toDecodedMap(map).sourcesContent, [null]);
+    });
   });
 
   describe('addMapping', () => {

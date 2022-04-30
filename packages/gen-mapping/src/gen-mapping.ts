@@ -36,6 +36,7 @@ export let addSegment: {
     sourceLine?: null,
     sourceColumn?: null,
     name?: null,
+    content?: null,
   ): void;
   (
     map: GenMapping,
@@ -45,6 +46,7 @@ export let addSegment: {
     sourceLine: number,
     sourceColumn: number,
     name?: null,
+    content?: string | null,
   ): void;
   (
     map: GenMapping,
@@ -54,6 +56,7 @@ export let addSegment: {
     sourceLine: number,
     sourceColumn: number,
     name: string,
+    content?: string | null,
   ): void;
 };
 
@@ -69,6 +72,7 @@ export let addMapping: {
       source?: null;
       original?: null;
       name?: null;
+      content?: null;
     },
   ): void;
   (
@@ -78,6 +82,7 @@ export let addMapping: {
       source: string;
       original: Pos;
       name?: null;
+      content?: string | null;
     },
   ): void;
   (
@@ -87,6 +92,7 @@ export let addMapping: {
       source: string;
       original: Pos;
       name: string;
+      content?: string | null;
     },
   ): void;
 };
@@ -143,6 +149,7 @@ let addSegmentInternal: <S extends string | null | undefined>(
   sourceLine: S extends string ? number : null | undefined,
   sourceColumn: S extends string ? number : null | undefined,
   name: S extends string ? string | null | undefined : null | undefined,
+  content: S extends string ? string | null | undefined : null | undefined,
 ) => void;
 
 /**
@@ -162,7 +169,7 @@ export class GenMapping {
   }
 
   static {
-    addSegment = (map, genLine, genColumn, source, sourceLine, sourceColumn, name) => {
+    addSegment = (map, genLine, genColumn, source, sourceLine, sourceColumn, name, content) => {
       return addSegmentInternal(
         false,
         map,
@@ -172,10 +179,20 @@ export class GenMapping {
         sourceLine,
         sourceColumn,
         name,
+        content,
       );
     };
 
-    maybeAddSegment = (map, genLine, genColumn, source, sourceLine, sourceColumn, name) => {
+    maybeAddSegment = (
+      map,
+      genLine,
+      genColumn,
+      source,
+      sourceLine,
+      sourceColumn,
+      name,
+      content,
+    ) => {
       return addSegmentInternal(
         true,
         map,
@@ -185,6 +202,7 @@ export class GenMapping {
         sourceLine,
         sourceColumn,
         name,
+        content,
       );
     };
 
@@ -281,6 +299,7 @@ export class GenMapping {
       sourceLine,
       sourceColumn,
       name,
+      content,
     ) => {
       const {
         _mappings: mappings,
@@ -303,7 +322,7 @@ export class GenMapping {
 
       const sourcesIndex = put(sources, source);
       const namesIndex = name ? put(names, name) : NO_NAME;
-      if (sourcesIndex === sourcesContent.length) sourcesContent[sourcesIndex] = null;
+      if (sourcesIndex === sourcesContent.length) sourcesContent[sourcesIndex] = content ?? null;
 
       if (skipable && skipSource(line, index, sourcesIndex, sourceLine, sourceColumn, namesIndex)) {
         return;
@@ -406,15 +425,17 @@ function addMappingInternal<S extends string | null | undefined>(
     source: S;
     original: S extends string ? Pos : null | undefined;
     name: S extends string ? string | null | undefined : null | undefined;
+    content: S extends string ? string | null | undefined : null | undefined;
   },
 ) {
-  const { generated, source, original, name } = mapping;
+  const { generated, source, original, name, content } = mapping;
   if (!source) {
     return addSegmentInternal(
       skipable,
       map,
       generated.line - 1,
       generated.column,
+      null,
       null,
       null,
       null,
@@ -432,5 +453,6 @@ function addMappingInternal<S extends string | null | undefined>(
     original.line - 1,
     original.column,
     name,
+    content,
   );
 }
