@@ -10,6 +10,9 @@ import {
 import type { TraceMap, SectionedSourceMapInput } from '@jridgewell/trace-mapping';
 export type { TraceMap, SectionedSourceMapInput };
 
+import type { Mapping, EncodedSourceMap, DecodedSourceMap } from '@jridgewell/gen-mapping';
+export type { Mapping, EncodedSourceMap, DecodedSourceMap };
+
 export class SourceMapConsumer {
   private declare _map: TraceMap;
   declare file: TraceMap['file'];
