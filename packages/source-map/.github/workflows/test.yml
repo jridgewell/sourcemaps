@@ -1,0 +1,34 @@
+name: Node CI
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        latest-node-version: [16.x]
+        node-version: [6.x, 8.x, 10.x, 12.x, 14.x, 16.x]
+
+    steps:
+      - uses: actions/checkout@v1
+      - name: Build with Node.js ${{ matrix.latest-node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.latest-node-version }}
+      - name: Build and test with latest
+        run: |
+          npm install
+          npm run build
+          npm run test:coverage
+      - name: Switch to Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Test legacy node
+        run: |
+          npm install mocha@6.2.3
+          npm run test:only
+        env:
+          CI: true
