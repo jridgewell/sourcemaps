@@ -12,8 +12,20 @@ export type { TraceMap, SectionedSourceMapInput };
 
 export class SourceMapConsumer {
   private declare _map: TraceMap;
+  declare file: TraceMap['file'];
+  declare names: TraceMap['names'];
+  declare sourceRoot: TraceMap['sourceRoot'];
+  declare sources: TraceMap['sources'];
+  declare sourcesContent: TraceMap['sourcesContent'];
+
   constructor(map: ConstructorParameters<typeof AnyMap>[0], mapUrl: Parameters<typeof AnyMap>[1]) {
-    this._map = new AnyMap(map, mapUrl);
+    const trace = (this._map = new AnyMap(map, mapUrl));
+
+    this.file = trace.file;
+    this.names = trace.names;
+    this.sourceRoot = trace.sourceRoot;
+    this.sources = trace.resolvedSources;
+    this.sourcesContent = trace.sourcesContent;
   }
 
   originalPositionFor(

@@ -39,13 +39,22 @@ it('SourceMapGenerator', () => {
 it('SourceMapConsumer', () => {
   const smc = new SourceMapConsumer({
     version: 3,
+    file: 'output.js',
+    sourceRoot: 'https://example.com/',
     names: ['foo'],
     sources: ['input.js'],
+    sourcesContent: ['foobar'],
     mappings: 'AAAAA',
   });
 
+  assert.equal(smc.file, 'output.js');
+  assert.deepEqual(smc.names, ['foo']);
+  assert.equal(smc.sourceRoot, 'https://example.com/');
+  assert.deepEqual(smc.sources, ['https://example.com/input.js']);
+  assert.deepEqual(smc.sourcesContent, ['foobar']);
+
   assert.deepEqual(smc.originalPositionFor({ line: 1, column: 0 }), {
-    source: 'input.js',
+    source: 'https://example.com/input.js',
     line: 1,
     column: 0,
     name: 'foo',
