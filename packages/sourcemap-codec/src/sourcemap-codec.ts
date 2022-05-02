@@ -131,13 +131,20 @@ export function encode(decoded: SourceMapMappings): string;
 export function encode(decoded: Readonly<SourceMapMappings>): string;
 export function encode(decoded: Readonly<SourceMapMappings>): string {
   const state: [number, number, number, number, number] = new Int32Array(5) as any;
-  let buf = new Uint8Array(1024);
+  const bufLength = 1024 * 16;
+  const subLength = bufLength - 36;
+  const buf = new Uint8Array(bufLength);
+  const sub = buf.subarray(0, subLength);
   let pos = 0;
+  let out = '';
 
   for (let i = 0; i < decoded.length; i++) {
     const line = decoded[i];
     if (i > 0) {
-      buf = reserve(buf, pos, 1);
+      if (pos === bufLength) {
+        out += td.decode(buf);
+        pos = 0;
+      }
       buf[pos++] = semicolon;
     }
     if (line.length === 0) continue;
@@ -148,7 +155,11 @@ export function encode(decoded: Readonly<SourceMapMappings>): string {
       const segment = line[j];
       // We can push up to 5 ints, each int can take at most 7 chars, and we
       // may push a comma.
-      buf = reserve(buf, pos, 36);
+      if (pos > subLength) {
+        out += td.decode(sub);
+        buf.copyWithin(0, subLength, pos);
+        pos -= subLength;
+      }
       if (j > 0) buf[pos++] = comma;
 
       pos = encodeInteger(buf, pos, state, segment, 0); // genColumn
@@ -163,15 +174,7 @@ export function encode(decoded: Readonly<SourceMapMappings>): string {
     }
   }
 
-  return td.decode(buf.subarray(0, pos));
-}
-
-function reserve(buf: Uint8Array, pos: number, count: number): Uint8Array {
-  if (buf.length > pos + count) return buf;
-
-  const swap = new Uint8Array(buf.length * 2);
-  swap.set(buf);
-  return swap;
+  return out + td.decode(buf.subarray(0, pos));
 }
 
 function encodeInteger(
