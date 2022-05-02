@@ -41,51 +41,53 @@ const td =
 export function decode(mappings: string): SourceMapMappings {
   const state: [number, number, number, number, number] = new Int32Array(5) as any;
   const decoded: SourceMapMappings = [];
-  let line: SourceMapLine = [];
-  let sorted = true;
-  let lastCol = 0;
 
-  for (let i = 0; i < mappings.length; ) {
-    const c = mappings.charCodeAt(i);
+  let index = 0;
+  do {
+    const semi = indexOf(mappings, index);
+    const line: SourceMapLine = [];
+    let sorted = true;
+    let lastCol = 0;
+    state[0] = 0;
 
-    if (c === comma) {
-      i++;
-    } else if (c === semicolon) {
-      state[0] = lastCol = 0;
-      if (!sorted) sort(line);
-      sorted = true;
-      decoded.push(line);
-      line = [];
-      i++;
-    } else {
+    for (let i = index; i < semi; i++) {
+      let seg: SourceMapSegment;
+
       i = decodeInteger(mappings, i, state, 0); // genColumn
       const col = state[0];
       if (col < lastCol) sorted = false;
       lastCol = col;
 
-      if (!hasMoreSegments(mappings, i)) {
-        line.push([col]);
-        continue;
+      if (hasMoreVlq(mappings, i, semi)) {
+        i = decodeInteger(mappings, i, state, 1); // sourcesIndex
+        i = decodeInteger(mappings, i, state, 2); // sourceLine
+        i = decodeInteger(mappings, i, state, 3); // sourceColumn
+
+        if (hasMoreVlq(mappings, i, semi)) {
+          i = decodeInteger(mappings, i, state, 4); // namesIndex
+          seg = [col, state[1], state[2], state[3], state[4]];
+        } else {
+          seg = [col, state[1], state[2], state[3]];
+        }
+      } else {
+        seg = [col];
       }
 
-      i = decodeInteger(mappings, i, state, 1); // sourcesIndex
-      i = decodeInteger(mappings, i, state, 2); // sourceLine
-      i = decodeInteger(mappings, i, state, 3); // sourceColumn
-
-      if (!hasMoreSegments(mappings, i)) {
-        line.push([col, state[1], state[2], state[3]]);
-        continue;
-      }
-
-      i = decodeInteger(mappings, i, state, 4); // namesIndex
-      line.push([col, state[1], state[2], state[3], state[4]]);
+      line.push(seg);
     }
-  }
 
-  if (!sorted) sort(line);
-  decoded.push(line);
+    if (!sorted) sort(line);
+    decoded.push(line);
+    index = semi + 1;
+  } while (index <= mappings.length);
 
   return decoded;
+}
+
+function indexOf(mappings: string, index: number): number {
+  const len = mappings.length;
+  const idx = index < len ? mappings.indexOf(';', index) : index;
+  return idx === -1 ? len : idx;
 }
 
 function decodeInteger(mappings: string, pos: number, state: SourceMapSegment, j: number): number {
@@ -111,12 +113,9 @@ function decodeInteger(mappings: string, pos: number, state: SourceMapSegment, j
   return pos;
 }
 
-function hasMoreSegments(mappings: string, i: number): boolean {
-  if (i >= mappings.length) return false;
-
-  const c = mappings.charCodeAt(i);
-  if (c === comma || c === semicolon) return false;
-  return true;
+function hasMoreVlq(mappings: string, i: number, length: number): boolean {
+  if (i >= length) return false;
+  return mappings.charCodeAt(i) !== comma;
 }
 
 function sort(line: SourceMapSegment[]) {
