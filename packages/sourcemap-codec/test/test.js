@@ -3,6 +3,8 @@
 const decode = require('../').decode;
 const encode = require('../').encode;
 const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
 
 describe('sourcemap-codec', () => {
   // TODO more tests
@@ -173,6 +175,19 @@ describe('sourcemap-codec', () => {
     tests.forEach((test, i) => {
       it('encodes sample ' + i, () => {
         assert.deepEqual(encode(test.decoded), test.encoded);
+      });
+    });
+  });
+
+  describe('real world', () => {
+    const dir = path.join(__dirname, '..', 'benchmark');
+    const files = fs.readdirSync(dir);
+    files.forEach((file) => {
+      if (path.extname(file) !== '.map') return;
+
+      it(file, () => {
+        const { mappings } = JSON.parse(fs.readFileSync(path.join(dir, file)));
+        assert.deepEqual(encode(decode(mappings)), mappings);
       });
     });
   });
