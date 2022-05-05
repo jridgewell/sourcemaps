@@ -85,9 +85,8 @@ export function decode(mappings: string): SourceMapMappings {
 }
 
 function indexOf(mappings: string, index: number): number {
-  const len = mappings.length;
-  const idx = index < len ? mappings.indexOf(';', index) : index;
-  return idx === -1 ? len : idx;
+  const idx = mappings.indexOf(';', index);
+  return idx === -1 ? mappings.length : idx;
 }
 
 function decodeInteger(mappings: string, pos: number, state: SourceMapSegment, j: number): number {
