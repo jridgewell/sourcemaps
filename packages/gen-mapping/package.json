@@ -14,6 +14,7 @@
   "typings": "dist/types/gen-mapping.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/types/gen-mapping.d.ts",
       "browser": "./dist/gen-mapping.umd.js",
       "require": "./dist/gen-mapping.umd.js",
       "import": "./dist/gen-mapping.mjs"
