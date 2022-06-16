@@ -1,23 +1,38 @@
+import fs from 'fs';
 import typescript from '@rollup/plugin-typescript';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 
-function configure(esm) {
+const packageDependencies = JSON.parse(fs.readFileSync('./package.json')).dependencies;
+
+function configure(mode) {
+  let output;
+  switch(mode) {
+    case 'browser':
+      output = {
+        format: 'umd',
+        name: 'sourceMap',
+        dir: 'dist',
+        entryFileNames: '[name].umd.js',
+        sourcemap: true,
+        exports: 'named',
+        globals: {
+          '@jridgewell/gen-mapping': 'genMapping',
+          '@jridgewell/trace-mapping': 'traceMapping',
+        },
+      }
+      break;
+    case 'esm':
+      output = { format: 'es', dir: 'dist', entryFileNames: '[name].mjs', sourcemap: true };
+      break;
+    case 'cjs':
+      output = { format: 'commonjs', dir: 'dist', entryFileNames: '[name].cjs', sourcemap: true };
+      break;
+  }
+
   return {
     input: 'src/source-map.ts',
-    output: esm
-      ? { format: 'es', dir: 'dist', entryFileNames: '[name].mjs', sourcemap: true }
-      : {
-          format: 'umd',
-          name: 'sourceMap',
-          dir: 'dist',
-          entryFileNames: '[name].umd.js',
-          sourcemap: true,
-          exports: 'named',
-          globals: {
-            '@jridgewell/gen-mapping': 'genMapping',
-            '@jridgewell/trace-mapping': 'traceMapping',
-          },
-        },
+    output,
+    external: mode == 'browser' ? [] : Object.keys(packageDependencies),
     plugins: [
       typescript({
         tsconfig: './tsconfig.build.json',
@@ -31,4 +46,4 @@ function configure(esm) {
   };
 }
 
-export default [configure(false), configure(true)];
+export default [configure('browser'), configure('esm'), configure('cjs')];
