@@ -1,6 +1,6 @@
 {
   "name": "@jridgewell/gen-mapping",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Generate source maps",
   "keywords": [
     "source",
