@@ -14,12 +14,15 @@
     "src"
   ],
   "exports": {
-    ".": {
-      "types": "./dist/types/sourcemap-codec.d.ts",
-      "browser": "./dist/sourcemap-codec.umd.js",
-      "import": "./dist/sourcemap-codec.mjs",
-      "require": "./dist/sourcemap-codec.umd.js"
-    },
+    ".": [
+      {
+        "types": "./dist/types/sourcemap-codec.d.ts",
+        "browser": "./dist/sourcemap-codec.umd.js",
+        "import": "./dist/sourcemap-codec.mjs",
+        "require": "./dist/sourcemap-codec.umd.js"
+      },
+      "./dist/sourcemap-codec.umd.js"
+    ],
     "./package.json": "./package.json"
   },
   "scripts": {
