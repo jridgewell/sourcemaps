@@ -1,5 +1,5 @@
-import remapping from '@ampproject/remapping';
 import resolveUri from '@jridgewell/resolve-uri';
+
 import {
   AnyMap,
   originalPositionFor,
@@ -15,6 +15,7 @@ import {
   toEncodedMap,
   setSourceContent,
   fromMap,
+  applySourceMap,
 } from '@jridgewell/gen-mapping';
 
 import type {
@@ -27,8 +28,6 @@ export type { TraceMap, SourceMapInput, SectionedSourceMapInput, DecodedSourceMa
 
 import type { Mapping, EncodedSourceMap } from '@jridgewell/gen-mapping';
 export type { Mapping, EncodedSourceMap };
-
-import { join, relative } from './util';
 
 function resolve(input: string, base: string | undefined): string {
   // The base is always treated as a directory, if it's not empty.
@@ -173,36 +172,13 @@ export class SourceMapGenerator {
     sourceFile?: string,
     sourceMapPath?: string,
   ) {
-    // If the SourceMap has no file property, we will use `sourceFile`
-    if (sourceMapConsumer.file == null) {
-      if (sourceFile == null) {
-        throw new Error(
-          'SourceMapGenerator.prototype.applySourceMap requires either an explicit source file, ' +
-            'or the source map\'s "file" property. Both were omitted.',
-        );
-      }
-      sourceMapConsumer.file = sourceFile;
-    }
-
-    const sourceRoot = this._map.sourceRoot;
-
-    const remapped = remapping(
-      [toDecodedMap(this._map) as SourceMapInput, sourceMapConsumer],
-      (_, ctx) => {
-        if (sourceMapPath || sourceRoot) {
-          if (sourceMapPath != null) {
-            ctx.source = join(sourceMapPath, ctx.source);
-          }
-
-          if (sourceRoot != null) {
-            ctx.source = relative(sourceRoot, ctx.source);
-          }
-        }
-      },
-      { decodedMappings: true },
+    // TODO :: not sure how sourceMapConsumer should be typed / converted
+    applySourceMap(
+      this._map,
+      new AnyMap(sourceMapConsumer) as unknown as any,
+      sourceFile,
+      sourceMapPath,
     );
-
-    this._map = fromMap(remapped as DecodedSourceMap);
   }
 
   toJSON(): ReturnType<typeof toEncodedMap> {
