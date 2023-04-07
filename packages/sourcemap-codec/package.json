@@ -17,8 +17,8 @@
       {
         "types": "./dist/types/sourcemap-codec.d.ts",
         "browser": "./dist/sourcemap-codec.umd.js",
-        "import": "./dist/sourcemap-codec.mjs",
-        "require": "./dist/sourcemap-codec.umd.js"
+        "require": "./dist/sourcemap-codec.umd.js",
+        "import": "./dist/sourcemap-codec.mjs"
       },
       "./dist/sourcemap-codec.umd.js"
     ],
