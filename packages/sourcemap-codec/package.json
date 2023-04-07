@@ -8,7 +8,7 @@
   ],
   "main": "dist/sourcemap-codec.umd.js",
   "module": "dist/sourcemap-codec.mjs",
-  "typings": "dist/types/sourcemap-codec.d.ts",
+  "types": "dist/types/sourcemap-codec.d.ts",
   "files": [
     "dist"
   ],
