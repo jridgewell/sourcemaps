@@ -11,7 +11,7 @@
   "repository": "https://github.com/jridgewell/gen-mapping",
   "main": "dist/gen-mapping.umd.js",
   "module": "dist/gen-mapping.mjs",
-  "typings": "dist/types/gen-mapping.d.ts",
+  "types": "dist/types/gen-mapping.d.ts",
   "exports": {
     ".": [
       {
