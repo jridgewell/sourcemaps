@@ -12,13 +12,17 @@
   "repository": "https://github.com/jridgewell/source-map",
   "main": "dist/source-map.umd.js",
   "module": "dist/source-map.mjs",
-  "typings": "dist/types/source-map.d.ts",
+  "types": "dist/types/source-map.d.ts",
   "exports": {
-    ".": {
-      "browser": "./dist/source-map.umd.js",
-      "require": "./dist/source-map.umd.js",
-      "import": "./dist/source-map.mjs"
-    },
+    ".": [
+      {
+        "types": "./dist/types/source-map.d.ts",
+        "browser": "./dist/source-map.umd.js",
+        "require": "./dist/source-map.umd.js",
+        "import": "./dist/source-map.mjs"
+      },
+      "./dist/source-map.umd.js"
+    ],
     "./package.json": "./package.json"
   },
   "files": [
