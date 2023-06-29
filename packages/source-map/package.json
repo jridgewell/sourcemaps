@@ -1,6 +1,6 @@
 {
   "name": "@jridgewell/source-map",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Packages @jridgewell/trace-mapping and @jridgewell/gen-mapping into the familiar source-map API",
   "keywords": [
     "sourcemap",
