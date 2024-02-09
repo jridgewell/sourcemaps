@@ -1,12 +1,14 @@
 /* eslint-env node */
 
 const { readdirSync, readFileSync } = require('fs');
-const { dirname, join, relative } = require('path');
+const { join, relative } = require('path');
 const Benchmark = require('benchmark');
-const sourcemapCodec = require('../');
+const localCode = require('../');
+const sourcemapCodec = require('jridgewell-sourcemap-codec');
 const originalSourcemapCodec = require('sourcemap-codec');
 const sourceMap061 = require('source-map');
 const sourceMapWasm = require('source-map-wasm');
+const sourcemapCodecVersion = require('jridgewell-sourcemap-codec/package.json').version;
 
 const dir = relative(process.cwd(), __dirname);
 
@@ -19,7 +21,7 @@ function track(label, results, cb) {
   const after = process.memoryUsage();
   const d = delta(before, after);
   console.log(
-    `${label.padEnd(30, ' ')} ${String(d.heapUsed + d.external).padStart(10, ' ')} bytes`,
+    `${label.padEnd(35, ' ')} ${String(d.heapUsed + d.external).padStart(10, ' ')} bytes`,
   );
   results.push({ label, delta: d.heapUsed + d.external });
   return ret;
@@ -38,7 +40,7 @@ function delta(before, after) {
 async function bench(file) {
   const map = JSON.parse(readFileSync(join(dir, file)));
   const encoded = map.mappings;
-  const decoded = sourcemapCodec.decode(encoded);
+  const decoded = localCode.decode(encoded);
   const consumer061 = new sourceMap061.SourceMapConsumer(map);
   const consumerWasm = await new sourceMapWasm.SourceMapConsumer(map);
 
@@ -51,7 +53,10 @@ async function bench(file) {
   {
     console.log('Decode Memory Usage:');
     const results = [];
-    track('@jridgewell/sourcemap-codec', results, () => {
+    track('local code', results, () => {
+      return localCode.decode(encoded);
+    });
+    track(`@jridgewell/sourcemap-codec ${sourcemapCodecVersion}`, results, () => {
       return sourcemapCodec.decode(encoded);
     });
     track('sourcemap-codec', results, () => {
@@ -77,7 +82,10 @@ async function bench(file) {
 
   console.log('Decode speed:');
   new Benchmark.Suite()
-    .add('decode: @jridgewell/sourcemap-codec', () => {
+    .add('decode: local code', () => {
+      localCode.decode(encoded);
+    })
+    .add(`decode: @jridgewell/sourcemap-codec ${sourcemapCodecVersion}`, () => {
       sourcemapCodec.decode(encoded);
     })
     .add('decode: sourcemap-codec', () => {
@@ -110,7 +118,10 @@ async function bench(file) {
   {
     console.log('Encode Memory Usage:');
     const results = [];
-    track('@jridgewell/sourcemap-codec', results, () => {
+    track('local code', results, () => {
+      return localCode.encode(decoded);
+    });
+    track(`@jridgewell/sourcemap-codec ${sourcemapCodecVersion}`, results, () => {
       return sourcemapCodec.encode(decoded);
     });
     track('sourcemap-codec', results, () => {
@@ -133,7 +144,10 @@ async function bench(file) {
 
   console.log('Encode speed:');
   new Benchmark.Suite()
-    .add('encode: @jridgewell/sourcemap-codec', () => {
+    .add('encode: local code', () => {
+      localCode.encode(decoded);
+    })
+    .add(`encode: @jridgewell/sourcemap-codec ${sourcemapCodecVersion}`, () => {
       sourcemapCodec.encode(decoded);
     })
     .add('encode: sourcemap-codec', () => {
