@@ -9,7 +9,7 @@ jobs:
     strategy:
       matrix:
         latest-node-version: [20.x]
-        node-version: [6.x, 8.x, 10.x, 12.x, 14.x, 16.x, 18.x, 20.x]
+        node-version: [18.x, 20.x]
 
     steps:
       - uses: actions/checkout@v1
@@ -26,6 +26,12 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
-      - name: Test legacy node
+      - name: Test node
         run: |
           node dist/gen-mapping.umd.js
+      - name: Benchmark
+        run: |
+          npm run benchmark:install
+          npm run benchmark:only
+        env:
+          CI: true
