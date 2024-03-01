@@ -1,4 +1,4 @@
-import { SetArray, put } from '@jridgewell/set-array';
+import { SetArray, put, remove } from '@jridgewell/set-array';
 import { encode } from '@jridgewell/sourcemap-codec';
 import { TraceMap, decodedMappings } from '@jridgewell/trace-mapping';
 
@@ -27,10 +27,11 @@ const NO_NAME = -1;
  * Provides the state to generate a sourcemap.
  */
 export class GenMapping {
-  private declare _names;
-  private declare _sources;
+  private declare _names: SetArray<string>;
+  private declare _sources: SetArray<string>;
   private declare _sourcesContent: (string | null)[];
   private declare _mappings: SourceMapSegment[][];
+  private declare _ignoreList: SetArray<number>;
   declare file: string | null | undefined;
   declare sourceRoot: string | null | undefined;
 
@@ -41,6 +42,7 @@ export class GenMapping {
     this._mappings = [];
     this.file = file;
     this.sourceRoot = sourceRoot;
+    this._ignoreList = new SetArray();
   }
 }
 
@@ -49,6 +51,7 @@ interface PublicMap {
   _sources: GenMapping['_sources'];
   _sourcesContent: GenMapping['_sourcesContent'];
   _mappings: GenMapping['_mappings'];
+  _ignoreList: GenMapping['_ignoreList'];
 }
 
 /**
@@ -205,7 +208,16 @@ export const maybeAddMapping: typeof addMapping = (map, mapping) => {
  */
 export function setSourceContent(map: GenMapping, source: string, content: string | null): void {
   const { _sources: sources, _sourcesContent: sourcesContent } = cast(map);
-  sourcesContent[put(sources, source)] = content;
+  const index = put(sources, source);
+  sourcesContent[index] = content;
+}
+
+export function setIgnore(map: GenMapping, source: string, ignore = true) {
+  const { _sources: sources, _sourcesContent: sourcesContent, _ignoreList: ignoreList } = cast(map);
+  const index = put(sources, source);
+  if (index === sourcesContent.length) sourcesContent[index] = null;
+  if (ignore) put(ignoreList, index);
+  else remove(ignoreList, index);
 }
 
 /**
@@ -218,6 +230,7 @@ export function toDecodedMap(map: GenMapping): DecodedSourceMap {
     _sources: sources,
     _sourcesContent: sourcesContent,
     _names: names,
+    _ignoreList: ignoreList,
   } = cast(map);
   removeEmptyFinalLines(mappings);
 
@@ -229,6 +242,7 @@ export function toDecodedMap(map: GenMapping): DecodedSourceMap {
     sources: sources.array,
     sourcesContent,
     mappings,
+    ignoreList: ignoreList.array,
   };
 }
 
@@ -255,6 +269,7 @@ export function fromMap(input: SourceMapInput): GenMapping {
   putAll(cast(gen)._sources, map.sources as string[]);
   cast(gen)._sourcesContent = map.sourcesContent || map.sources.map(() => null);
   cast(gen)._mappings = decodedMappings(map) as GenMapping['_mappings'];
+  if (map.ignoreList) putAll(cast(gen)._ignoreList, map.ignoreList);
 
   return gen;
 }
@@ -375,8 +390,8 @@ function removeEmptyFinalLines(mappings: SourceMapSegment[][]) {
   if (len < length) mappings.length = len;
 }
 
-function putAll(strarr: SetArray, array: string[]) {
-  for (let i = 0; i < array.length; i++) put(strarr, array[i]);
+function putAll<T extends string | number>(setarr: SetArray<T>, array: T[]) {
+  for (let i = 0; i < array.length; i++) put(setarr, array[i]);
 }
 
 function skipSourceless(line: SourceMapSegment[], index: number): boolean {

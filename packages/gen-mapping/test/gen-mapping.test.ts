@@ -10,6 +10,7 @@ import {
   fromMap,
   maybeAddSegment,
   maybeAddMapping,
+  setIgnore,
 } from '../src/gen-mapping';
 
 describe('GenMapping', () => {
@@ -59,6 +60,13 @@ describe('GenMapping', () => {
 
       assert.deepEqual(toDecodedMap(map).mappings, [[[1, 0, 2, 3, 0]]]);
     });
+
+    it('has ignoreList', () => {
+      const map = new GenMapping();
+      setIgnore(map, 'input.js');
+
+      assert.deepEqual(toDecodedMap(map).ignoreList, [0]);
+    });
   });
 
   describe('toEncodedMap', () => {
@@ -106,6 +114,13 @@ describe('GenMapping', () => {
       addSegment(map, 0, 1, 'input.js', 2, 3, 'foo');
 
       assert.deepEqual(toEncodedMap(map).mappings, 'CAEGA');
+    });
+
+    it('has ignoreList', () => {
+      const map = new GenMapping();
+      setIgnore(map, 'input.js');
+
+      assert.deepEqual(toDecodedMap(map).ignoreList, [0]);
     });
   });
 
@@ -842,6 +857,79 @@ describe('GenMapping', () => {
 
         assert.deepEqual(toDecodedMap(map).mappings, [[[0, 0, 0, 0]]]);
       });
+    });
+  });
+
+  describe('setSourceContent', () => {
+    it('sets source content for source', () => {
+      const map = new GenMapping();
+      addSegment(map, 0, 0, 'input.js', 0, 0);
+
+      setSourceContent(map, 'input.js', 'input');
+
+      assert.deepEqual(toDecodedMap(map).sourcesContent, ['input']);
+    });
+
+    it('sets source content for many sources', () => {
+      const map = new GenMapping();
+      addSegment(map, 0, 0, 'first.js', 0, 0);
+      addSegment(map, 0, 1, 'second.js', 0, 0);
+
+      setSourceContent(map, 'second.js', 'second');
+      setSourceContent(map, 'first.js', 'first');
+
+      assert.deepEqual(toDecodedMap(map).sourcesContent, ['first', 'second']);
+    });
+
+    it('adds unknown source file', () => {
+      const map = new GenMapping();
+
+      setSourceContent(map, 'input.js', 'input');
+
+      assert.deepEqual(toDecodedMap(map).sources, ['input.js']);
+      assert.deepEqual(toDecodedMap(map).sourcesContent, ['input']);
+    });
+  });
+
+  describe('setIgnore', () => {
+    it('marks source file as ignored', () => {
+      const map = new GenMapping();
+      addSegment(map, 0, 0, 'input.js', 0, 0);
+
+      setIgnore(map, 'input.js');
+
+      assert.deepEqual(toDecodedMap(map).ignoreList, [0]);
+    });
+
+    it('marks many source files as ignored', () => {
+      const map = new GenMapping();
+      addSegment(map, 0, 0, 'first.js', 0, 0);
+      addSegment(map, 0, 1, 'second.js', 0, 0);
+
+      setIgnore(map, 'second.js');
+      setIgnore(map, 'first.js');
+
+      assert.deepEqual(toDecodedMap(map).ignoreList, [1, 0]);
+    });
+
+    it('adds unknown source file', () => {
+      const map = new GenMapping();
+
+      setIgnore(map, 'input.js');
+
+      assert.deepEqual(toDecodedMap(map).sources, ['input.js']);
+      assert.deepEqual(toDecodedMap(map).sourcesContent, [null]);
+      assert.deepEqual(toDecodedMap(map).ignoreList, [0]);
+    });
+
+    it('unignores source file', () => {
+      const map = new GenMapping();
+      addSegment(map, 0, 0, 'input.js', 0, 0);
+
+      setIgnore(map, 'input.js');
+      setIgnore(map, 'input.js', false);
+
+      assert.deepEqual(toDecodedMap(map).ignoreList, []);
     });
   });
 });
