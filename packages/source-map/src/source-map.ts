@@ -58,7 +58,6 @@ export class SourceMapConsumer {
   }
 
   get mappings(): string {
-    // TODO :: should this be cached ?
     return encodedMappings(this._map);
   }
 

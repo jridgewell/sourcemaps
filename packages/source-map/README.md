@@ -48,7 +48,10 @@ smc.originalPositionFor({ line: 1, column: 0 });
 
 #### SourceMapConsumer.prototype.mappings
 
-TODO
+```typescript
+const smc = new SourceMapConsumer(map);
+smc.mappings; // AAAA
+```
 
 #### SourceMapConsumer.prototype.allGeneratedPositionsFor(originalPosition)
 
@@ -158,6 +161,13 @@ smg.setSourceContent('input.js', 'foobar');
 ```typescript
 const smg = new SourceMapGenerator();
 smg.toJSON(); // { version: 3, names: [], sources: [], mappings: '' }
+```
+
+#### SourceMapGenerator.prototype.toString()
+
+```typescript
+const smg = new SourceMapGenerator();
+smg.toJSON(); // "{version:3,names:[],sources:[],mappings:''}"
 ```
 
 #### SourceMapGenerator.prototype.toDecodedMap()
