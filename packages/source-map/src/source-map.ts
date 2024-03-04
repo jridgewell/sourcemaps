@@ -1,5 +1,3 @@
-import resolveUri from '@jridgewell/resolve-uri';
-
 import {
   AnyMap,
   originalPositionFor,
@@ -27,15 +25,6 @@ export type { TraceMap, SourceMapInput, SectionedSourceMapInput, DecodedSourceMa
 
 import type { Mapping, EncodedSourceMap } from '@jridgewell/gen-mapping';
 export type { Mapping, EncodedSourceMap };
-
-function resolve(input: string, base: string | undefined): string {
-  // The base is always treated as a directory, if it's not empty.
-  // https://github.com/mozilla/source-map/blob/8cb3ee57/lib/util.js#L327
-  // https://github.com/chromium/chromium/blob/da4adbb3/third_party/blink/renderer/devtools/front_end/sdk/SourceMap.js#L400-L401
-  if (base && !base.endsWith('/')) base += '/';
-
-  return resolveUri(input, base);
-}
 
 export class SourceMapConsumer {
   private declare _map: TraceMap;
@@ -114,15 +103,10 @@ export class SourceMapConsumer {
       return sourceContent;
     }
 
-    const resolvedSource = resolve(aSource, this.sourceRoot);
-    if (this.sources.indexOf(resolvedSource) > -1) {
-      return this.sourcesContent[this.sources.indexOf(resolvedSource)];
-    }
-
     if (nullOnMissing) {
       return null;
     } else {
-      throw new Error('"' + resolvedSource + '" is not in the SourceMap.');
+      throw new Error('"' + aSource + '" is not in the SourceMap.');
     }
   }
 

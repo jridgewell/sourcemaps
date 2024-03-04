@@ -67,7 +67,6 @@
   },
   "dependencies": {
     "@jridgewell/gen-mapping": "^0.3.0",
-    "@jridgewell/resolve-uri": "^3.0.7",
     "@jridgewell/trace-mapping": "^0.3.11"
   }
 }
