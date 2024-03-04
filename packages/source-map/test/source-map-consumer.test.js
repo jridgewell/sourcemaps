@@ -64,6 +64,53 @@ describe('SourceMapConsumer.sourceContentFor', () => {
 
 })
 
+describe('SourceMapConsuper.hasContentsOfAllSources', () => {
+
+  function createSourceMapWithoutSources() {
+    var smg = new SourceMapGenerator({
+      sourceRoot: 'http://example.com/',
+      file: 'foo.js'
+    });
+    smg.addMapping({
+      original: { line: 1, column: 1 },
+      generated: { line: 2, column: 2 },
+      source: 'bar.js'
+    });
+    smg.addMapping({
+      original: { line: 2, column: 2 },
+      generated: { line: 4, column: 4 },
+      source: 'baz.js',
+      name: 'dirtMcGirt'
+    });
+
+    return smg;
+  }
+
+  it('has no content', () => {
+    const smg = createSourceMapWithoutSources();
+
+    var smc = SourceMapConsumer.fromSourceMap(smg);
+    assert.equal(smc.hasContentsOfAllSources(), false);
+  });
+
+  it('has partial content', () => {
+    const smg = createSourceMapWithoutSources();
+    smg.setSourceContent('baz.js', 'baz.js content');
+
+    var smc = SourceMapConsumer.fromSourceMap(smg);
+    assert.equal(smc.hasContentsOfAllSources(), false);
+  });
+
+  it('has all content', () => {
+    const smg = createSourceMapWithoutSources();
+    smg.setSourceContent('bar.js', 'bar.js content');
+    smg.setSourceContent('baz.js', 'baz.js content');
+
+    var smc = SourceMapConsumer.fromSourceMap(smg);
+    assert.equal(smc.hasContentsOfAllSources(), true);
+  });
+});
+
 it('SourceMapConsumer.fromSourceMap', () => {
   var smg = new SourceMapGenerator({
     sourceRoot: 'http://example.com/',

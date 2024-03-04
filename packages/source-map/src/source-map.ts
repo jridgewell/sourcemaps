@@ -82,15 +82,17 @@ export class SourceMapConsumer {
   }
 
   hasContentsOfAllSources(): boolean {
-    if (!this.sourcesContent) {
+    if (!this.sourcesContent || this.sourcesContent.length < this.sources.length) {
       return false;
     }
-    return (
-      this.sourcesContent.length >= this.sources.length &&
-      !this.sourcesContent.some(function (sc) {
-        return sc == null;
-      })
-    );
+
+    for (const content of this.sourcesContent) {
+      if (content == null) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   sourceContentFor(aSource: string, nullOnMissing?: boolean): string | null {
