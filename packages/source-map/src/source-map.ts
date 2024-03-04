@@ -15,7 +15,6 @@ import {
   toEncodedMap,
   setSourceContent,
   fromMap,
-  applySourceMap,
 } from '@jridgewell/gen-mapping';
 
 import type {
@@ -165,20 +164,6 @@ export class SourceMapGenerator {
     content: Parameters<typeof setSourceContent>[2],
   ): ReturnType<typeof setSourceContent> {
     setSourceContent(this._map, source, content);
-  }
-
-  applySourceMap(
-    sourceMapConsumer: SourceMapConsumer,
-    sourceFile?: string,
-    sourceMapPath?: string,
-  ) {
-    // TODO :: not sure how sourceMapConsumer should be typed / converted
-    applySourceMap(
-      this._map,
-      new AnyMap(sourceMapConsumer) as unknown as any,
-      sourceFile,
-      sourceMapPath,
-    );
   }
 
   toJSON(): ReturnType<typeof toEncodedMap> {
