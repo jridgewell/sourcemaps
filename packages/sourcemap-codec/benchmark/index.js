@@ -9,6 +9,7 @@ const originalSourcemapCodec = require('sourcemap-codec');
 const sourceMap061 = require('source-map');
 const sourceMapWasm = require('source-map-wasm');
 const sourcemapCodecVersion = require('jridgewell-sourcemap-codec/package.json').version;
+const ChromeMap = require('./chrome').SourceMap;
 
 const dir = relative(process.cwd(), __dirname);
 
@@ -71,6 +72,9 @@ async function bench(file) {
       consumerWasm._parseMappings(encoded, '');
       return consumerWasm;
     });
+    track('chrome dev tools', results, () => {
+      new ChromeMap('url', map);
+    });
     const winner = results.reduce((min, cur) => {
       if (cur.delta < min.delta) return cur;
       return min;
@@ -97,6 +101,9 @@ async function bench(file) {
     .add('decode: source-map-0.8.0', () => {
       consumerWasm.destroy();
       consumerWasm._parseMappings(encoded, '');
+    })
+    .add('chrome dev tools', () => {
+      new ChromeMap('url', map);
     })
     // add listeners
     .on('error', ({ error }) => console.error(error))
