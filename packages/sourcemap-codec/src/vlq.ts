@@ -60,6 +60,23 @@ export function encodeInteger(buf: Uint8Array, pos: number, num: number, relativ
   return num;
 }
 
+export function maybeWrite(
+  build: string,
+  buf: Uint8Array,
+  pos: number,
+  copy: Uint8Array,
+  length: number,
+): string {
+  if (pos < length) {
+    posOut = pos;
+    return build;
+  }
+  const out = td.decode(buf);
+  copy.copyWithin(0, length, pos);
+  posOut = pos - length;
+  return build + out;
+}
+
 // Provide a fallback for older environments.
 export const td =
   typeof TextDecoder !== 'undefined'

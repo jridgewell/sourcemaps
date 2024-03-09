@@ -7,6 +7,7 @@ import {
   posOut,
   indexOf,
   td,
+  maybeWrite,
 } from './vlq';
 // export { decodeOriginalScopes } from './scopes';
 
@@ -78,7 +79,9 @@ export function encode(decoded: SourceMapMappings): string;
 export function encode(decoded: Readonly<SourceMapMappings>): string;
 export function encode(decoded: Readonly<SourceMapMappings>): string {
   const bufLength = 1024 * 16;
-  const subLength = bufLength - 36;
+  // We can push up to 5 ints, each int can take at most 7 chars, and we
+  // may push a comma.
+  const subLength = bufLength - (7 * 5 + 1);
   const buf = new Uint8Array(bufLength);
   const sub = buf.subarray(0, subLength);
   let pos = 0;
@@ -91,26 +94,18 @@ export function encode(decoded: Readonly<SourceMapMappings>): string {
 
   for (let i = 0; i < decoded.length; i++) {
     const line = decoded[i];
-    if (i > 0) {
-      if (pos === bufLength) {
-        out += td.decode(buf);
-        pos = 0;
-      }
-      buf[pos++] = semicolon;
-    }
+    out = maybeWrite(out, buf, pos, buf, bufLength);
+    pos = posOut;
+    if (i > 0) buf[pos++] = semicolon;
+
     if (line.length === 0) continue;
 
     genColumn = 0;
 
     for (let j = 0; j < line.length; j++, pos = posOut) {
       const segment = line[j];
-      // We can push up to 5 ints, each int can take at most 7 chars, and we
-      // may push a comma.
-      if (pos > subLength) {
-        out += td.decode(sub);
-        buf.copyWithin(0, subLength, pos);
-        pos -= subLength;
-      }
+      out = maybeWrite(out, sub, pos, buf, subLength);
+      pos = posOut;
       if (j > 0) buf[pos++] = comma;
 
       genColumn = encodeInteger(buf, pos, segment[0], genColumn);
