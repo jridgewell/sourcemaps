@@ -4,7 +4,7 @@ const { readdirSync, readFileSync } = require('fs');
 const { join, relative } = require('path');
 const Benchmark = require('benchmark');
 const localCode = require('../');
-const sourcemapCodec = require('jridgewell-sourcemap-codec');
+const latestSourcemapCodec = require('jridgewell-sourcemap-codec');
 const originalSourcemapCodec = require('sourcemap-codec');
 const sourceMap061 = require('source-map');
 const sourceMapWasm = require('source-map-wasm');
@@ -12,6 +12,7 @@ const sourcemapCodecVersion = require('jridgewell-sourcemap-codec/package.json')
 const ChromeMap = require('./chrome').SourceMap;
 
 const dir = relative(process.cwd(), __dirname);
+const diff = !!process.env.DIFF;
 
 console.log(`node ${process.version}\n`);
 
@@ -44,6 +45,7 @@ async function bench(file) {
   const decoded = localCode.decode(encoded);
   const consumer061 = new sourceMap061.SourceMapConsumer(map);
   const consumerWasm = await new sourceMapWasm.SourceMapConsumer(map);
+  let bench;
 
   const segments = decoded.reduce((cur, line) => {
     return cur + line.length;
@@ -54,27 +56,30 @@ async function bench(file) {
   {
     console.log('Decode Memory Usage:');
     const results = [];
-    track('local code', results, () => {
+    track('@jridgewell/sourcemap-codec', results, () => {
       return localCode.decode(encoded);
     });
-    track(`@jridgewell/sourcemap-codec ${sourcemapCodecVersion}`, results, () => {
-      return sourcemapCodec.decode(encoded);
-    });
-    track('sourcemap-codec', results, () => {
-      return originalSourcemapCodec.decode(encoded);
-    });
-    track('source-map-0.6.1', results, () => {
-      consumer061._parseMappings(encoded, '');
-      return consumer061;
-    });
-    track('source-map-0.8.0', results, () => {
-      consumerWasm.destroy();
-      consumerWasm._parseMappings(encoded, '');
-      return consumerWasm;
-    });
-    track('chrome dev tools', results, () => {
-      new ChromeMap('url', map);
-    });
+    if (diff) {
+      track(`@jridgewell/sourcemap-codec @latest`, results, () => {
+        return latestSourcemapCodec.decode(encoded);
+      });
+    } else {
+      track('sourcemap-codec', results, () => {
+        return originalSourcemapCodec.decode(encoded);
+      });
+      track('source-map-0.6.1', results, () => {
+        consumer061._parseMappings(encoded, '');
+        return consumer061;
+      });
+      track('source-map-0.8.0', results, () => {
+        consumerWasm.destroy();
+        consumerWasm._parseMappings(encoded, '');
+        return consumerWasm;
+      });
+      track('chrome dev tools', results, () => {
+        new ChromeMap('url', map);
+      });
+    }
     const winner = results.reduce((min, cur) => {
       if (cur.delta < min.delta) return cur;
       return min;
@@ -85,27 +90,31 @@ async function bench(file) {
   console.log('');
 
   console.log('Decode speed:');
-  new Benchmark.Suite()
-    .add('decode: local code', () => {
-      localCode.decode(encoded);
-    })
-    .add(`decode: @jridgewell/sourcemap-codec ${sourcemapCodecVersion}`, () => {
-      sourcemapCodec.decode(encoded);
-    })
-    .add('decode: sourcemap-codec', () => {
-      originalSourcemapCodec.decode(encoded);
-    })
-    .add('decode: source-map-0.6.1', () => {
-      consumer061._parseMappings(encoded, '');
-    })
-    .add('decode: source-map-0.8.0', () => {
-      consumerWasm.destroy();
-      consumerWasm._parseMappings(encoded, '');
-    })
-    .add('chrome dev tools', () => {
-      new ChromeMap('url', map);
-    })
-    // add listeners
+  bench = new Benchmark.Suite().add('decode: @jridgewell/sourcemap-codec', () => {
+    localCode.decode(encoded);
+  });
+  if (diff) {
+    bench = bench.add(`decode: @jridgewell/sourcemap-codec @latest`, () => {
+      latestSourcemapCodec.decode(encoded);
+    });
+  } else {
+    bench = bench
+      .add('decode: sourcemap-codec', () => {
+        originalSourcemapCodec.decode(encoded);
+      })
+      .add('decode: source-map-0.6.1', () => {
+        consumer061._parseMappings(encoded, '');
+      })
+      .add('decode: source-map-0.8.0', () => {
+        consumerWasm.destroy();
+        consumerWasm._parseMappings(encoded, '');
+      })
+      .add('chrome dev tools', () => {
+        new ChromeMap('url', map);
+      });
+  }
+  // add listeners
+  bench
     .on('error', ({ error }) => console.error(error))
     .on('cycle', (event) => {
       console.log(String(event.target));
@@ -125,21 +134,24 @@ async function bench(file) {
   {
     console.log('Encode Memory Usage:');
     const results = [];
-    track('local code', results, () => {
+    track('@jridgewell/sourcemap-codec', results, () => {
       return localCode.encode(decoded);
     });
-    track(`@jridgewell/sourcemap-codec ${sourcemapCodecVersion}`, results, () => {
-      return sourcemapCodec.encode(decoded);
-    });
-    track('sourcemap-codec', results, () => {
-      return originalSourcemapCodec.encode(decoded);
-    });
-    track('source-map-0.6.1', results, () => {
-      return generator061._serializeMappings();
-    });
-    track('source-map-0.8.0', results, () => {
-      return generatorWasm._serializeMappings();
-    });
+    if (diff) {
+      track(`@jridgewell/sourcemap-codec @latest`, results, () => {
+        return latestSourcemapCodec.encode(decoded);
+      });
+    } else {
+      track('sourcemap-codec', results, () => {
+        return originalSourcemapCodec.encode(decoded);
+      });
+      track('source-map-0.6.1', results, () => {
+        return generator061._serializeMappings();
+      });
+      track('source-map-0.8.0', results, () => {
+        return generatorWasm._serializeMappings();
+      });
+    }
     const winner = results.reduce((min, cur) => {
       if (cur.delta < min.delta) return cur;
       return min;
@@ -150,23 +162,27 @@ async function bench(file) {
   console.log('');
 
   console.log('Encode speed:');
-  new Benchmark.Suite()
-    .add('encode: local code', () => {
-      localCode.encode(decoded);
-    })
-    .add(`encode: @jridgewell/sourcemap-codec ${sourcemapCodecVersion}`, () => {
-      sourcemapCodec.encode(decoded);
-    })
-    .add('encode: sourcemap-codec', () => {
-      originalSourcemapCodec.encode(decoded);
-    })
-    .add('encode: source-map-0.6.1', () => {
-      generator061._serializeMappings();
-    })
-    .add('encode: source-map-0.8.0', () => {
-      generatorWasm._serializeMappings();
-    })
-    // add listeners
+  bench = new Benchmark.Suite().add('encode: local code', () => {
+    localCode.encode(decoded);
+  });
+  if (diff) {
+    bench = bench.add(`encode: @jridgewell/sourcemap-codec ${sourcemapCodecVersion}`, () => {
+      latestSourcemapCodec.encode(decoded);
+    });
+  } else {
+    bench = bench
+      .add('encode: sourcemap-codec', () => {
+        originalSourcemapCodec.encode(decoded);
+      })
+      .add('encode: source-map-0.6.1', () => {
+        generator061._serializeMappings();
+      })
+      .add('encode: source-map-0.8.0', () => {
+        generatorWasm._serializeMappings();
+      });
+  }
+  // add listeners
+  bench
     .on('error', ({ error }) => console.error(error))
     .on('cycle', (event) => {
       console.log(String(event.target));
