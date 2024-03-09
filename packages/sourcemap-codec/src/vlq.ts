@@ -45,26 +45,19 @@ export function decodeInteger(mappings: string, pos: number, relative: number): 
   return relative + value;
 }
 
-export function encodeInteger(
-  buf: Uint8Array,
-  pos: number,
-  state: number[],
-  segment: number[],
-  j: number,
-): number {
-  const next = segment[j];
-  let num = next - state[j];
-  state[j] = next;
+export function encodeInteger(buf: Uint8Array, pos: number, num: number, relative: number): number {
+  let delta = num - relative;
 
-  num = num < 0 ? (-num << 1) | 1 : num << 1;
+  delta = delta < 0 ? (-delta << 1) | 1 : delta << 1;
   do {
-    let clamped = num & 0b011111;
-    num >>>= 5;
-    if (num > 0) clamped |= 0b100000;
+    let clamped = delta & 0b011111;
+    delta >>>= 5;
+    if (delta > 0) clamped |= 0b100000;
     buf[pos++] = intToChar[clamped];
-  } while (num > 0);
+  } while (delta > 0);
 
-  return pos;
+  posOut = pos;
+  return num;
 }
 
 // Provide a fallback for older environments.

@@ -33,7 +33,7 @@ export function decode(mappings: string): SourceMapMappings {
     let lastCol = 0;
     genColumn = 0;
 
-    for (let i = index; i < semi; i++) {
+    for (let i = index; i < semi; i = posOut + 1) {
       let seg: SourceMapSegment;
 
       genColumn = decodeInteger(mappings, i, genColumn);
@@ -56,7 +56,6 @@ export function decode(mappings: string): SourceMapMappings {
       }
 
       line.push(seg);
-      i = posOut;
     }
 
     if (!sorted) sort(line);
@@ -78,13 +77,17 @@ function sortComparator(a: SourceMapSegment, b: SourceMapSegment): number {
 export function encode(decoded: SourceMapMappings): string;
 export function encode(decoded: Readonly<SourceMapMappings>): string;
 export function encode(decoded: Readonly<SourceMapMappings>): string {
-  const state: [number, number, number, number, number] = new Uint32Array(5) as any;
   const bufLength = 1024 * 16;
   const subLength = bufLength - 36;
   const buf = new Uint8Array(bufLength);
   const sub = buf.subarray(0, subLength);
   let pos = 0;
   let out = '';
+  let genColumn = 0;
+  let sourcesIndex = 0;
+  let sourceLine = 0;
+  let sourceColumn = 0;
+  let namesIndex = 0;
 
   for (let i = 0; i < decoded.length; i++) {
     const line = decoded[i];
@@ -97,9 +100,9 @@ export function encode(decoded: Readonly<SourceMapMappings>): string {
     }
     if (line.length === 0) continue;
 
-    state[0] = 0;
+    genColumn = 0;
 
-    for (let j = 0; j < line.length; j++) {
+    for (let j = 0; j < line.length; j++, pos = posOut) {
       const segment = line[j];
       // We can push up to 5 ints, each int can take at most 7 chars, and we
       // may push a comma.
@@ -110,15 +113,15 @@ export function encode(decoded: Readonly<SourceMapMappings>): string {
       }
       if (j > 0) buf[pos++] = comma;
 
-      pos = encodeInteger(buf, pos, state, segment, 0); // genColumn
+      genColumn = encodeInteger(buf, pos, segment[0], genColumn);
 
       if (segment.length === 1) continue;
-      pos = encodeInteger(buf, pos, state, segment, 1); // sourcesIndex
-      pos = encodeInteger(buf, pos, state, segment, 2); // sourceLine
-      pos = encodeInteger(buf, pos, state, segment, 3); // sourceColumn
+      sourcesIndex = encodeInteger(buf, posOut, segment[1], sourcesIndex);
+      sourceLine = encodeInteger(buf, posOut, segment[2], sourceLine);
+      sourceColumn = encodeInteger(buf, posOut, segment[3], sourceColumn);
 
       if (segment.length === 4) continue;
-      pos = encodeInteger(buf, pos, state, segment, 4); // namesIndex
+      namesIndex = encodeInteger(buf, posOut, segment[4], namesIndex);
     }
   }
 
