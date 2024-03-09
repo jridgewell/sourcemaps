@@ -1,10 +1,9 @@
 /* eslint-env node, mocha */
 
-const decode = require('../').decode;
-const encode = require('../').encode;
-const assert = require('assert');
-const fs = require('fs');
-const path = require('path');
+import { encode, decode } from '../src/sourcemap-codec';
+import { strict as assert } from 'assert';
+import * as fs from 'fs';
+import * as path from 'path';
 
 describe('sourcemap-codec', () => {
   // TODO more tests
