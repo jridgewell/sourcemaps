@@ -18,8 +18,8 @@ describe('sourcemap-codec', () => {
       decoded: [[], [], [], []],
     },
     {
-      encoded: 'A,AAAA;;AACDE;',
-      decoded: [[[0], [0, 0, 0, 0]], [], [[0, 0, 1, -1, 2]], []],
+      encoded: 'A,AAAC;;AACDE;',
+      decoded: [[[0], [0, 0, 0, 1]], [], [[0, 0, 1, 0, 2]], []],
     },
     {
       encoded: ';;;;EAEEA,EAAE,EAAC,CAAE;ECQY,UACC',
@@ -133,8 +133,14 @@ describe('sourcemap-codec', () => {
     },
     {
       // Handle smallest 32bit int
-      encoded: 'B',
-      decoded: [[[-2147483648]]],
+      encoded: 'AAA+/////D,AAAE,AAAB',
+      decoded: [
+        [
+          [0, 0, 0, 2147483647],
+          [0, 0, 0, 2147483649],
+          [0, 0, 0, 1],
+        ],
+      ],
     },
   ];
 
