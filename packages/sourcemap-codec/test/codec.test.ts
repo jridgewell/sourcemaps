@@ -1,13 +1,13 @@
 /* eslint-env node, mocha */
 
-import { encode, decode } from '../src/sourcemap-codec';
+import { encode, decode, SourceMapMappings } from '../src/sourcemap-codec';
 import { strict as assert } from 'assert';
 import * as fs from 'fs';
 import * as path from 'path';
 
 describe('sourcemap-codec', () => {
   // TODO more tests
-  let tests = [
+  let tests: { encoded: string; decoded: SourceMapMappings; only?: true }[] = [
     {
       encoded: 'AAAA',
       decoded: [[[0, 0, 0, 0]]],
@@ -144,7 +144,7 @@ describe('sourcemap-codec', () => {
   ];
 
   const filtered = tests.filter((test) => {
-    return test.solo;
+    return test.only;
   });
 
   tests = filtered.length ? filtered : tests;
