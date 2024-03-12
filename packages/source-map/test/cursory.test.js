@@ -23,6 +23,7 @@ it('SourceMapGenerator', () => {
     sources: ['input.js'],
     sourcesContent: ['foobar'],
     mappings: 'AAAAA',
+    ignoreList: [],
   });
 
   assert.deepEqual(smg.toDecodedMap(), {
@@ -33,6 +34,7 @@ it('SourceMapGenerator', () => {
     sources: ['input.js'],
     sourcesContent: ['foobar'],
     mappings: [[[0, 0, 0, 0, 0]]],
+    ignoreList: [],
   });
 });
 

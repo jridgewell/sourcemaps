@@ -55,9 +55,6 @@ smc.mappings; // AAAA
 
 #### SourceMapConsumer.prototype.allGeneratedPositionsFor(originalPosition)
 
-> This implementation is different from the other packages as it
-> will only return one position.
-
 ```typescript
 const smc = new SourceMapConsumer(map);
 smc.allGeneratedpositionsfor({ line: 1, column: 5, source: "baz.ts" });
@@ -100,9 +97,6 @@ smc.hasContentsOfAllSources();
 ```
 
 #### SourceMapConsumer.prototype.sourceContentFor(source[, returnNullOnMissing])
-
-> This implementation is different from the other packages as it
-> can only resolve from file names specified in input, no name resolution is performed.
 
 ```typescript
 const smc = new SourceMapConsumer(map);
@@ -181,10 +175,6 @@ smg.toDecodedMap(); // { version: 3, names: [], sources: [], mappings: [] }
 
 This implementation has some differences with `source-map` and `source-map-js`.
 
-- `SourceMapConsumer.prototype.allGeneratedPositionsFor()`
-  - Cannot return more than one value
-- `SourceMapConsumer.prototype.sourceContentFor()`
-  - Can only resolve from file names specified in input, no name resolution is performed
 - `SourceMapConsumer.prototype.eachMapping()`
   - Does not support the `order` argument
 - `SourceMapGenerator.prototype.applySourceMap()`

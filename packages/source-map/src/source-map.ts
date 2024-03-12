@@ -2,6 +2,7 @@ import {
   AnyMap,
   originalPositionFor,
   generatedPositionFor,
+  allGeneratedPositionsFor,
   eachMapping,
   encodedMappings,
   sourceContentFor,
@@ -76,12 +77,11 @@ export class SourceMapConsumer {
   allGeneratedPositionsFor(
     originalPosition: Parameters<typeof generatedPositionFor>[1],
   ): ReturnType<typeof generatedPositionFor>[] {
-    // This doesn't map exactly to the same feature
-    return [generatedPositionFor(this._map, originalPosition)];
+    return allGeneratedPositionsFor(this._map, originalPosition);
   }
 
   hasContentsOfAllSources(): boolean {
-    if (!this.sourcesContent || this.sourcesContent.length < this.sources.length) {
+    if (!this.sourcesContent || this.sourcesContent.length !== this.sources.length) {
       return false;
     }
 
@@ -94,33 +94,24 @@ export class SourceMapConsumer {
     return true;
   }
 
-  sourceContentFor(aSource: string, nullOnMissing?: boolean): string | null {
-    if (!this.sourcesContent) {
-      return null;
-    }
-
-    const sourceContent = sourceContentFor(this._map, aSource);
+  sourceContentFor(source: string, nullOnMissing?: boolean): string | null {
+    const sourceContent = sourceContentFor(this._map, source);
     if (sourceContent != null) {
       return sourceContent;
     }
 
     if (nullOnMissing) {
       return null;
-    } else {
-      throw new Error('"' + aSource + '" is not in the SourceMap.');
     }
+    throw new Error(`"${source}" is not in the SourceMap.`);
   }
 
   eachMapping(
-    aCallback: Parameters<typeof eachMapping>[1],
-    aContext?: any /*, aOrder?: number*/,
+    callback: Parameters<typeof eachMapping>[1],
+    context?: any /*, order?: number*/,
   ): void {
     // order is ignored as @jridgewell/trace-map doesn't implement it
-
-    const context = aContext || null;
-    const boundCallback = aCallback.bind(context);
-
-    eachMapping(this._map, boundCallback);
+    eachMapping(this._map, context ? callback.bind(context) : callback);
   }
 
   destroy() {
@@ -136,8 +127,8 @@ export class SourceMapGenerator {
     this._map = opts instanceof GenMapping ? opts : new GenMapping(opts);
   }
 
-  static fromSourceMap(sourceMapConsumer: SourceMapConsumer) {
-    return new SourceMapGenerator(fromMap(sourceMapConsumer));
+  static fromSourceMap(consumer: SourceMapConsumer) {
+    return new SourceMapGenerator(fromMap(consumer));
   }
 
   addMapping(mapping: Parameters<typeof maybeAddMapping>[1]): ReturnType<typeof maybeAddMapping> {
