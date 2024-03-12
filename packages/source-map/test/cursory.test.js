@@ -1,4 +1,4 @@
-const { SourceMapConsumer, SourceMapGenerator } = require('..');
+const { SourceMapConsumer, SourceMapGenerator } = require('../src/source-map');
 const assert = require('assert');
 
 it('SourceMapGenerator', () => {

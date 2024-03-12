@@ -1,17 +1,30 @@
-import { AnyMap, originalPositionFor } from '@jridgewell/trace-mapping';
+import {
+  AnyMap,
+  originalPositionFor,
+  generatedPositionFor,
+  eachMapping,
+  encodedMappings,
+  sourceContentFor,
+} from '@jridgewell/trace-mapping';
 import {
   GenMapping,
   maybeAddMapping,
   toDecodedMap,
   toEncodedMap,
   setSourceContent,
+  fromMap,
 } from '@jridgewell/gen-mapping';
 
-import type { TraceMap, SectionedSourceMapInput } from '@jridgewell/trace-mapping';
-export type { TraceMap, SectionedSourceMapInput };
+import type {
+  TraceMap,
+  SourceMapInput,
+  SectionedSourceMapInput,
+  DecodedSourceMap,
+} from '@jridgewell/trace-mapping';
+export type { TraceMap, SourceMapInput, SectionedSourceMapInput, DecodedSourceMap };
 
-import type { Mapping, EncodedSourceMap, DecodedSourceMap } from '@jridgewell/gen-mapping';
-export type { Mapping, EncodedSourceMap, DecodedSourceMap };
+import type { Mapping, EncodedSourceMap } from '@jridgewell/gen-mapping';
+export type { Mapping, EncodedSourceMap };
 
 export class SourceMapConsumer {
   private declare _map: TraceMap;
@@ -20,6 +33,7 @@ export class SourceMapConsumer {
   declare sourceRoot: TraceMap['sourceRoot'];
   declare sources: TraceMap['sources'];
   declare sourcesContent: TraceMap['sourcesContent'];
+  declare version: TraceMap['version'];
 
   constructor(map: ConstructorParameters<typeof AnyMap>[0], mapUrl: Parameters<typeof AnyMap>[1]) {
     const trace = (this._map = new AnyMap(map, mapUrl));
@@ -29,12 +43,84 @@ export class SourceMapConsumer {
     this.sourceRoot = trace.sourceRoot;
     this.sources = trace.resolvedSources;
     this.sourcesContent = trace.sourcesContent;
+    this.version = trace.version;
+  }
+
+  static fromSourceMap(map: SourceMapGenerator, mapUrl: Parameters<typeof AnyMap>[1]) {
+    // This is more performant if we receive
+    // a @jridgewell/source-map SourceMapGenerator
+    if (map.toDecodedMap) {
+      return new SourceMapConsumer(map.toDecodedMap() as SectionedSourceMapInput, mapUrl);
+    }
+
+    // This is a fallback for `source-map` and `source-map-js`
+    return new SourceMapConsumer(map.toJSON() as SectionedSourceMapInput, mapUrl);
+  }
+
+  get mappings(): string {
+    return encodedMappings(this._map);
   }
 
   originalPositionFor(
     needle: Parameters<typeof originalPositionFor>[1],
   ): ReturnType<typeof originalPositionFor> {
     return originalPositionFor(this._map, needle);
+  }
+
+  generatedPositionFor(
+    originalPosition: Parameters<typeof generatedPositionFor>[1],
+  ): ReturnType<typeof generatedPositionFor> {
+    return generatedPositionFor(this._map, originalPosition);
+  }
+
+  allGeneratedPositionsFor(
+    originalPosition: Parameters<typeof generatedPositionFor>[1],
+  ): ReturnType<typeof generatedPositionFor>[] {
+    // This doesn't map exactly to the same feature
+    return [generatedPositionFor(this._map, originalPosition)];
+  }
+
+  hasContentsOfAllSources(): boolean {
+    if (!this.sourcesContent || this.sourcesContent.length < this.sources.length) {
+      return false;
+    }
+
+    for (const content of this.sourcesContent) {
+      if (content == null) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  sourceContentFor(aSource: string, nullOnMissing?: boolean): string | null {
+    if (!this.sourcesContent) {
+      return null;
+    }
+
+    const sourceContent = sourceContentFor(this._map, aSource);
+    if (sourceContent != null) {
+      return sourceContent;
+    }
+
+    if (nullOnMissing) {
+      return null;
+    } else {
+      throw new Error('"' + aSource + '" is not in the SourceMap.');
+    }
+  }
+
+  eachMapping(
+    aCallback: Parameters<typeof eachMapping>[1],
+    aContext?: any /*, aOrder?: number*/,
+  ): void {
+    // order is ignored as @jridgewell/trace-map doesn't implement it
+
+    const context = aContext || null;
+    const boundCallback = aCallback.bind(context);
+
+    eachMapping(this._map, boundCallback);
   }
 
   destroy() {
@@ -45,8 +131,13 @@ export class SourceMapConsumer {
 export class SourceMapGenerator {
   private declare _map: GenMapping;
 
-  constructor(opts: ConstructorParameters<typeof GenMapping>[0]) {
-    this._map = new GenMapping(opts);
+  constructor(opts: ConstructorParameters<typeof GenMapping>[0] | GenMapping) {
+    // TODO :: should this be duck-typed ?
+    this._map = opts instanceof GenMapping ? opts : new GenMapping(opts);
+  }
+
+  static fromSourceMap(sourceMapConsumer: SourceMapConsumer) {
+    return new SourceMapGenerator(fromMap(sourceMapConsumer));
   }
 
   addMapping(mapping: Parameters<typeof maybeAddMapping>[1]): ReturnType<typeof maybeAddMapping> {
@@ -62,6 +153,10 @@ export class SourceMapGenerator {
 
   toJSON(): ReturnType<typeof toEncodedMap> {
     return toEncodedMap(this._map);
+  }
+
+  toString(): string {
+    return JSON.stringify(this.toJSON());
   }
 
   toDecodedMap(): ReturnType<typeof toDecodedMap> {
