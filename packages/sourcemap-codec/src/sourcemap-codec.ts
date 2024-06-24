@@ -7,7 +7,9 @@ import {
   posOut,
   indexOf,
   td,
-  maybeWrite,
+  maybeFlush,
+  write,
+  resetPos,
 } from './vlq';
 // export { decodeOriginalScopes } from './scopes';
 
@@ -84,7 +86,7 @@ export function encode(decoded: Readonly<SourceMapMappings>): string {
   const subLength = bufLength - (7 * 5 + 1);
   const buf = new Uint8Array(bufLength);
   const sub = buf.subarray(0, subLength);
-  let pos = 0;
+  resetPos();
   let out = '';
   let genColumn = 0;
   let sourcesIndex = 0;
@@ -94,21 +96,19 @@ export function encode(decoded: Readonly<SourceMapMappings>): string {
 
   for (let i = 0; i < decoded.length; i++) {
     const line = decoded[i];
-    out = maybeWrite(out, buf, pos, buf, bufLength);
-    pos = posOut;
-    if (i > 0) buf[pos++] = semicolon;
+    out = maybeFlush(out, buf, posOut, buf, bufLength);
+    if (i > 0) write(buf, posOut, semicolon);
 
     if (line.length === 0) continue;
 
     genColumn = 0;
 
-    for (let j = 0; j < line.length; j++, pos = posOut) {
+    for (let j = 0; j < line.length; j++) {
       const segment = line[j];
-      out = maybeWrite(out, sub, pos, buf, subLength);
-      pos = posOut;
-      if (j > 0) buf[pos++] = comma;
+      out = maybeFlush(out, sub, posOut, buf, subLength);
+      if (j > 0) write(buf, posOut, comma);
 
-      genColumn = encodeInteger(buf, pos, segment[0], genColumn);
+      genColumn = encodeInteger(buf, posOut, segment[0], genColumn);
 
       if (segment.length === 1) continue;
       sourcesIndex = encodeInteger(buf, posOut, segment[1], sourcesIndex);
@@ -120,5 +120,5 @@ export function encode(decoded: Readonly<SourceMapMappings>): string {
     }
   }
 
-  return out + td.decode(buf.subarray(0, pos));
+  return out + td.decode(buf.subarray(0, posOut));
 }

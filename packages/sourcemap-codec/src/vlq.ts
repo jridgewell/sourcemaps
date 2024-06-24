@@ -22,6 +22,10 @@ export function indexOf(mappings: string, char: string, index: number): number {
 }
 
 export let posOut = 0;
+export function resetPos() {
+  posOut = 0;
+}
+
 export function decodeInteger(mappings: string, pos: number, relative: number): number {
   let value = 0;
   let shift = 0;
@@ -60,7 +64,7 @@ export function encodeInteger(buf: Uint8Array, pos: number, num: number, relativ
   return num;
 }
 
-export function maybeWrite(
+export function maybeFlush(
   build: string,
   buf: Uint8Array,
   pos: number,
@@ -75,6 +79,11 @@ export function maybeWrite(
   copy.copyWithin(0, length, pos);
   posOut = pos - length;
   return build + out;
+}
+
+export function write(buf: Uint8Array, pos: number, value: number) {
+  buf[pos] = value;
+  posOut = pos + 1;
 }
 
 // Provide a fallback for older environments.
