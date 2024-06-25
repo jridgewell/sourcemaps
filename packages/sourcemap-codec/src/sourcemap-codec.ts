@@ -11,7 +11,14 @@ import {
   write,
   resetPos,
 } from './vlq';
-// export { decodeOriginalScopes } from './scopes';
+
+export {
+  decodeOriginalScopes,
+  encodeOriginalScopes,
+  decodeGeneratedRanges,
+  encodeGeneratedRanges,
+} from './scopes';
+export type { OriginalScope, GeneratedRange, CallSite, ExpressionBinding } from './scopes';
 
 export type SourceMapSegment =
   | [number]
