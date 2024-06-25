@@ -566,13 +566,16 @@ export function addGeneratedRange(
     originalScope ? originalScope[0] : -1,
     originalScope ? originalScope[1] : -1,
   ];
-  if (isScope) range.isScope = true;
+  if (originalScope?.[2]) {
+    range.bindings = originalScope[2].map(() => [[-1]]);
+  }
   if (callsite) {
     const index = put(sources, callsite.source);
     if (index === sourcesContent.length) sourcesContent[index] = null;
     if (index === originalScopes.length) originalScopes[index] = [];
     range.callsite = [index, callsite.line - 1, callsite.column];
   }
+  if (isScope) range.isScope = true;
   generatedRanges.push(range);
 
   return [range, originalScope?.[2]];
