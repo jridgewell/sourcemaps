@@ -555,6 +555,7 @@ export function addGeneratedRange(
     _originalScopes: originalScopes,
     _sources: sources,
     _sourcesContent: sourcesContent,
+    _generatedRanges: generatedRanges,
   } = cast(map);
 
   const range: GeneratedRange = [
@@ -572,6 +573,7 @@ export function addGeneratedRange(
     if (index === originalScopes.length) originalScopes[index] = [];
     range.callsite = [index, callsite.line - 1, callsite.column];
   }
+  generatedRanges.push(range);
 
   return [range, originalScope?.[2]];
 }
