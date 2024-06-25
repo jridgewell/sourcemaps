@@ -221,7 +221,6 @@ export function decodeGeneratedRanges(input: string): GeneratedRange[] {
         }
 
         if (hasMoreVlq(input, posOut, semi)) {
-          debugger;
           const bindings: ExpressionBinding[][] = [];
           range.bindings = bindings;
           do {
