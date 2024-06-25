@@ -581,9 +581,9 @@ export function addGeneratedRange(
   return [range, originalScope?.[2]];
 }
 
-export function setEndPosition(range: GeneratedRange, pos: Pos) {
-  range[2] = pos.line - 1;
-  range[3] = pos.column;
+export function setEndPosition(range: GeneratedRangeInfo, pos: Pos) {
+  range[0][2] = pos.line - 1;
+  range[0][3] = pos.column;
 }
 
 export function addBinding(
