@@ -38,6 +38,7 @@ export interface BindingExpressionRange {
 }
 
 export type OriginalScopeInfo = [number, number, string[] | undefined];
+export type GeneratedRangeInfo = [GeneratedRange, string[] | undefined];
 
 export type Mapping =
   | {

@@ -21,6 +21,7 @@ import type {
   BindingExpressionRange,
   OriginalPos,
   OriginalScopeInfo,
+  GeneratedRangeInfo,
 } from './types';
 
 export type { DecodedSourceMap, EncodedSourceMap, Mapping };
@@ -548,7 +549,7 @@ export function addGeneratedRange(
     originalScope?: OriginalScopeInfo;
     callsite?: OriginalPos;
   },
-): GeneratedRange {
+): GeneratedRangeInfo {
   const { start, isScope, originalScope, callsite } = data;
   const {
     _originalScopes: originalScopes,
@@ -564,7 +565,6 @@ export function addGeneratedRange(
     originalScope ? originalScope[0] : -1,
     originalScope ? originalScope[1] : -1,
   ];
-  if (originalScope) (range as any).vars = originalScopes[originalScope[0]][originalScope[1]].vars;
   if (isScope) range.isScope = true;
   if (callsite) {
     const index = put(sources, callsite.source);
@@ -573,7 +573,7 @@ export function addGeneratedRange(
     range.callsite = [index, callsite.line - 1, callsite.column];
   }
 
-  return range;
+  return [range, originalScope?.[2]];
 }
 
 export function setEndPosition(range: GeneratedRange, pos: Pos) {
@@ -583,15 +583,15 @@ export function setEndPosition(range: GeneratedRange, pos: Pos) {
 
 export function addBinding(
   map: GenMapping,
-  range: GeneratedRange,
+  range: GeneratedRangeInfo,
   variable: string,
   expression: string | BindingExpressionRange,
 ) {
   const { _names: names } = cast(map);
-  const vars: string[] = (range as any).vars;
-  const bindings = (range.bindings ||= []);
+  const bindings = (range[0].bindings ||= []);
+  const vars = range[1];
 
-  const index = vars.indexOf(variable);
+  const index = vars!.indexOf(variable);
   const binding = getIndex(bindings, index);
 
   if (typeof expression === 'string') binding[0] = [put(names, expression)];
