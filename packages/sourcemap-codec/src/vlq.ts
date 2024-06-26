@@ -26,17 +26,6 @@ export function resetPos() {
   posOut = 0;
 }
 
-export function decodeFirstOctet(mappings: string, pos: number) {
-  const c = mappings.charCodeAt(pos);
-  let value = charToInt[c];
-  const shouldNegate = value & 1;
-  value >>>= 1;
-  if (shouldNegate) {
-    value = -0x80000000 | -value;
-  }
-  return value;
-}
-
 export function decodeInteger(mappings: string, pos: number, relative: number): number {
   let value = 0;
   let shift = 0;

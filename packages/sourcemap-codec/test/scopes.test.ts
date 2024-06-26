@@ -159,7 +159,7 @@ describe('scopes proposal', () => {
         ],
       },
       {
-        encoded: 'AKAADGFCAI,AGACAICG,mB;AGAAAEAI,mB,A',
+        encoded: 'AKAADFGCAI,AGACAICG,mB;AGAAAEAI,mB,A',
         decoded: [
           bindings(scope([0, 0, 1, 19, 0, 0], true), [[[-1]], [[3], [4, 1, 0]]]),
           bindings(callsite([0, 0, 0, 19, 0, 1], [0, 4, 1]), [[[3]]]),

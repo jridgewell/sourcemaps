@@ -9,7 +9,6 @@ import {
   write,
   td,
   resetPos,
-  decodeFirstOctet,
   semicolon,
 } from './vlq';
 
@@ -226,12 +225,11 @@ export function decodeGeneratedRanges(input: string): GeneratedRange[] {
           do {
             bindingLine = genLine;
             bindingColumn = genColumn;
-            let name = decodeInteger(input, posOut, 0);
-            const hasExpressions = decodeFirstOctet(input, posOut);
-            const binding: ExpressionBinding[] = [[name]];
-            bindings.push(binding);
-            if (hasExpressions < -1) {
-              const expressionsCount = decodeInteger(input, posOut, 0);
+            const expressionsCount = decodeInteger(input, posOut, 0);
+            let binding: ExpressionBinding[];
+            if (expressionsCount < -1) {
+              let name = decodeInteger(input, posOut, 0);
+              binding = [[name]];
               for (let i = -1; i > expressionsCount; i--) {
                 const prevBindingLine = bindingLine;
                 bindingLine = decodeInteger(input, posOut, bindingLine);
@@ -241,9 +239,12 @@ export function decodeGeneratedRanges(input: string): GeneratedRange[] {
                   bindingLine === prevBindingLine ? bindingColumn : 0,
                 );
                 name = decodeInteger(input, posOut, 0);
+                binding.push([name, bindingLine, bindingColumn]);
               }
-              binding.push([name, bindingLine, bindingColumn] as ExpressionBinding);
+            } else {
+              binding = [[expressionsCount]];
             }
+            bindings.push(binding);
           } while (hasMoreVlq(input, posOut, semi));
         }
 
@@ -356,18 +357,16 @@ export function encodeGeneratedRanges(ranges: GeneratedRange[]): string {
     if (hasBindings) {
       for (const binding of range.bindings!) {
         out = maybeFlush(out, sub, posOut, buf, subLength);
+        if (binding.length > 1) encodeInteger(buf, posOut, -binding.length, 0);
         encodeInteger(buf, posOut, binding[0][0], 0);
-        if (binding.length > 1) {
-          encodeInteger(buf, posOut, -binding.length, 0);
-          let bindingStartLine = startLine;
-          let bindingStartColumn = startColumn;
-          for (let i = 1; i < binding.length; i++) {
-            out = maybeFlush(out, sub, posOut, buf, subLength);
-            const expression = binding[i];
-            bindingStartLine = encodeInteger(buf, posOut, expression[1]!, bindingStartLine);
-            bindingStartColumn = encodeInteger(buf, posOut, expression[2]!, bindingStartColumn);
-            encodeInteger(buf, posOut, expression[0]!, 0);
-          }
+        let bindingStartLine = startLine;
+        let bindingStartColumn = startColumn;
+        for (let i = 1; i < binding.length; i++) {
+          out = maybeFlush(out, sub, posOut, buf, subLength);
+          const expression = binding[i];
+          bindingStartLine = encodeInteger(buf, posOut, expression[1]!, bindingStartLine);
+          bindingStartColumn = encodeInteger(buf, posOut, expression[2]!, bindingStartColumn);
+          encodeInteger(buf, posOut, expression[0]!, 0);
         }
       }
     }
