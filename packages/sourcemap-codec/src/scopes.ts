@@ -20,26 +20,25 @@ type Var = number;
 type SourcesIndex = number;
 type ScopesIndex = number;
 
-export type OriginalScope =
-  | {
-      0: Line;
-      1: Column;
-      2: Line;
-      3: Column;
-      4: Kind;
-      vars?: Var[];
-      length: 5;
-    }
-  | {
-      0: Line;
-      1: Column;
-      2: Line;
-      3: Column;
-      4: Kind;
-      5: Name;
-      vars?: Var[];
-      length: 6;
-    };
+type Mix<A, B, O> = (A & O) | (B & O);
+
+export type OriginalScope = Mix<
+  [Line, Column, Line, Column, Kind],
+  [Line, Column, Line, Column, Kind, Name],
+  { vars?: Var[] }
+>;
+
+export type GeneratedRange = Mix<
+  [Line, Column, Line, Column],
+  [Line, Column, Line, Column, SourcesIndex, ScopesIndex],
+  {
+    callsite?: CallSite;
+    bindings?: ExpressionBinding[][];
+    isScope?: boolean;
+  }
+>;
+export type CallSite = [SourcesIndex, Line, Column];
+export type ExpressionBinding = [Name] | [Name, Line, Column];
 
 const NO_NAME = -1;
 const NO_SOURCE = -1;
@@ -149,25 +148,6 @@ export function encodeOriginalScopes(scopes: OriginalScope[]): string {
   return out + td.decode(buf.subarray(0, posOut));
 }
 
-// type OptionalFields<T> = {
-// [K in keyof T]: K extends number ? T[K] : never;
-// } & {
-// [K in keyof T]: K extends string ? T[K] : never;
-// };
-export type GeneratedRange = {
-  0: Line;
-  1: Column;
-  2: Line;
-  3: Column;
-  4: SourcesIndex;
-  5: ScopesIndex;
-  callsite?: CallSite;
-  bindings?: ExpressionBinding[][];
-  isScope?: boolean;
-};
-export type CallSite = [SourcesIndex, Line, Column];
-export type ExpressionBinding = [Name] | [Name, Line, Column];
-
 export function decodeGeneratedRanges(input: string): GeneratedRange[] {
   let genLine = 0;
   let genColumn = 0;
@@ -202,7 +182,10 @@ export function decodeGeneratedRanges(input: string): GeneratedRange[] {
           defScopeIndex = definitionScopeIndex = decodeInteger(input, posOut, definitionScopeIndex);
         }
 
-        const range: GeneratedRange = [genLine, genColumn, 0, 0, defSourcesIndex, defScopeIndex];
+        const range: GeneratedRange =
+          defScopeIndex === NO_SOURCE
+            ? [genLine, genColumn, 0, 0]
+            : [genLine, genColumn, 0, 0, defSourcesIndex, defScopeIndex];
 
         if (fields & 0b0010) {
           const callSourcesIndex = decodeInteger(input, posOut, callsiteSourcesIndex);
