@@ -190,7 +190,7 @@ describe('scopes proposal', () => {
 
     tests = filtered.length ? filtered : tests;
 
-    describe('decodeOriginalScopes()', () => {
+    describe('decodeGeneratedRanges()', () => {
       tests.forEach((test, i) => {
         it('decodes sample ' + i, () => {
           assert.deepEqual(decodeGeneratedRanges(test.encoded), test.decoded);
@@ -198,7 +198,7 @@ describe('scopes proposal', () => {
       });
     });
 
-    describe('encodeOriginalScopes()', () => {
+    describe('encodeGeneratedRanges()', () => {
       tests.forEach((test, i) => {
         it('encodes sample ' + i, () => {
           assert.deepEqual(encodeGeneratedRanges(test.decoded), test.encoded);

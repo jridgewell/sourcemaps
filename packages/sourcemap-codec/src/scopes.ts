@@ -1,16 +1,5 @@
-import {
-  comma,
-  decodeInteger,
-  encodeInteger,
-  hasMoreVlq,
-  indexOf,
-  maybeFlush,
-  posOut,
-  write,
-  td,
-  resetPos,
-  semicolon,
-} from './vlq';
+import { StringReader, StringWriter, comma, semicolon } from './strings';
+import { decodeInteger, encodeInteger } from './vlq';
 
 type Line = number;
 type Column = number;
@@ -40,41 +29,40 @@ export type GeneratedRange = Mix<
 export type CallSite = [SourcesIndex, Line, Column];
 export type ExpressionBinding = [Name] | [Name, Line, Column];
 
-const NO_NAME = -1;
-const NO_SOURCE = -1;
-
 export function decodeOriginalScopes(input: string): OriginalScope[] {
-  let line = 0;
+  const { length } = input;
+  const reader = new StringReader(input);
   const scopes: OriginalScope[] = [];
   const stack: OriginalScope[] = [];
+  let line = 0;
 
-  for (let i = 0; i < input.length; i = posOut + 1) {
-    line = decodeInteger(input, i, line);
-    const column = decodeInteger(input, posOut, 0);
+  for (; reader.pos < length; reader.pos++) {
+    line = decodeInteger(reader, line);
+    const column = decodeInteger(reader, 0);
 
-    if (!hasMoreVlq(input, posOut, input.length)) {
+    if (!reader.hasMoreVlq(length)) {
       const last = stack.pop()!;
       last[2] = line;
       last[3] = column;
       continue;
     }
 
-    const kind = decodeInteger(input, posOut, 0);
-    const fields = decodeInteger(input, posOut, 0);
-    const name = fields & 0b0001 ? decodeInteger(input, posOut, 0) : NO_NAME;
-    const scope: OriginalScope =
-      name === NO_NAME ? [line, column, 0, 0, kind] : [line, column, 0, 0, kind, name];
+    const kind = decodeInteger(reader, 0);
+    const fields = decodeInteger(reader, 0);
+    const hasName = fields & 0b0001;
+    const scope: OriginalScope = hasName
+      ? [line, column, 0, 0, kind, decodeInteger(reader, 0)]
+      : [line, column, 0, 0, kind];
     scopes.push(scope);
     stack.push(scope);
 
-    const index = indexOf(input, ',', posOut);
-    if (posOut < index) {
+    if (reader.hasMoreVlq(length)) {
       const vars: Var[] = [];
       scope.vars = vars;
-      while (posOut < index) {
-        const varsIndex = decodeInteger(input, posOut, 0);
+      do {
+        const varsIndex = decodeInteger(reader, 0);
         vars.push(varsIndex);
-      }
+      } while (reader.hasMoreVlq(length));
     }
   }
 
@@ -82,15 +70,9 @@ export function decodeOriginalScopes(input: string): OriginalScope[] {
 }
 
 export function encodeOriginalScopes(scopes: OriginalScope[]): string {
-  let out = '';
-  if (scopes.length === 0) return out;
+  if (scopes.length === 0) return '';
 
-  const bufLength = 1024 * 16;
-  const subLength = bufLength - (7 * 6 + 1);
-  const buf = new Uint8Array(bufLength);
-  const sub = buf.subarray(0, subLength);
-  resetPos();
-
+  const writer = new StringWriter();
   const endStack: number[] = [];
   let lastEndLine = scopes[0][2] + 1;
   let lastEndColumn = scopes[0][3];
@@ -99,56 +81,54 @@ export function encodeOriginalScopes(scopes: OriginalScope[]): string {
   for (let i = 0; i < scopes.length; i++) {
     const scope = scopes[i];
     const { 0: startLine, 1: startColumn, 2: endLine, 3: endColumn, 4: kind } = scope;
-    const name = scope.length === 6 ? scope[5] : NO_NAME;
     const vars = 'vars' in scope ? scope.vars! : [];
 
-    out = maybeFlush(out, buf, posOut, buf, bufLength);
-    if (i > 0) write(buf, posOut, comma);
+    if (i > 0) writer.write(comma);
 
     while (startLine > lastEndLine || (startLine === lastEndLine && startColumn >= lastEndColumn)) {
-      out = maybeFlush(out, sub, posOut, buf, subLength);
-
-      line = encodeInteger(buf, posOut, lastEndLine, line);
-      encodeInteger(buf, posOut, lastEndColumn, 0);
-      write(buf, posOut, comma);
+      line = encodeInteger(writer, lastEndLine, line);
+      encodeInteger(writer, lastEndColumn, 0);
+      writer.write(comma);
 
       lastEndColumn = endStack.pop()!;
       lastEndLine = endStack.pop()!;
     }
 
-    line = encodeInteger(buf, posOut, startLine, line);
-    encodeInteger(buf, posOut, startColumn, 0);
+    line = encodeInteger(writer, startLine, line);
+    encodeInteger(writer, startColumn, 0);
     endStack.push(lastEndLine);
     endStack.push(lastEndColumn);
     lastEndLine = endLine;
     lastEndColumn = endColumn;
 
-    encodeInteger(buf, posOut, kind, 0);
+    encodeInteger(writer, kind, 0);
 
-    const fields = name === NO_NAME ? 0 : 1;
-    encodeInteger(buf, posOut, fields, 0);
-    if (name !== NO_NAME) encodeInteger(buf, posOut, name, 0);
+    const fields = scope.length === 6 ? 0b0001 : 0;
+    encodeInteger(writer, fields, 0);
+    if (scope.length === 6) encodeInteger(writer, scope[5], 0);
 
     for (const v of vars) {
-      out = maybeFlush(out, sub, posOut, buf, subLength);
-      encodeInteger(buf, posOut, v, 0);
+      encodeInteger(writer, v, 0);
     }
   }
-  while (endStack.length > 0) {
-    out = maybeFlush(out, sub, posOut, buf, subLength);
 
-    write(buf, posOut, comma);
-    line = encodeInteger(buf, posOut, lastEndLine, line);
-    encodeInteger(buf, posOut, lastEndColumn, 0);
+  while (endStack.length > 0) {
+    writer.write(comma);
+    line = encodeInteger(writer, lastEndLine, line);
+    encodeInteger(writer, lastEndColumn, 0);
 
     lastEndColumn = endStack.pop()!;
     lastEndLine = endStack.pop()!;
   }
 
-  return out + td.decode(buf.subarray(0, posOut));
+  return writer.flush();
 }
 
 export function decodeGeneratedRanges(input: string): GeneratedRange[] {
+  const reader = new StringReader(input);
+  const ranges: GeneratedRange[] = [];
+  const stack: GeneratedRange[] = [];
+
   let genLine = 0;
   let genColumn = 0;
   let definitionSourcesIndex = 0;
@@ -159,230 +139,201 @@ export function decodeGeneratedRanges(input: string): GeneratedRange[] {
   let bindingLine = 0;
   let bindingColumn = 0;
 
-  const ranges: GeneratedRange[] = [];
-  const stack: GeneratedRange[] = [];
-  let index = 0;
   do {
-    const semi = indexOf(input, ';', index);
+    const semi = reader.indexOf(';');
     genColumn = 0;
 
-    for (let i = index; i < semi; i = posOut + 1) {
-      genColumn = decodeInteger(input, i, genColumn);
-      if (hasMoreVlq(input, posOut, semi)) {
-        const fields = decodeInteger(input, posOut, 0);
-        let defSourcesIndex = NO_SOURCE;
-        let defScopeIndex = NO_SOURCE;
+    for (; reader.pos < semi; reader.pos++) {
+      genColumn = decodeInteger(reader, genColumn);
 
-        if (fields & 0b0001) {
-          defSourcesIndex = decodeInteger(input, posOut, definitionSourcesIndex);
-          if (definitionSourcesIndex !== defSourcesIndex) {
-            definitionScopeIndex = 0;
-            definitionSourcesIndex = defSourcesIndex;
-          }
-          defScopeIndex = definitionScopeIndex = decodeInteger(input, posOut, definitionScopeIndex);
-        }
-
-        const range: GeneratedRange =
-          defScopeIndex === NO_SOURCE
-            ? [genLine, genColumn, 0, 0]
-            : [genLine, genColumn, 0, 0, defSourcesIndex, defScopeIndex];
-
-        if (fields & 0b0010) {
-          const callSourcesIndex = decodeInteger(input, posOut, callsiteSourcesIndex);
-          const sameSource = callSourcesIndex === callsiteSourcesIndex;
-          const callLine = decodeInteger(input, posOut, sameSource ? callsiteLine : 0);
-          const sameLine = sameSource && callLine === callsiteLine;
-          callsiteColumn = decodeInteger(input, posOut, sameLine ? callsiteColumn : 0);
-
-          callsiteSourcesIndex = callSourcesIndex;
-          callsiteLine = callLine;
-          range.callsite = [callsiteSourcesIndex, callsiteLine, callsiteColumn];
-        }
-        if (fields & 0b0100) {
-          range.isScope = true;
-        }
-
-        if (hasMoreVlq(input, posOut, semi)) {
-          const bindings: ExpressionBinding[][] = [];
-          range.bindings = bindings;
-          do {
-            bindingLine = genLine;
-            bindingColumn = genColumn;
-            const expressionsCount = decodeInteger(input, posOut, 0);
-            let binding: ExpressionBinding[];
-            if (expressionsCount < -1) {
-              let name = decodeInteger(input, posOut, 0);
-              binding = [[name]];
-              for (let i = -1; i > expressionsCount; i--) {
-                const prevBindingLine = bindingLine;
-                bindingLine = decodeInteger(input, posOut, bindingLine);
-                bindingColumn = decodeInteger(
-                  input,
-                  posOut,
-                  bindingLine === prevBindingLine ? bindingColumn : 0,
-                );
-                name = decodeInteger(input, posOut, 0);
-                binding.push([name, bindingLine, bindingColumn]);
-              }
-            } else {
-              binding = [[expressionsCount]];
-            }
-            bindings.push(binding);
-          } while (hasMoreVlq(input, posOut, semi));
-        }
-
-        ranges.push(range);
-        stack.push(range);
-      } else {
+      if (!reader.hasMoreVlq(semi)) {
         const range = stack.pop()!;
         range[2] = genLine;
         range[3] = genColumn;
+        continue;
       }
+
+      const fields = decodeInteger(reader, 0);
+      const hasDefinition = fields & 0b0001;
+      const hasCallsite = fields & 0b0010;
+      const isScope = fields & 0b0100;
+
+      let range: GeneratedRange;
+      if (hasDefinition) {
+        const defSourcesIndex = decodeInteger(reader, definitionSourcesIndex);
+        definitionScopeIndex = decodeInteger(
+          reader,
+          definitionSourcesIndex === defSourcesIndex ? definitionScopeIndex : 0,
+        );
+
+        definitionSourcesIndex = defSourcesIndex;
+        range = [genLine, genColumn, 0, 0, defSourcesIndex, definitionScopeIndex];
+      } else {
+        range = [genLine, genColumn, 0, 0];
+      }
+
+      if (hasCallsite) {
+        const prevCsi = callsiteSourcesIndex;
+        const prevLine = callsiteLine;
+        callsiteSourcesIndex = decodeInteger(reader, callsiteSourcesIndex);
+        const sameSource = prevCsi === callsiteSourcesIndex;
+        callsiteLine = decodeInteger(reader, sameSource ? callsiteLine : 0);
+        callsiteColumn = decodeInteger(
+          reader,
+          sameSource && prevLine === callsiteLine ? callsiteColumn : 0,
+        );
+
+        range.callsite = [callsiteSourcesIndex, callsiteLine, callsiteColumn];
+      }
+
+      if (isScope) {
+        range.isScope = true;
+      }
+
+      if (reader.hasMoreVlq(semi)) {
+        const bindings: ExpressionBinding[][] = [];
+        range.bindings = bindings;
+        do {
+          bindingLine = genLine;
+          bindingColumn = genColumn;
+          const expressionsCount = decodeInteger(reader, 0);
+          let expressionRanges: ExpressionBinding[];
+          if (expressionsCount < -1) {
+            expressionRanges = [[decodeInteger(reader, 0)]];
+            for (let i = -1; i > expressionsCount; i--) {
+              const prevBl = bindingLine;
+              bindingLine = decodeInteger(reader, bindingLine);
+              bindingColumn = decodeInteger(reader, bindingLine === prevBl ? bindingColumn : 0);
+              const expression = decodeInteger(reader, 0);
+              expressionRanges.push([expression, bindingLine, bindingColumn]);
+            }
+          } else {
+            expressionRanges = [[expressionsCount]];
+          }
+          bindings.push(expressionRanges);
+        } while (reader.hasMoreVlq(semi));
+      }
+
+      ranges.push(range);
+      stack.push(range);
     }
 
     genLine++;
-    index = semi + 1;
-  } while (index <= input.length);
+    reader.pos = semi + 1;
+  } while (reader.pos < input.length);
 
   return ranges;
 }
 
 export function encodeGeneratedRanges(ranges: GeneratedRange[]): string {
-  let out = '';
-  if (ranges.length === 0) return out;
+  if (ranges.length === 0) return '';
 
-  const bufLength = 1024 * 16;
-  const subLength = bufLength - (7 * 7 + 1);
-  const buf = new Uint8Array(bufLength);
-  const sub = buf.subarray(0, subLength);
-  resetPos();
-
+  const writer = new StringWriter();
   const endStack: number[] = [];
   let lastEndLine = ranges[0][2] + 1;
   let lastEndColumn = ranges[0][3];
   let line = 0;
   let genColumn = 0;
-  let definitionSourcesIndex = 0;
-  let definitionScopeIndex = 0;
-  let callsiteSourcesIndex = 0;
-  let callsiteLine = 0;
-  let callsiteColumn = 0;
+  let relDefSourcesIndex = 0;
+  let relDefScopeIndex = 0;
+  let relCallSourcesIndex = 0;
+  let relCallLine = 0;
+  let relCallColumn = 0;
   for (let i = 0; i < ranges.length; i++) {
     const range = ranges[i];
-    const {
-      0: startLine,
-      1: startColumn,
-      2: endLine,
-      3: endColumn,
-      4: defSourcesIndex,
-      5: defScopeIndex,
-    } = range;
+    const { 0: startLine, 1: startColumn, 2: endLine, 3: endColumn } = range;
     const isScope = 'isScope' in range && range.isScope;
     const hasCallsite = 'callsite' in range;
-    const hasBindings = 'bindings' in range;
+    const bindings = 'bindings' in range ? range.bindings! : [];
 
     while (startLine > lastEndLine || (startLine === lastEndLine && startColumn >= lastEndColumn)) {
       if (line < lastEndLine) {
-        out = catchupLine(out, buf, bufLength, line, lastEndLine);
+        catchupLine(writer, line, lastEndLine);
         line = lastEndLine;
         genColumn = 0;
       } else {
-        out = maybeFlush(out, buf, posOut, buf, bufLength);
-        write(buf, posOut, comma);
+        writer.write(comma);
       }
-      out = maybeFlush(out, sub, posOut, buf, subLength);
-      genColumn = encodeInteger(buf, posOut, lastEndColumn, genColumn);
+      genColumn = encodeInteger(writer, lastEndColumn, genColumn);
 
       lastEndColumn = endStack.pop()!;
       lastEndLine = endStack.pop()!;
     }
+
     if (line < startLine) {
-      out = catchupLine(out, buf, bufLength, line, startLine);
+      catchupLine(writer, line, startLine);
       line = startLine;
       genColumn = 0;
     } else if (i > 0) {
-      out = maybeFlush(out, buf, posOut, buf, bufLength);
-      write(buf, posOut, comma);
+      writer.write(comma);
     }
 
-    out = maybeFlush(out, sub, posOut, buf, subLength);
-    genColumn = encodeInteger(buf, posOut, range[1], genColumn);
+    genColumn = encodeInteger(writer, range[1], genColumn);
     endStack.push(lastEndLine);
     endStack.push(lastEndColumn);
     lastEndLine = endLine;
     lastEndColumn = endColumn;
 
     const fields =
-      (defSourcesIndex === NO_SOURCE ? 0 : 0b0001) |
-      (hasCallsite ? 0b0010 : 0) |
-      (isScope ? 0b0100 : 0);
-    encodeInteger(buf, posOut, fields, 0);
+      (range.length === 6 ? 0b0001 : 0) | (hasCallsite ? 0b0010 : 0) | (isScope ? 0b0100 : 0);
+    encodeInteger(writer, fields, 0);
 
-    if (defSourcesIndex !== NO_SOURCE) {
-      if (defSourcesIndex !== definitionSourcesIndex) definitionScopeIndex = 0;
-      definitionSourcesIndex = encodeInteger(buf, posOut, defSourcesIndex, definitionSourcesIndex);
-      definitionScopeIndex = encodeInteger(buf, posOut, defScopeIndex, definitionScopeIndex);
+    if (range.length === 6) {
+      const { 4: sourcesIndex, 5: scopesIndex } = range;
+      if (sourcesIndex !== relDefSourcesIndex) {
+        relDefScopeIndex = 0;
+      }
+      relDefSourcesIndex = encodeInteger(writer, sourcesIndex, relDefSourcesIndex);
+      relDefScopeIndex = encodeInteger(writer, scopesIndex, relDefScopeIndex);
     }
 
     if (hasCallsite) {
-      const { 0: callSourcesIndex, 1: callLine, 2: callColumn } = range.callsite!;
-      if (callSourcesIndex !== callsiteSourcesIndex) {
-        callsiteLine = 0;
-        callsiteColumn = 0;
-      } else if (callLine !== callsiteLine) {
-        callsiteColumn = 0;
+      const { 0: sourcesIndex, 1: callLine, 2: callColumn } = range.callsite!;
+      if (sourcesIndex !== relCallSourcesIndex) {
+        relCallLine = 0;
+        relCallColumn = 0;
+      } else if (callLine !== relCallLine) {
+        relCallColumn = 0;
       }
-      callsiteSourcesIndex = encodeInteger(buf, posOut, callSourcesIndex, callsiteSourcesIndex);
-      callsiteLine = encodeInteger(buf, posOut, callLine, callsiteLine);
-      callsiteColumn = encodeInteger(buf, posOut, callColumn, callsiteColumn);
+      relCallSourcesIndex = encodeInteger(writer, sourcesIndex, relCallSourcesIndex);
+      relCallLine = encodeInteger(writer, callLine, relCallLine);
+      relCallColumn = encodeInteger(writer, callColumn, relCallColumn);
     }
 
-    if (hasBindings) {
-      for (const binding of range.bindings!) {
-        out = maybeFlush(out, sub, posOut, buf, subLength);
-        if (binding.length > 1) encodeInteger(buf, posOut, -binding.length, 0);
-        encodeInteger(buf, posOut, binding[0][0], 0);
-        let bindingStartLine = startLine;
-        let bindingStartColumn = startColumn;
-        for (let i = 1; i < binding.length; i++) {
-          out = maybeFlush(out, sub, posOut, buf, subLength);
-          const expression = binding[i];
-          bindingStartLine = encodeInteger(buf, posOut, expression[1]!, bindingStartLine);
-          bindingStartColumn = encodeInteger(buf, posOut, expression[2]!, bindingStartColumn);
-          encodeInteger(buf, posOut, expression[0]!, 0);
-        }
+    for (const binding of bindings) {
+      if (binding.length > 1) encodeInteger(writer, -binding.length, 0);
+      const expression = binding[0][0];
+      encodeInteger(writer, expression, 0);
+      let bindingStartLine = startLine;
+      let bindingStartColumn = startColumn;
+      for (let i = 1; i < binding.length; i++) {
+        const expRange = binding[i];
+        bindingStartLine = encodeInteger(writer, expRange[1]!, bindingStartLine);
+        bindingStartColumn = encodeInteger(writer, expRange[2]!, bindingStartColumn);
+        encodeInteger(writer, expRange[0]!, 0);
       }
     }
   }
+
   while (endStack.length > 0) {
     if (line < lastEndLine) {
-      out = catchupLine(out, buf, bufLength, line, lastEndLine);
+      catchupLine(writer, line, lastEndLine);
       line = lastEndLine;
       genColumn = 0;
     } else {
-      out = maybeFlush(out, buf, posOut, buf, bufLength);
-      write(buf, posOut, comma);
+      writer.write(comma);
     }
-    out = maybeFlush(out, sub, posOut, buf, subLength);
-    genColumn = encodeInteger(buf, posOut, lastEndColumn, genColumn);
+    genColumn = encodeInteger(writer, lastEndColumn, genColumn);
 
     lastEndColumn = endStack.pop()!;
     lastEndLine = endStack.pop()!;
   }
 
-  return out + td.decode(buf.subarray(0, posOut));
+  return writer.flush();
 }
 
-function catchupLine(
-  build: string,
-  buf: Uint8Array,
-  bufLength: number,
-  lastLine: number,
-  line: number,
-) {
+function catchupLine(writer: StringWriter, lastLine: number, line: number) {
   do {
-    build = maybeFlush(build, buf, posOut, buf, bufLength);
-    write(buf, posOut, semicolon);
+    writer.write(semicolon);
   } while (++lastLine < line);
-  return build;
 }
