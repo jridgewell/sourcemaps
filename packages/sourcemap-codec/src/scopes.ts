@@ -1,5 +1,5 @@
-import { StringReader, StringWriter, comma, semicolon } from './strings';
-import { decodeInteger, encodeInteger } from './vlq';
+import { StringReader, StringWriter } from './strings';
+import { comma, decodeInteger, encodeInteger, hasMoreVlq, semicolon } from './vlq';
 
 type Line = number;
 type Column = number;
@@ -40,7 +40,7 @@ export function decodeOriginalScopes(input: string): OriginalScope[] {
     line = decodeInteger(reader, line);
     const column = decodeInteger(reader, 0);
 
-    if (!reader.hasMoreVlq(length)) {
+    if (!hasMoreVlq(reader, length)) {
       const last = stack.pop()!;
       last[2] = line;
       last[3] = column;
@@ -56,13 +56,13 @@ export function decodeOriginalScopes(input: string): OriginalScope[] {
     scopes.push(scope);
     stack.push(scope);
 
-    if (reader.hasMoreVlq(length)) {
+    if (hasMoreVlq(reader, length)) {
       const vars: Var[] = [];
       scope.vars = vars;
       do {
         const varsIndex = decodeInteger(reader, 0);
         vars.push(varsIndex);
-      } while (reader.hasMoreVlq(length));
+      } while (hasMoreVlq(reader, length));
     }
   }
 
@@ -146,7 +146,7 @@ export function decodeGeneratedRanges(input: string): GeneratedRange[] {
     for (; reader.pos < semi; reader.pos++) {
       genColumn = decodeInteger(reader, genColumn);
 
-      if (!reader.hasMoreVlq(semi)) {
+      if (!hasMoreVlq(reader, semi)) {
         const range = stack.pop()!;
         range[2] = genLine;
         range[3] = genColumn;
@@ -190,7 +190,7 @@ export function decodeGeneratedRanges(input: string): GeneratedRange[] {
         range.isScope = true;
       }
 
-      if (reader.hasMoreVlq(semi)) {
+      if (hasMoreVlq(reader, semi)) {
         const bindings: ExpressionBinding[][] = [];
         range.bindings = bindings;
         do {
@@ -211,7 +211,7 @@ export function decodeGeneratedRanges(input: string): GeneratedRange[] {
             expressionRanges = [[expressionsCount]];
           }
           bindings.push(expressionRanges);
-        } while (reader.hasMoreVlq(semi));
+        } while (hasMoreVlq(reader, semi));
       }
 
       ranges.push(range);
@@ -220,7 +220,7 @@ export function decodeGeneratedRanges(input: string): GeneratedRange[] {
 
     genLine++;
     reader.pos = semi + 1;
-  } while (reader.pos < input.length);
+  } while (reader.hasMore());
 
   return ranges;
 }

@@ -1,6 +1,4 @@
 const bufLength = 1024 * 16;
-export const comma = ','.charCodeAt(0);
-export const semicolon = ';'.charCodeAt(0);
 
 // Provide a fallback for older environments.
 const td =
@@ -55,10 +53,12 @@ export class StringReader {
     return this.buffer.charCodeAt(this.pos++);
   }
 
-  hasMoreVlq(max: number): boolean {
-    const { buffer, pos } = this;
-    if (pos >= max) return false;
-    return buffer.charCodeAt(pos) !== comma;
+  peek(): number {
+    return this.buffer.charCodeAt(this.pos);
+  }
+
+  hasMore(): boolean {
+    return this.pos < this.buffer.length;
   }
 
   indexOf(char: string): number {

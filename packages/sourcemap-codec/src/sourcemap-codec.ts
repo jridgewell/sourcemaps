@@ -1,5 +1,5 @@
-import { decodeInteger, encodeInteger } from './vlq';
-import { StringWriter, StringReader, comma, semicolon } from './strings';
+import { comma, decodeInteger, encodeInteger, hasMoreVlq, semicolon } from './vlq';
+import { StringWriter, StringReader } from './strings';
 
 export {
   decodeOriginalScopes,
@@ -39,12 +39,12 @@ export function decode(mappings: string): SourceMapMappings {
       if (genColumn < lastCol) sorted = false;
       lastCol = genColumn;
 
-      if (reader.hasMoreVlq(semi)) {
+      if (hasMoreVlq(reader, semi)) {
         sourcesIndex = decodeInteger(reader, sourcesIndex);
         sourceLine = decodeInteger(reader, sourceLine);
         sourceColumn = decodeInteger(reader, sourceColumn);
 
-        if (reader.hasMoreVlq(semi)) {
+        if (hasMoreVlq(reader, semi)) {
           namesIndex = decodeInteger(reader, namesIndex);
           seg = [genColumn, sourcesIndex, sourceLine, sourceColumn, namesIndex];
         } else {
