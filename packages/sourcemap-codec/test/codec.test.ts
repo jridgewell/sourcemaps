@@ -1,6 +1,6 @@
 /* eslint-env node, mocha */
 
-import { encode, decode, SourceMapMappings } from '../src/sourcemap-codec';
+import { encode, decode, type SourceMapMappings } from '../src/sourcemap-codec';
 import { strict as assert } from 'assert';
 import * as fs from 'fs';
 import * as path from 'path';
