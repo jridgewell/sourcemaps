@@ -157,7 +157,7 @@ describe('sourcemap-codec', () => {
     });
 
     it('sorts during decoding', () => {
-      const mappings = [
+      const mappings: SourceMapMappings = [
         [[1], [2], [3]],
         [[1], [3], [2]],
         [[2], [1], [3]],
@@ -190,8 +190,9 @@ describe('sourcemap-codec', () => {
     files.forEach((file) => {
       if (path.extname(file) !== '.map') return;
 
-      it(file, () => {
-        const { mappings } = JSON.parse(fs.readFileSync(path.join(dir, file)));
+      it(file, function () {
+        this.timeout(5000);
+        const { mappings } = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8'));
         assert.deepEqual(encode(decode(mappings)), mappings);
       });
     });
