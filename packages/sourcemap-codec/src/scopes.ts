@@ -108,7 +108,14 @@ function _encodeOriginalScopes(
     encodeInteger(writer, v, 0);
   }
 
-  index = encodeTree(scopes, index, writer, state, endLine, endColumn, _encodeOriginalScopes);
+  for (index++; index < scopes.length; ) {
+    const next = scopes[index];
+    const { 0: l, 1: c } = next;
+    if (l > endLine || (l === endLine && c >= endColumn)) {
+      break;
+    }
+    index = _encodeOriginalScopes(scopes, index, writer, state);
+  }
 
   writer.write(comma);
   state[0] = encodeInteger(writer, endLine, state[0]);
@@ -124,7 +131,6 @@ export function decodeGeneratedRanges(input: string): GeneratedRange[] {
   const stack: GeneratedRange[] = [];
 
   let genLine = 0;
-  let genColumn = 0;
   let definitionSourcesIndex = 0;
   let definitionScopeIndex = 0;
   let callsiteSourcesIndex = 0;
@@ -135,7 +141,7 @@ export function decodeGeneratedRanges(input: string): GeneratedRange[] {
 
   do {
     const semi = reader.indexOf(';');
-    genColumn = 0;
+    let genColumn = 0;
 
     for (; reader.pos < semi; reader.pos++) {
       genColumn = decodeInteger(reader, genColumn);
@@ -309,7 +315,14 @@ function _encodeGeneratedRanges(
     }
   }
 
-  index = encodeTree(ranges, index, writer, state, endLine, endColumn, _encodeGeneratedRanges);
+  for (index++; index < ranges.length; ) {
+    const next = ranges[index];
+    const { 0: l, 1: c } = next;
+    if (l > endLine || (l === endLine && c >= endColumn)) {
+      break;
+    }
+    index = _encodeGeneratedRanges(ranges, index, writer, state);
+  }
 
   if (state[0] < endLine) {
     catchupLine(writer, state[0], endLine);
@@ -320,26 +333,6 @@ function _encodeGeneratedRanges(
   }
   state[1] = encodeInteger(writer, endColumn, state[1]);
 
-  return index;
-}
-
-function encodeTree<T extends [number, number, ...number[]], S>(
-  arr: T[],
-  index: number,
-  writer: StringWriter,
-  state: S,
-  endLine: number,
-  endColumn: number,
-  fn: (arr: T[], index: number, writer: StringWriter, state: S) => number,
-): number {
-  for (index++; index < arr.length; ) {
-    const next = arr[index];
-    const { 0: l, 1: c } = next;
-    if (l > endLine || (l === endLine && c >= endColumn)) {
-      break;
-    }
-    index = fn(arr, index, writer, state);
-  }
   return index;
 }
 

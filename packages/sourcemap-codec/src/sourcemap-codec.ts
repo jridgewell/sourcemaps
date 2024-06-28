@@ -78,10 +78,7 @@ function sortComparator(a: SourceMapSegment, b: SourceMapSegment): number {
 export function encode(decoded: SourceMapMappings): string;
 export function encode(decoded: Readonly<SourceMapMappings>): string;
 export function encode(decoded: Readonly<SourceMapMappings>): string {
-  // We can push up to 5 ints, each int can take at most 7 chars, and we
-  // may push a comma.
   const writer = new StringWriter();
-  let genColumn = 0;
   let sourcesIndex = 0;
   let sourceLine = 0;
   let sourceColumn = 0;
@@ -90,10 +87,9 @@ export function encode(decoded: Readonly<SourceMapMappings>): string {
   for (let i = 0; i < decoded.length; i++) {
     const line = decoded[i];
     if (i > 0) writer.write(semicolon);
-
     if (line.length === 0) continue;
 
-    genColumn = 0;
+    let genColumn = 0;
 
     for (let j = 0; j < line.length; j++) {
       const segment = line[j];
