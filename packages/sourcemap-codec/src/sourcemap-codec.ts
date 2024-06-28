@@ -7,7 +7,7 @@ export {
   decodeGeneratedRanges,
   encodeGeneratedRanges,
 } from './scopes';
-export type { OriginalScope, GeneratedRange, CallSite, ExpressionBinding } from './scopes';
+export type { OriginalScope, GeneratedRange, CallSite, BindingExpressionRange } from './scopes';
 
 export type SourceMapSegment =
   | [number]
@@ -17,6 +17,7 @@ export type SourceMapLine = SourceMapSegment[];
 export type SourceMapMappings = SourceMapLine[];
 
 export function decode(mappings: string): SourceMapMappings {
+  const { length } = mappings;
   const reader = new StringReader(mappings);
   const decoded: SourceMapMappings = [];
   let genColumn = 0;
@@ -61,7 +62,7 @@ export function decode(mappings: string): SourceMapMappings {
     if (!sorted) sort(line);
     decoded.push(line);
     reader.pos = semi + 1;
-  } while (reader.pos <= mappings.length);
+  } while (reader.pos <= length);
 
   return decoded;
 }
