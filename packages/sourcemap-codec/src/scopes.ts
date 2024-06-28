@@ -53,11 +53,10 @@ export function decodeOriginalScopes(input: string): OriginalScope[] {
     const kind = decodeInteger(reader, 0);
     const fields = decodeInteger(reader, 0);
     const hasName = fields & 0b0001;
+
     const scope: OriginalScope = (
       hasName ? [line, column, 0, 0, kind, decodeInteger(reader, 0)] : [line, column, 0, 0, kind]
     ) as OriginalScope;
-    scopes.push(scope);
-    stack.push(scope);
 
     let vars: Var[] = EMPTY;
     if (hasMoreVlq(reader, length)) {
@@ -68,6 +67,9 @@ export function decodeOriginalScopes(input: string): OriginalScope[] {
       } while (hasMoreVlq(reader, length));
     }
     scope.vars = vars;
+
+    scopes.push(scope);
+    stack.push(scope);
   }
 
   return scopes;
@@ -147,9 +149,9 @@ export function decodeGeneratedRanges(input: string): GeneratedRange[] {
       genColumn = decodeInteger(reader, genColumn);
 
       if (!hasMoreVlq(reader, semi)) {
-        const range = stack.pop()!;
-        range[2] = genLine;
-        range[3] = genColumn;
+        const last = stack.pop()!;
+        last[2] = genLine;
+        last[3] = genColumn;
         continue;
       }
 
@@ -157,9 +159,9 @@ export function decodeGeneratedRanges(input: string): GeneratedRange[] {
       const hasDefinition = fields & 0b0001;
       const hasCallsite = fields & 0b0010;
       const hasScope = fields & 0b0100;
+
       let callsite: CallSite | null = null;
       let bindings: Binding[] = EMPTY;
-
       let range: GeneratedRange;
       if (hasDefinition) {
         const defSourcesIndex = decodeInteger(reader, definitionSourcesIndex);
