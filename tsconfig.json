@@ -2,16 +2,15 @@
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
     "composite": true,
-    "declaration": true,
     "esModuleInterop": true,
     "incremental": true,
     "lib": ["es2015", "dom"],
     "module": "es2015",
     "moduleResolution": "bundler",
-    "noEmit": true,
     "sourceMap": true,
     "strict": true,
     "target": "es2015",
     "typeRoots": ["node_modules/@types"]
-  }
+  },
+  "references": [{ "path": "packages/sourcemap-codec" }]
 }
