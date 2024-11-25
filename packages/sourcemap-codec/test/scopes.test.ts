@@ -5,9 +5,10 @@ import {
   decodeOriginalScopes,
   encodeGeneratedRanges,
   encodeOriginalScopes,
+  type GeneratedRange,
+  type OriginalScope,
 } from '../src/scopes';
-import { strict as assert } from 'assert';
-import type { GeneratedRange, OriginalScope } from '../src/scopes';
+import { strict as assert } from 'node:assert';
 
 describe('scopes proposal', () => {
   type Tuple<T> = Pick<T, Extract<keyof T, number>>;

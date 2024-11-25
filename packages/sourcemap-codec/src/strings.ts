@@ -5,21 +5,21 @@ const td =
   typeof TextDecoder !== 'undefined'
     ? /* #__PURE__ */ new TextDecoder()
     : typeof Buffer !== 'undefined'
-    ? {
-        decode(buf: Uint8Array): string {
-          const out = Buffer.from(buf.buffer, buf.byteOffset, buf.byteLength);
-          return out.toString();
-        },
-      }
-    : {
-        decode(buf: Uint8Array): string {
-          let out = '';
-          for (let i = 0; i < buf.length; i++) {
-            out += String.fromCharCode(buf[i]);
-          }
-          return out;
-        },
-      };
+      ? {
+          decode(buf: Uint8Array): string {
+            const out = Buffer.from(buf.buffer, buf.byteOffset, buf.byteLength);
+            return out.toString();
+          },
+        }
+      : {
+          decode(buf: Uint8Array): string {
+            let out = '';
+            for (let i = 0; i < buf.length; i++) {
+              out += String.fromCharCode(buf[i]);
+            }
+            return out;
+          },
+        };
 
 export class StringWriter {
   pos = 0;
