@@ -1,0 +1,12 @@
+{
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**"]
+    },
+    "test": {},
+    "lint": {},
+    "dev": { "cache": false }
+  },
+  "globalDependencies": ["tsconfig.json"]
+}

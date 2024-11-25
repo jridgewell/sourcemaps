@@ -1,0 +1,46 @@
+{
+  "name": "@jridgewell/sourcemap-codec",
+  "version": "1.5.0",
+  "description": "Encode/decode sourcemap mappings",
+  "keywords": [
+    "sourcemap",
+    "vlq"
+  ],
+  "main": "dist/sourcemap-codec.umd.js",
+  "module": "dist/sourcemap-codec.mjs",
+  "types": "types/sourcemap-codec.d.ts",
+  "files": [
+    "dist",
+    "src",
+    "types"
+  ],
+  "exports": {
+    ".": [
+      {
+        "types": "./types/sourcemap-codec.d.ts",
+        "browser": "./dist/sourcemap-codec.umd.js",
+        "require": "./dist/sourcemap-codec.umd.js",
+        "import": "./dist/sourcemap-codec.mjs"
+      },
+      "./dist/sourcemap-codec.umd.js"
+    ],
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "UMD=sourcemapCodec node ../../esbuild.mjs sourcemap-codec.ts",
+    "test": "run-s -n test:types test:only test:format",
+    "test:format": "prettier --check '{src,test}/**/*.ts'",
+    "test:only": "mocha",
+    "test:types": "eslint '{src,test}/**/*.ts'",
+    "lint": "run-s -n lint:types lint:format",
+    "lint:format": "npm run test:format -- --write",
+    "lint:types": "npm run test:types -- --fix"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jridgewell/sourcemaps.git",
+    "directory": "packages/sourcemap-codec"
+  },
+  "author": "Justin Ridgewell <justin@ridgewell.name>",
+  "license": "MIT"
+}

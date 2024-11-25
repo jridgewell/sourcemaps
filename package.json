@@ -1,0 +1,32 @@
+{
+  "name": "sourcemaps",
+  "private": true,
+  "description": "Monorepo for @jridgewell's collection of sourcemap packages",
+  "scripts": {
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test --parallel"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "author": "Justin Ridgewell <justin@ridgewell.name>",
+  "license": "MIT",
+  "packageManager": "npm@10.0.0",
+  "devDependencies": {
+    "@eslint/eslintrc": "3.2.0",
+    "@eslint/js": "9.15.0",
+    "@types/mocha": "10.0.10",
+    "@types/node": "22.9.3",
+    "esbuild": "0.24.0",
+    "esbuild-plugin-umd-wrapper": "3.0.0",
+    "eslint": "9.15.0",
+    "mocha": "10.8.2",
+    "npm-run-all": "4.1.5",
+    "prettier": "3.3.3",
+    "tsx": "4.19.2",
+    "turbo": "2.3.1",
+    "typescript": "5.7.2",
+    "typescript-eslint": "8.15.0"
+  }
+}

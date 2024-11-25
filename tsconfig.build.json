@@ -1,0 +1,9 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/gen-mapping" },
+    { "path": "packages/source-map" },
+    { "path": "packages/sourcemap-codec" },
+    { "path": "packages/trace-mapping" }
+  ]
+}
