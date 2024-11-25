@@ -16,9 +16,10 @@ async function build(esm) {
     outdir: 'dist',
     bundle: true,
     sourcemap: 'linked',
+    sourcesContent: false,
     format: esm ? 'esm' : 'umd',
     plugins: esm ? [] : [umdWrapper({ libraryName: umd })],
-    outExtension: esm ? {} : { '.js': '.umd.js' },
+    outExtension: esm ? { '.js': '.mjs' } : { '.js': '.umd.js' },
   });
   console.log(`Compiled ${esm ? 'esm' : 'umd'}`, build);
 }

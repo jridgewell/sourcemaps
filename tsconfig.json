@@ -3,11 +3,9 @@
     "allowSyntheticDefaultImports": true,
     "composite": true,
     "esModuleInterop": true,
-    "incremental": true,
     "lib": ["es2015", "dom"],
     "module": "es2015",
     "moduleResolution": "bundler",
-    "sourceMap": true,
     "strict": true,
     "target": "es2015",
     "typeRoots": ["node_modules/@types"]
