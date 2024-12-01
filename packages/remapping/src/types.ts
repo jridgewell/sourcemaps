@@ -18,7 +18,7 @@ export type LoaderContext = {
 
 export type SourceMapLoader = (
   file: string,
-  ctx: LoaderContext
+  ctx: LoaderContext,
 ) => SourceMapInput | null | undefined | void;
 
 export type Options = {

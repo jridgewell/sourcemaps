@@ -45,7 +45,7 @@ describe('buildSourceMapTree', () => {
         ...decodedMap,
         sourcesContent: ['1 + 1'],
       },
-      () => null
+      () => null,
     );
 
     expect(tree.sources).toMatchObject([
@@ -70,7 +70,7 @@ describe('buildSourceMapTree', () => {
         ...decodedMap,
         sourcesContent: undefined,
       },
-      () => null
+      () => null,
     );
 
     expect(tree.sources).toMatchObject([
@@ -86,7 +86,7 @@ describe('buildSourceMapTree', () => {
         ...decodedMap,
         ignoreList: [0],
       },
-      () => null
+      () => null,
     );
 
     expect(tree.sources).toMatchObject([
@@ -111,7 +111,7 @@ describe('buildSourceMapTree', () => {
         ...decodedMap,
         ignoreList: undefined,
       },
-      () => null
+      () => null,
     );
 
     expect(tree.sources).toMatchObject([
@@ -153,7 +153,7 @@ describe('buildSourceMapTree', () => {
         ...decodedMap,
         sourceRoot: 'https://foo.com/',
       },
-      loader
+      loader,
     );
 
     expect(loader).toHaveBeenCalledTimes(1);
@@ -212,7 +212,7 @@ describe('buildSourceMapTree', () => {
           expect.anything(),
           expect.objectContaining({
             importer: '',
-          })
+          }),
         );
       });
 
@@ -229,13 +229,13 @@ describe('buildSourceMapTree', () => {
           'helloworld.js',
           expect.objectContaining({
             importer: '',
-          })
+          }),
         );
         expect(loader).toHaveBeenCalledWith(
           'two.js',
           expect.objectContaining({
             importer: 'helloworld.js',
-          })
+          }),
         );
       });
     });
@@ -248,7 +248,7 @@ describe('buildSourceMapTree', () => {
             ...decodedMap,
             sources: ['first.js', 'second.js'],
           },
-          loader
+          loader,
         );
 
         expect(loader).toHaveBeenCalledTimes(2);
@@ -256,13 +256,13 @@ describe('buildSourceMapTree', () => {
           'first.js',
           expect.objectContaining({
             depth: 1,
-          })
+          }),
         );
         expect(loader).toHaveBeenCalledWith(
           'second.js',
           expect.objectContaining({
             depth: 1,
-          })
+          }),
         );
       });
 
@@ -277,7 +277,7 @@ describe('buildSourceMapTree', () => {
             ...decodedMap,
             sources: ['first.js', 'second.js'],
           },
-          loader
+          loader,
         );
 
         expect(loader).toHaveBeenCalledTimes(3);
@@ -285,19 +285,19 @@ describe('buildSourceMapTree', () => {
           'first.js',
           expect.objectContaining({
             depth: 1,
-          })
+          }),
         );
         expect(loader).toHaveBeenCalledWith(
           'two.js',
           expect.objectContaining({
             depth: 2,
-          })
+          }),
         );
         expect(loader).toHaveBeenCalledWith(
           'second.js',
           expect.objectContaining({
             depth: 1,
-          })
+          }),
         );
       });
     });
@@ -312,7 +312,7 @@ describe('buildSourceMapTree', () => {
           'helloworld.js',
           expect.objectContaining({
             source: 'helloworld.js',
-          })
+          }),
         );
       });
 
@@ -386,7 +386,7 @@ describe('buildSourceMapTree', () => {
             ...decodedMap,
             sourcesContent: ['test'],
           },
-          loader
+          loader,
         );
 
         expect(tree.sources).toMatchObject([
@@ -426,7 +426,7 @@ describe('buildSourceMapTree', () => {
             ...decodedMap,
             ignoreList: [0],
           },
-          loader
+          loader,
         );
 
         expect(tree.sources).toMatchObject([
@@ -461,7 +461,7 @@ describe('buildSourceMapTree', () => {
         // sucks.
         sourceRoot: 'https://foo.com/deep',
       },
-      loader
+      loader,
     );
 
     expect(tree.sources).toMatchObject([
@@ -576,7 +576,7 @@ describe('buildSourceMapTree', () => {
           ...decodedMap,
           sources: [null],
         },
-        loader
+        loader,
       );
 
       expect(tree.map).toMatchObject({
@@ -599,7 +599,7 @@ describe('buildSourceMapTree', () => {
           ...decodedMap,
           sources: [null],
         },
-        loader
+        loader,
       );
 
       expect(tree.sources).toMatchObject([
@@ -630,7 +630,7 @@ describe('buildSourceMapTree', () => {
           sourceRoot: 'https://foo.com/',
           sources: [null],
         },
-        loader
+        loader,
       );
 
       expect(tree.sources).toMatchObject([

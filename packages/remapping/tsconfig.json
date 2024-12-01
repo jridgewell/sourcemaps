@@ -1,18 +1,10 @@
 {
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "moduleResolution": "node",
-    "esModuleInterop": true,
-    "target": "es2015",
-    "module": "es2015",
-    "lib": ["es2015"],
-    "strict": true,
-    "sourceMap": true,
-    "inlineSources": true,
-    "declaration": true,
-    "allowSyntheticDefaultImports": true,
-    "declarationDir": "dist/types",
-    "typeRoots": ["node_modules/@types"]
+    "declarationDir": "types",
+    "outDir": "dist"
   },
-  "exclude": ["dist"],
-  "include": ["src", "test"]
+  "include": ["src", "test"],
+  "exclude": ["dist"]
 }
+

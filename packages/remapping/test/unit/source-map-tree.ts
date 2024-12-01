@@ -34,7 +34,7 @@ describe('MapSource', () => {
         sources: ['original.js'],
         version: 3,
       }),
-      [OriginalSource(`${sourceRoot}/original.js`, '', false)]
+      [OriginalSource(`${sourceRoot}/original.js`, '', false)],
     );
 
     test('records segment if segment is 1-length', () => {

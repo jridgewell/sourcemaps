@@ -39,7 +39,7 @@ function SegmentObject(
   column: number,
   name: string,
   content: string | null,
-  ignore: boolean
+  ignore: boolean,
 ): SourceMapSegmentObject {
   return { source, line, column, name, content, ignore };
 }
@@ -49,21 +49,21 @@ function Source(
   sources: Sources[],
   source: '',
   content: null,
-  ignore: false
+  ignore: false,
 ): MapSource;
 function Source(
   map: null,
   sources: Sources[],
   source: string,
   content: string | null,
-  ignore: boolean
+  ignore: boolean,
 ): OriginalSource;
 function Source(
   map: TraceMap | null,
   sources: Sources[],
   source: string | '',
   content: string | null,
-  ignore: boolean
+  ignore: boolean,
 ): Sources {
   return {
     map,
@@ -89,7 +89,7 @@ export function MapSource(map: TraceMap, sources: Sources[]): MapSource {
 export function OriginalSource(
   source: string,
   content: string | null,
-  ignore: boolean
+  ignore: boolean,
 ): OriginalSource {
   return Source(null, EMPTY_SOURCES, source, content, ignore);
 }
@@ -122,7 +122,7 @@ export function traceMappings(tree: MapSource): GenMapping {
           source,
           segment[2],
           segment[3],
-          segment.length === 5 ? rootNames[segment[4]] : ''
+          segment.length === 5 ? rootNames[segment[4]] : '',
         );
 
         // If the trace is invalid, then the trace ran into a sourcemap that doesn't contain a
@@ -149,7 +149,7 @@ export function originalPositionFor(
   source: Sources,
   line: number,
   column: number,
-  name: string
+  name: string,
 ): SourceMapSegmentObject | null {
   if (!source.map) {
     return SegmentObject(source.source, line, column, name, source.content, source.ignore);
@@ -167,6 +167,6 @@ export function originalPositionFor(
     source.sources[segment[1]],
     segment[2],
     segment[3],
-    segment.length === 5 ? source.map.names[segment[4]] : name
+    segment.length === 5 ? source.map.names[segment[4]] : name,
   );
 }

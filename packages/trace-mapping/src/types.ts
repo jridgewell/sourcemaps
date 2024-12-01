@@ -100,11 +100,12 @@ export abstract class SourceMap {
   declare ignoreList: SourceMapV3['ignoreList'];
 }
 
-export type Ro<T> = T extends Array<infer V>
-  ? V[] | Readonly<V[]> | RoArray<V> | Readonly<RoArray<V>>
-  : T extends object
-    ? T | Readonly<T> | RoObject<T> | Readonly<RoObject<T>>
-    : T;
+export type Ro<T> =
+  T extends Array<infer V>
+    ? V[] | Readonly<V[]> | RoArray<V> | Readonly<RoArray<V>>
+    : T extends object
+      ? T | Readonly<T> | RoObject<T> | Readonly<RoObject<T>>
+      : T;
 type RoArray<T> = Ro<T>[];
 type RoObject<T> = { [K in keyof T]: T[K] | Ro<T[K]> };
 

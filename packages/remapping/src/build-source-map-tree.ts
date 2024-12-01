@@ -23,7 +23,7 @@ function asArray<T>(value: T | T[]): T[] {
  */
 export default function buildSourceMapTree(
   input: SourceMapInput | SourceMapInput[],
-  loader: SourceMapLoader
+  loader: SourceMapLoader,
 ): MapSourceType {
   const maps = asArray(input).map((m) => new TraceMap(m, ''));
   const map = maps.pop()!;
@@ -32,7 +32,7 @@ export default function buildSourceMapTree(
     if (maps[i].sources.length > 1) {
       throw new Error(
         `Transformation map ${i} must have exactly one source file.\n` +
-          'Did you specify these with the most recent transformation maps first?'
+          'Did you specify these with the most recent transformation maps first?',
       );
     }
   }
@@ -48,7 +48,7 @@ function build(
   map: TraceMap,
   loader: SourceMapLoader,
   importer: string,
-  importerDepth: number
+  importerDepth: number,
 ): MapSourceType {
   const { resolvedSources, sourcesContent, ignoreList } = map;
 

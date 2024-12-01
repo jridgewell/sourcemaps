@@ -6,16 +6,18 @@
     "source",
     "map"
   ],
-  "author": "Justin Ridgewell <justin@ridgewell.name>",
-  "license": "MIT",
-  "repository": "https://github.com/jridgewell/gen-mapping",
   "main": "dist/gen-mapping.umd.js",
   "module": "dist/gen-mapping.mjs",
-  "types": "dist/types/gen-mapping.d.ts",
+  "types": "types/gen-mapping.d.ts",
+  "files": [
+    "dist",
+    "src",
+    "types"
+  ],
   "exports": {
     ".": [
       {
-        "types": "./dist/types/gen-mapping.d.ts",
+        "types": "./types/gen-mapping.d.ts",
         "browser": "./dist/gen-mapping.umd.js",
         "require": "./dist/gen-mapping.umd.js",
         "import": "./dist/gen-mapping.mjs"
@@ -24,50 +26,28 @@
     ],
     "./package.json": "./package.json"
   },
-  "files": [
-    "dist"
-  ],
-  "engines": {
-    "node": ">=6.0.0"
-  },
   "scripts": {
-    "benchmark": "run-s build:rollup benchmark:*",
+    "benchmark": "run-s build:code benchmark:*",
     "benchmark:install": "cd benchmark && npm install",
-    "benchmark:only": "node benchmark/index.mjs",
-    "prebuild": "rm -rf dist",
-    "build": "run-s -n build:*",
-    "build:rollup": "rollup -c rollup.config.js",
-    "build:ts": "tsc --project tsconfig.build.json",
-    "lint": "run-s -n lint:*",
-    "lint:prettier": "npm run test:lint:prettier -- --write",
-    "lint:ts": "npm run test:lint:ts -- --fix",
-    "test": "run-s -n test:lint test:only",
-    "test:debug": "mocha --inspect-brk",
-    "test:lint": "run-s -n test:lint:*",
-    "test:lint:prettier": "prettier --check '{src,test}/**/*.ts'",
-    "test:lint:ts": "eslint '{src,test}/**/*.ts'",
-    "test:only": "c8 mocha",
-    "test:watch": "mocha --watch",
-    "prepublishOnly": "npm run preversion",
-    "preversion": "run-s test build"
+    "benchmark:only": "node --expose-gc benchmark/index.js",
+    "build": "run-s -n build:code build:types",
+    "build:code": "UMD=sourcemapCodec node ../../esbuild.mjs gen-mapping.ts",
+    "build:types": "tsc --project tsconfig.build.json",
+    "test": "run-s -n test:types test:only test:format",
+    "test:format": "prettier --check '{src,test}/**/*.ts'",
+    "test:only": "mocha",
+    "test:types": "eslint '{src,test}/**/*.ts'",
+    "lint": "run-s -n lint:types lint:format",
+    "lint:format": "npm run test:format -- --write",
+    "lint:types": "npm run test:types -- --fix"
   },
-  "devDependencies": {
-    "@rollup/plugin-typescript": "8.3.2",
-    "@types/mocha": "9.1.1",
-    "@types/node": "17.0.29",
-    "@typescript-eslint/eslint-plugin": "5.21.0",
-    "@typescript-eslint/parser": "5.21.0",
-    "benchmark": "2.1.4",
-    "c8": "7.11.2",
-    "eslint": "8.14.0",
-    "eslint-config-prettier": "8.5.0",
-    "mocha": "9.2.2",
-    "npm-run-all": "4.1.5",
-    "prettier": "2.6.2",
-    "rollup": "2.70.2",
-    "tsx": "4.7.1",
-    "typescript": "4.6.3"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jridgewell/sourcemaps.git",
+    "directory": "packages/gen-mapping"
   },
+  "author": "Justin Ridgewell <justin@ridgewell.name>",
+  "license": "MIT",
   "dependencies": {
     "@jridgewell/set-array": "^1.2.1",
     "@jridgewell/sourcemap-codec": "1.4.16-beta.0",

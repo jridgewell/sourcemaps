@@ -33,7 +33,7 @@ export type { SourceMap };
 export default function remapping(
   input: SourceMapInput | SourceMapInput[],
   loader: SourceMapLoader,
-  options?: boolean | Options
+  options?: boolean | Options,
 ): SourceMap {
   const opts =
     typeof options === 'object' ? options : { excludeContent: !!options, decodedMappings: false };

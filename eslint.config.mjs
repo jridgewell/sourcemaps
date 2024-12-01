@@ -33,19 +33,15 @@ export default [
 
     rules: {
       '@typescript-eslint/consistent-type-imports': 'error',
-      '@/no-duplicate-imports': 'error',
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',
 
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        {
-          argsIgnorePattern: '^_',
-        },
-      ],
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
 
       'no-constant-condition': 'off',
       'no-unused-labels': 'off',
+      'prefer-rest-params': 'off',
+      'prefer-const': ['error', { destructuring: 'all' }],
     },
   },
   {
@@ -57,4 +53,3 @@ export default [
     },
   },
 ];
-

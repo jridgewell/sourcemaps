@@ -70,7 +70,7 @@ describe('remapping', () => {
         if (name.endsWith('transpiled.js')) {
           return transpiledMap;
         }
-      }
+      },
     );
 
     expect(map).toEqual({
@@ -92,7 +92,7 @@ describe('remapping', () => {
         if (name.endsWith('transpiled.js')) {
           return transpiledMap;
         }
-      }
+      },
     );
 
     expect(map).toEqual({
@@ -177,7 +177,7 @@ describe('remapping', () => {
             return transpiledMap;
           }
         },
-        true
+        true,
       );
 
       expect(map).not.toHaveProperty('sourcesContent');
@@ -193,7 +193,7 @@ describe('remapping', () => {
             return transpiledMap;
           }
         },
-        { excludeContent: true }
+        { excludeContent: true },
       );
 
       expect(map).not.toHaveProperty('sourcesContent');
@@ -207,7 +207,7 @@ describe('remapping', () => {
             return transpiledMap;
           }
         },
-        { decodedMappings: true }
+        { decodedMappings: true },
       );
 
       expect(map).toHaveProperty('mappings', [[[0, 0, 2, 2, 0]]]);
