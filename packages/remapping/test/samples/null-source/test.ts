@@ -1,6 +1,6 @@
-import type { RawSourceMap } from 'source-map';
-import { SourceMapConsumer } from 'source-map';
+import { SourceMapConsumer, type RawSourceMap } from 'source-map';
 import remapping from '../../../src/remapping';
+import { assertMatchObject } from '../../unit/util';
 
 describe('null-source segement', () => {
   const original: any = {
@@ -17,7 +17,7 @@ describe('null-source segement', () => {
     mappings: 'AAAA,SAASA,IAAIC,GAAMC,QAAQC,IAAIF,GAAMD,IAAI,SAASI,QAAQC,KAAK',
   };
 
-  test('minified code keeps null-source segment', () => {
+  it('minified code keeps null-source segment', () => {
     const remapped = remapping([minified, original], () => null);
     const consumer = new SourceMapConsumer(remapped as unknown as RawSourceMap);
 
@@ -25,7 +25,7 @@ describe('null-source segement', () => {
       column: 20,
       line: 1,
     });
-    expect(console).toMatchObject({
+    assertMatchObject(console, {
       column: 0,
       line: 1,
       source: 'source.ts',
@@ -35,7 +35,7 @@ describe('null-source segement', () => {
       column: 38,
       line: 1,
     });
-    expect(say).toMatchObject({
+    assertMatchObject(say, {
       column: null,
       line: null,
       source: null,
@@ -45,14 +45,14 @@ describe('null-source segement', () => {
       column: 53,
       line: 1,
     });
-    expect(exit).toMatchObject({
+    assertMatchObject(exit, {
       column: 0,
       line: 2,
       source: 'source.ts',
     });
   });
 
-  test('null-source', () => {
+  it('null-source', () => {
     const remapped = remapping(original, () => null);
     const consumer = new SourceMapConsumer(remapped as unknown as RawSourceMap);
 
@@ -60,7 +60,7 @@ describe('null-source segement', () => {
       column: 20,
       line: 1,
     });
-    expect(console).toMatchObject({
+    assertMatchObject(console, {
       column: 0,
       line: 1,
       source: 'source.ts',
@@ -70,7 +70,7 @@ describe('null-source segement', () => {
       column: 38,
       line: 1,
     });
-    expect(say).toMatchObject({
+    assertMatchObject(say, {
       column: null,
       line: null,
       source: null,
@@ -80,7 +80,7 @@ describe('null-source segement', () => {
       column: 53,
       line: 1,
     });
-    expect(exit).toMatchObject({
+    assertMatchObject(exit, {
       column: 0,
       line: 2,
       source: 'source.ts',

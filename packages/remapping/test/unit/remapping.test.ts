@@ -1,5 +1,10 @@
 import remapping from '../../src/remapping';
-import type { EncodedSourceMap } from '../../src/types';
+import { type EncodedSourceMap } from '../../src/types';
+import assert from 'node:assert/strict';
+
+function stripUndefined(value: object) {
+  return JSON.parse(JSON.stringify(value));
+}
 
 describe('remapping', () => {
   const rawMap: EncodedSourceMap = {
@@ -37,29 +42,29 @@ describe('remapping', () => {
     ignoreList: [],
   };
 
-  test('does not alter a lone sourcemap', () => {
+  it('does not alter a lone sourcemap', () => {
     const map = remapping(rawMap, () => null);
-    expect(map).toEqual(rawMap);
+    assert.deepEqual(stripUndefined(map), rawMap);
   });
 
-  test('traces SourceMapSegments through child sourcemaps', () => {
+  it('traces SourceMapSegments through child sourcemaps', () => {
     const map = remapping(rawMap, (name: string) => {
       if (name === 'transpiled.js') {
         return transpiledMap;
       }
     });
 
-    expect(map).toEqual(translatedMap);
+    assert.deepEqual(stripUndefined(map), translatedMap);
   });
 
-  test('traces transformations through sourcemap', () => {
+  it('traces transformations through sourcemap', () => {
     const maps = [rawMap, transpiledMap];
     const map = remapping(maps, () => null);
 
-    expect(map).toEqual(translatedMap);
+    assert.deepEqual(stripUndefined(map), translatedMap);
   });
 
-  test('resolves sourcemaps realtive to sourceRoot', () => {
+  it('resolves sourcemaps realtive to sourceRoot', () => {
     const sourceRoot = 'foo/';
     const map = remapping(
       {
@@ -73,7 +78,7 @@ describe('remapping', () => {
       },
     );
 
-    expect(map).toEqual({
+    assert.deepEqual(stripUndefined(map), {
       ...translatedMap,
       // TODO: support sourceRoot
       // sourceRoot,
@@ -81,7 +86,7 @@ describe('remapping', () => {
     });
   });
 
-  test('resolves sourcemaps realtive to absolute sourceRoot', () => {
+  it('resolves sourcemaps realtive to absolute sourceRoot', () => {
     const sourceRoot = 'https://foo.com/';
     const map = remapping(
       {
@@ -95,7 +100,7 @@ describe('remapping', () => {
       },
     );
 
-    expect(map).toEqual({
+    assert.deepEqual(stripUndefined(map), {
       ...translatedMap,
       // TODO: support sourceRoot
       // sourceRoot,
@@ -103,7 +108,7 @@ describe('remapping', () => {
     });
   });
 
-  test('includes null sourceContent if sourcemap has no sourcesContent', () => {
+  it('includes null sourceContent if sourcemap has no sourcesContent', () => {
     const map = remapping(rawMap, (name: string) => {
       if (name === 'transpiled.js') {
         return {
@@ -113,10 +118,10 @@ describe('remapping', () => {
       }
     });
 
-    expect(map).toHaveProperty('sourcesContent', [null]);
+    assert.deepEqual(map.sourcesContent, [null]);
   });
 
-  test('excludes null sourceContent if sourcemap is not self-containing', () => {
+  it('excludes null sourceContent if sourcemap is not self-containing', () => {
     const map = remapping(rawMap, (name: string) => {
       if (name === 'transpiled.js') {
         return {
@@ -126,10 +131,10 @@ describe('remapping', () => {
       }
     });
 
-    expect(map).toHaveProperty('sourcesContent', [null]);
+    assert.deepEqual(map.sourcesContent, [null]);
   });
 
-  test('ignores if original source is ignored', () => {
+  it('ignores if original source is ignored', () => {
     const map = remapping(rawMap, (name: string) => {
       if (name === 'transpiled.js') {
         return {
@@ -139,10 +144,10 @@ describe('remapping', () => {
       }
     });
 
-    expect(map).toHaveProperty('ignoreList', [0]);
+    assert.deepEqual(map.ignoreList, [0]);
   });
 
-  test('unignores if sourcemap has no ignoreList', () => {
+  it('unignores if sourcemap has no ignoreList', () => {
     const map = remapping(rawMap, (name: string) => {
       if (name === 'transpiled.js') {
         return {
@@ -152,10 +157,10 @@ describe('remapping', () => {
       }
     });
 
-    expect(map).toHaveProperty('ignoreList', []);
+    assert.deepEqual(map.ignoreList, []);
   });
 
-  test('unignores if sourcemap unignores original source', () => {
+  it('unignores if sourcemap unignores original source', () => {
     const map = remapping(rawMap, (name: string) => {
       if (name === 'transpiled.js') {
         return {
@@ -165,11 +170,11 @@ describe('remapping', () => {
       }
     });
 
-    expect(map).toHaveProperty('ignoreList', []);
+    assert.deepEqual(map.ignoreList, []);
   });
 
   describe('boolean options', () => {
-    test('excludes sourcesContent if `excludeContent` is set', () => {
+    it('excludes sourcesContent if `excludeContent` is set', () => {
       const map = remapping(
         rawMap,
         (name: string) => {
@@ -180,12 +185,12 @@ describe('remapping', () => {
         true,
       );
 
-      expect(map).not.toHaveProperty('sourcesContent');
+      assert(!('sourcesContent' in map));
     });
   });
 
   describe('options bag', () => {
-    test('excludes sourcesContent if `excludeContent` is set', () => {
+    it('excludes sourcesContent if `excludeContent` is set', () => {
       const map = remapping(
         rawMap,
         (name: string) => {
@@ -196,10 +201,10 @@ describe('remapping', () => {
         { excludeContent: true },
       );
 
-      expect(map).not.toHaveProperty('sourcesContent');
+      assert(!('sourcesContent' in map));
     });
 
-    test('returns decoded sourcemap if `decodedMappings` is set', () => {
+    it('returns decoded sourcemap if `decodedMappings` is set', () => {
       const map = remapping(
         rawMap,
         (name: string) => {
@@ -210,7 +215,7 @@ describe('remapping', () => {
         { decodedMappings: true },
       );
 
-      expect(map).toHaveProperty('mappings', [[[0, 0, 2, 2, 0]]]);
+      assert.deepEqual(map.mappings, [[[0, 0, 2, 2, 0]]]);
     });
   });
 });

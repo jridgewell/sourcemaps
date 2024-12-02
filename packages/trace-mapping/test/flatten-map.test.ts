@@ -1,9 +1,13 @@
 /// <reference lib="esnext" />
 
-import { strict as assert } from 'assert';
-import { FlattenMap, encodedMappings, decodedMappings } from '../src/trace-mapping';
-
-import type { SectionedSourceMap, SourceMapSegment } from '../src/trace-mapping';
+import assert from 'node:assert/strict';
+import {
+  FlattenMap,
+  encodedMappings,
+  decodedMappings,
+  type SectionedSourceMap,
+  type SourceMapSegment,
+} from '../src/trace-mapping';
 
 describe('FlattenMap', () => {
   const map: SectionedSourceMap = {

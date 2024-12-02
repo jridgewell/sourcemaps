@@ -1,24 +1,36 @@
-const { SourceMapConsumer, SourceMapGenerator } = require('../src/source-map');
-const fixtures = require('./fixtures');
-const assert = require('assert');
+import { SourceMapConsumer, SourceMapGenerator } from '../src/source-map';
+import * as fixtures from './fixtures';
+import assert from 'node:assert/strict';
 
 describe('SourceMapConsumer.sourceContentFor', () => {
   it('test that we can get the original sources for the sources', () => {
-    var map = new SourceMapConsumer(fixtures.testMapWithSourcesContent);
-    var sources = map.sources;
+    const map = new SourceMapConsumer(fixtures.testMapWithSourcesContent);
+    const sources = map.sources;
 
-    assert.equal(map.sourceContentFor(sources[0]), ' ONE.foo = function (bar) {\n   return baz(bar);\n };');
-    assert.equal(map.sourceContentFor(sources[1]), ' TWO.inc = function (n) {\n   return n + 1;\n };');
-    assert.equal(map.sourceContentFor("one.js"), ' ONE.foo = function (bar) {\n   return baz(bar);\n };');
-    assert.equal(map.sourceContentFor("two.js"), ' TWO.inc = function (n) {\n   return n + 1;\n };');
+    assert.equal(
+      map.sourceContentFor(sources[0]!),
+      ' ONE.foo = function (bar) {\n   return baz(bar);\n };',
+    );
+    assert.equal(
+      map.sourceContentFor(sources[1]!),
+      ' TWO.inc = function (n) {\n   return n + 1;\n };',
+    );
+    assert.equal(
+      map.sourceContentFor('one.js'),
+      ' ONE.foo = function (bar) {\n   return baz(bar);\n };',
+    );
+    assert.equal(
+      map.sourceContentFor('two.js'),
+      ' TWO.inc = function (n) {\n   return n + 1;\n };',
+    );
     assert.throws(function () {
-      map.sourceContentFor("");
+      map.sourceContentFor('');
     }, Error);
     assert.throws(function () {
-      map.sourceContentFor("/the/root/three.js");
+      map.sourceContentFor('/the/root/three.js');
     }, Error);
     assert.throws(function () {
-      map.sourceContentFor("three.js");
+      map.sourceContentFor('three.js');
     }, Error);
   });
 
@@ -61,26 +73,24 @@ describe('SourceMapConsumer.sourceContentFor', () => {
       map.sourceContentFor("three.js");
     }, Error);
   });*/
-
-})
+});
 
 describe('SourceMapConsuper.hasContentsOfAllSources', () => {
-
   function createSourceMapWithoutSources() {
-    var smg = new SourceMapGenerator({
+    const smg = new SourceMapGenerator({
       sourceRoot: 'http://example.com/',
-      file: 'foo.js'
+      file: 'foo.js',
     });
     smg.addMapping({
       original: { line: 1, column: 1 },
       generated: { line: 2, column: 2 },
-      source: 'bar.js'
+      source: 'bar.js',
     });
     smg.addMapping({
       original: { line: 2, column: 2 },
       generated: { line: 4, column: 4 },
       source: 'baz.js',
-      name: 'dirtMcGirt'
+      name: 'dirtMcGirt',
     });
 
     return smg;
@@ -89,7 +99,7 @@ describe('SourceMapConsuper.hasContentsOfAllSources', () => {
   it('has no content', () => {
     const smg = createSourceMapWithoutSources();
 
-    var smc = SourceMapConsumer.fromSourceMap(smg);
+    const smc = SourceMapConsumer.fromSourceMap(smg);
     assert.equal(smc.hasContentsOfAllSources(), false);
   });
 
@@ -97,7 +107,7 @@ describe('SourceMapConsuper.hasContentsOfAllSources', () => {
     const smg = createSourceMapWithoutSources();
     smg.setSourceContent('baz.js', 'baz.js content');
 
-    var smc = SourceMapConsumer.fromSourceMap(smg);
+    const smc = SourceMapConsumer.fromSourceMap(smg);
     assert.equal(smc.hasContentsOfAllSources(), false);
   });
 
@@ -106,30 +116,30 @@ describe('SourceMapConsuper.hasContentsOfAllSources', () => {
     smg.setSourceContent('bar.js', 'bar.js content');
     smg.setSourceContent('baz.js', 'baz.js content');
 
-    var smc = SourceMapConsumer.fromSourceMap(smg);
+    const smc = SourceMapConsumer.fromSourceMap(smg);
     assert.equal(smc.hasContentsOfAllSources(), true);
   });
 });
 
 it('SourceMapConsumer.fromSourceMap', () => {
-  var smg = new SourceMapGenerator({
+  const smg = new SourceMapGenerator({
     sourceRoot: 'http://example.com/',
-    file: 'foo.js'
+    file: 'foo.js',
   });
   smg.addMapping({
     original: { line: 1, column: 1 },
     generated: { line: 2, column: 2 },
-    source: 'bar.js'
+    source: 'bar.js',
   });
   smg.addMapping({
     original: { line: 2, column: 2 },
     generated: { line: 4, column: 4 },
     source: 'baz.js',
-    name: 'dirtMcGirt'
+    name: 'dirtMcGirt',
   });
   smg.setSourceContent('baz.js', 'baz.js content');
 
-  var smc = SourceMapConsumer.fromSourceMap(smg);
+  const smc = SourceMapConsumer.fromSourceMap(smg);
   assert.equal(smc.file, 'foo.js');
   assert.equal(smc.sourceRoot, 'http://example.com/');
   assert.equal(smc.sources.length, 2);
@@ -137,48 +147,48 @@ it('SourceMapConsumer.fromSourceMap', () => {
   assert.equal(smc.sources[1], 'http://example.com/baz.js');
   assert.equal(smc.sourceContentFor('baz.js'), 'baz.js content');
 
-  var pos = smc.originalPositionFor({
+  let pos = smc.originalPositionFor({
     line: 2,
-    column: 2
+    column: 2,
   });
   assert.equal(pos.line, 1);
   assert.equal(pos.column, 1);
   assert.equal(pos.source, 'http://example.com/bar.js');
   assert.equal(pos.name, null);
 
-  pos = smc.generatedPositionFor({
+  let gpos = smc.generatedPositionFor({
     line: 1,
     column: 1,
-    source: 'http://example.com/bar.js'
+    source: 'http://example.com/bar.js',
   });
-  assert.equal(pos.line, 2);
-  assert.equal(pos.column, 2);
+  assert.equal(gpos.line, 2);
+  assert.equal(gpos.column, 2);
 
   pos = smc.originalPositionFor({
     line: 4,
-    column: 4
+    column: 4,
   });
   assert.equal(pos.line, 2);
   assert.equal(pos.column, 2);
   assert.equal(pos.source, 'http://example.com/baz.js');
   assert.equal(pos.name, 'dirtMcGirt');
 
-  pos = smc.generatedPositionFor({
+  gpos = smc.generatedPositionFor({
     line: 2,
     column: 2,
-    source: 'http://example.com/baz.js'
+    source: 'http://example.com/baz.js',
   });
-  assert.equal(pos.line, 4);
-  assert.equal(pos.column, 4);
+  assert.equal(gpos.line, 4);
+  assert.equal(gpos.column, 4);
 });
 
-describe("SourceMapConsumer.eachMapping", () => {
+describe('SourceMapConsumer.eachMapping', () => {
   it('test eachMapping', () => {
-    var map;
+    let map;
 
     map = new SourceMapConsumer(fixtures.testMap);
-    var previousLine = -Infinity;
-    var previousColumn = -Infinity;
+    let previousLine = -Infinity;
+    let previousColumn = -Infinity;
     map.eachMapping(function (mapping) {
       assert.ok(mapping.generatedLine >= previousLine);
 
@@ -187,8 +197,7 @@ describe("SourceMapConsumer.eachMapping", () => {
       if (mapping.generatedLine === previousLine) {
         assert.ok(mapping.generatedColumn >= previousColumn);
         previousColumn = mapping.generatedColumn;
-      }
-      else {
+      } else {
         previousLine = mapping.generatedLine;
         previousColumn = -Infinity;
       }
@@ -206,21 +215,20 @@ describe("SourceMapConsumer.eachMapping", () => {
   });
 
   it('test eachMapping for indexed source maps', () => {
-    var map = new SourceMapConsumer(fixtures.indexedTestMap);
-    var previousLine = -Infinity;
-    var previousColumn = -Infinity;
+    const map = new SourceMapConsumer(fixtures.indexedTestMap);
+    let previousLine = -Infinity;
+    let previousColumn = -Infinity;
     map.eachMapping(function (mapping) {
       assert.ok(mapping.generatedLine >= previousLine);
 
       if (mapping.source) {
-        assert.equal(mapping.source.indexOf(fixtures.testMap.sourceRoot), 0);
+        assert.equal(mapping.source.indexOf(fixtures.testMap.sourceRoot!), 0);
       }
 
       if (mapping.generatedLine === previousLine) {
         assert.ok(mapping.generatedColumn >= previousColumn);
         previousColumn = mapping.generatedColumn;
-      }
-      else {
+      } else {
         previousLine = mapping.generatedLine;
         previousColumn = -Infinity;
       }
@@ -286,45 +294,45 @@ describe("SourceMapConsumer.eachMapping", () => {
   });*/
 
   it('test that we can set the context for `this` in eachMapping', () => {
-    var map = new SourceMapConsumer(fixtures.testMap);
-    var context = {};
-    map.eachMapping(function () {
+    const map = new SourceMapConsumer(fixtures.testMap);
+    const context = {};
+    map.eachMapping(function (this: object) {
       assert.equal(this, context);
     }, context);
   });
 
   it('test that we can set the context for `this` in eachMapping in indexed source maps', () => {
-    var map = new SourceMapConsumer(fixtures.indexedTestMap);
-    var context = {};
-    map.eachMapping(function () {
+    const map = new SourceMapConsumer(fixtures.indexedTestMap);
+    const context = {};
+    map.eachMapping(function (this: object) {
       assert.equal(this, context);
     }, context);
   });
-})
+});
 
-describe("SourceMapConsumer.generatedPositionFor", () => {
+describe('SourceMapConsumer.generatedPositionFor', () => {
   it('test sourceRoot + generatedPositionFor', () => {
-    var map = new SourceMapGenerator({
+    const map = new SourceMapGenerator({
       sourceRoot: 'foo/bar',
-      file: 'baz.js'
+      file: 'baz.js',
     });
     map.addMapping({
       original: { line: 1, column: 1 },
       generated: { line: 2, column: 2 },
-      source: 'bang.coffee'
+      source: 'bang.coffee',
     });
     map.addMapping({
       original: { line: 5, column: 5 },
       generated: { line: 6, column: 6 },
-      source: 'bang.coffee'
+      source: 'bang.coffee',
     });
-    map = new SourceMapConsumer(map.toString(), 'http://example.com/');
+    const consumer = new SourceMapConsumer(map.toString(), 'http://example.com/');
 
     // Should handle without sourceRoot.
-    let pos = map.generatedPositionFor({
+    const pos = consumer.generatedPositionFor({
       line: 1,
       column: 1,
-      source: 'bang.coffee'
+      source: 'bang.coffee',
     });
 
     assert.equal(pos.line, 2);
@@ -356,25 +364,25 @@ describe("SourceMapConsumer.generatedPositionFor", () => {
   });
 
   it('test sourceRoot + generatedPositionFor for path above the root', () => {
-    var map = new SourceMapGenerator({
+    const map = new SourceMapGenerator({
       sourceRoot: 'foo/bar',
-      file: 'baz.js'
+      file: 'baz.js',
     });
     map.addMapping({
       original: { line: 1, column: 1 },
       generated: { line: 2, column: 2 },
-      source: '../bang.coffee'
+      source: '../bang.coffee',
     });
-    map = new SourceMapConsumer(map.toString());
+    const consumer = new SourceMapConsumer(map.toString());
 
     // Should handle with sourceRoot.
-    var pos = map.generatedPositionFor({
+    const pos = consumer.generatedPositionFor({
       line: 1,
       column: 1,
-      source: 'foo/bang.coffee'
+      source: 'foo/bang.coffee',
     });
 
     assert.equal(pos.line, 2);
     assert.equal(pos.column, 2);
   });
-})
+});

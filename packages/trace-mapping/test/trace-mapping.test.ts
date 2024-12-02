@@ -1,6 +1,6 @@
 /// <reference lib="esnext" />
 
-import { strict as assert } from 'assert';
+import assert from 'node:assert/strict';
 import { encode, decode } from '@jridgewell/sourcemap-codec';
 
 import {
@@ -17,14 +17,11 @@ import {
   LEAST_UPPER_BOUND,
   allGeneratedPositionsFor,
   isIgnored,
-} from '../src/trace-mapping';
-
-import type {
-  SourceMapInput,
-  EncodedSourceMap,
-  DecodedSourceMap,
-  EachMapping,
-  SourceMapSegment,
+  type SourceMapInput,
+  type EncodedSourceMap,
+  type DecodedSourceMap,
+  type EachMapping,
+  type SourceMapSegment,
 } from '../src/trace-mapping';
 
 describe('TraceMap', () => {

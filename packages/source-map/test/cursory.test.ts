@@ -1,5 +1,5 @@
-const { SourceMapConsumer, SourceMapGenerator } = require('../src/source-map');
-const assert = require('assert');
+import { SourceMapConsumer, SourceMapGenerator } from '../src/source-map';
+import assert from 'node:assert/strict';
 
 it('SourceMapGenerator', () => {
   const smg = new SourceMapGenerator({

@@ -36,7 +36,10 @@ export class SourceMapConsumer {
   declare sourcesContent: TraceMap['sourcesContent'];
   declare version: TraceMap['version'];
 
-  constructor(map: ConstructorParameters<typeof AnyMap>[0], mapUrl: Parameters<typeof AnyMap>[1]) {
+  constructor(
+    map: ConstructorParameters<typeof AnyMap>[0],
+    mapUrl?: ConstructorParameters<typeof AnyMap>[1],
+  ) {
     const trace = (this._map = new AnyMap(map, mapUrl));
 
     this.file = trace.file;
@@ -47,7 +50,7 @@ export class SourceMapConsumer {
     this.version = trace.version;
   }
 
-  static fromSourceMap(map: SourceMapGenerator, mapUrl: Parameters<typeof AnyMap>[1]) {
+  static fromSourceMap(map: SourceMapGenerator, mapUrl?: Parameters<typeof AnyMap>[1]) {
     // This is more performant if we receive
     // a @jridgewell/source-map SourceMapGenerator
     if (map.toDecodedMap) {

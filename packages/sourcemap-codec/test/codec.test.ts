@@ -1,9 +1,12 @@
 /* eslint-env node, mocha */
 
 import { encode, decode, type SourceMapMappings } from '../src/sourcemap-codec';
-import { strict as assert } from 'node:assert';
+import assert from 'node:assert/strict';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe('sourcemap-codec', () => {
   // TODO more tests

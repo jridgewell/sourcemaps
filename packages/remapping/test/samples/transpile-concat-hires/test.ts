@@ -1,14 +1,19 @@
-import { readFileSync } from 'fs';
-import type { RawSourceMap } from 'source-map';
-import { SourceMapConsumer } from 'source-map';
+import { readFileSync } from 'node:fs';
+import { SourceMapConsumer, type RawSourceMap } from 'source-map';
 import remapping from '../../../src/remapping';
+import { assertMatchObject } from '../../unit/util';
+import assert from 'node:assert/strict';
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 function read(filename: string): string {
   return readFileSync(`${__dirname}/files/${filename}`, 'utf8');
 }
 
 describe('transpile then concatenate', () => {
-  test('concated sections point to source files', () => {
+  it('concated sections point to source files', () => {
     const map = read('bundle.js.map');
     const remapped = remapping(map, (file) => {
       return file.endsWith('.mjs') ? null : read(`${file}.map`);
@@ -21,7 +26,7 @@ describe('transpile then concatenate', () => {
         column: j,
         line: 17,
       });
-      expect(foo).toMatchObject({
+      assertMatchObject(foo, {
         column: 18,
         line: 17,
         source: 'main.mjs',
@@ -34,7 +39,7 @@ describe('transpile then concatenate', () => {
         column: j,
         line: 36,
       });
-      expect(bar).toMatchObject({
+      assertMatchObject(bar, {
         column: 18,
         line: 17,
         source: 'placeholder.mjs',
@@ -47,7 +52,7 @@ describe('transpile then concatenate', () => {
         column: j,
         line: 43,
       });
-      expect(baz).toMatchObject({
+      assertMatchObject(baz, {
         column: 18,
         line: 21,
         source: 'main.mjs',
@@ -55,12 +60,12 @@ describe('transpile then concatenate', () => {
     }
   });
 
-  test('inherits sourcesContent of original sources', () => {
+  it('inherits sourcesContent of original sources', () => {
     const map = read('bundle.js.map');
     const remapped = remapping(map, (file) => {
       return file.endsWith('.mjs') ? null : read(`${file}.map`);
     });
 
-    expect(remapped.sourcesContent).toEqual([read('main.mjs'), read('placeholder.mjs')]);
+    assert.deepEqual(remapped.sourcesContent, [read('main.mjs'), read('placeholder.mjs')]);
   });
 });

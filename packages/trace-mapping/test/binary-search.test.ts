@@ -1,4 +1,4 @@
-import { strict as assert } from 'assert';
+import assert from 'node:assert/strict';
 import { binarySearch, found, memoizedState, memoizedBinarySearch } from '../src/binary-search';
 
 type SourceMapSegment = [number];

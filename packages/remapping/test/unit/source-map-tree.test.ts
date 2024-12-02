@@ -1,5 +1,6 @@
 import { toDecodedMap } from '@jridgewell/gen-mapping';
 import { TraceMap } from '@jridgewell/trace-mapping';
+import assert from 'node:assert/strict';
 
 import {
   OriginalSource,
@@ -7,7 +8,8 @@ import {
   originalPositionFor,
   traceMappings,
 } from '../../src/source-map-tree';
-import type { DecodedSourceMap } from '../../src/types';
+import { type DecodedSourceMap } from '../../src/types';
+import { assertMatchObject } from './util';
 
 describe('MapSource', () => {
   describe('traceMappings()', () => {
@@ -37,7 +39,7 @@ describe('MapSource', () => {
       [OriginalSource(`${sourceRoot}/original.js`, '', false)],
     );
 
-    test('records segment if segment is 1-length', () => {
+    it('records segment if segment is 1-length', () => {
       const map: DecodedSourceMap = {
         ...baseMap,
         mappings: [[[0, 0, 0, 4], [5]]],
@@ -45,10 +47,10 @@ describe('MapSource', () => {
 
       const tree = MapSource(new TraceMap(map), [child]);
       const traced = toDecodedMap(traceMappings(tree));
-      expect(traced.mappings).toEqual([[[0, 0, 1, 1], [5]]]);
+      assert.deepEqual(traced.mappings, [[[0, 0, 1, 1], [5]]]);
     });
 
-    test('records segment if trace hits 1-length segment', () => {
+    it('records segment if trace hits 1-length segment', () => {
       const map: DecodedSourceMap = {
         ...baseMap,
         mappings: [
@@ -61,10 +63,10 @@ describe('MapSource', () => {
 
       const tree = MapSource(new TraceMap(map), [child]);
       const traced = toDecodedMap(traceMappings(tree));
-      expect(traced.mappings).toEqual([[[0, 0, 1, 1], [5]]]);
+      assert.deepEqual(traced.mappings, [[[0, 0, 1, 1], [5]]]);
     });
 
-    test('skips segment if trace returns null', () => {
+    it('skips segment if trace returns null', () => {
       const sourceIndex = 0;
       const line = 10; // There is no line 10 in child's mappings.
       const column = 0;
@@ -75,10 +77,10 @@ describe('MapSource', () => {
 
       const tree = MapSource(new TraceMap(map), [child]);
       const traced = toDecodedMap(traceMappings(tree));
-      expect(traced.mappings).toEqual([]);
+      assert.deepEqual(traced.mappings, []);
     });
 
-    test('traces name if segment is 5-length', () => {
+    it('traces name if segment is 5-length', () => {
       const sourceIndex = 0;
       const line = 0;
       const column = 0;
@@ -92,13 +94,13 @@ describe('MapSource', () => {
 
       const tree = MapSource(new TraceMap(map), [child]);
       const traced = toDecodedMap(traceMappings(tree));
-      expect(traced.mappings).toEqual([[[0, 0, 0, 0, 0]]]);
-      expect(traced).toMatchObject({
+      assert.deepEqual(traced.mappings, [[[0, 0, 0, 0, 0]]]);
+      assertMatchObject(traced, {
         names: [name],
       });
     });
 
-    test('maps into traced segment', () => {
+    it('maps into traced segment', () => {
       const sourceIndex = 0;
       const line = 0;
       const column = 4;
@@ -109,10 +111,10 @@ describe('MapSource', () => {
 
       const tree = MapSource(new TraceMap(map), [child]);
       const traced = toDecodedMap(traceMappings(tree));
-      expect(traced.mappings).toEqual([[[0, 0, 1, 1]]]);
+      assert.deepEqual(traced.mappings, [[[0, 0, 1, 1]]]);
     });
 
-    test('maps into traced segment with name', () => {
+    it('maps into traced segment with name', () => {
       const sourceIndex = 0;
       const line = 1;
       const column = 1;
@@ -123,13 +125,13 @@ describe('MapSource', () => {
 
       const tree = MapSource(new TraceMap(map), [child]);
       const traced = toDecodedMap(traceMappings(tree));
-      expect(traced.mappings).toEqual([[[0, 0, 0, 0, 0]]]);
-      expect(traced).toMatchObject({
+      assert.deepEqual(traced.mappings, [[[0, 0, 0, 0, 0]]]);
+      assertMatchObject(traced, {
         names: ['child'],
       });
     });
 
-    test('defaults decoded return map with original data', () => {
+    it('defaults decoded return map with original data', () => {
       const extras = {
         file: 'foobar.js',
         // TODO: support sourceRoot
@@ -143,10 +145,10 @@ describe('MapSource', () => {
 
       const tree = MapSource(new TraceMap(map), [child]);
       const traced = toDecodedMap(traceMappings(tree));
-      expect(traced).toMatchObject(extras);
+      assertMatchObject(traced, extras);
     });
 
-    test('resolves source files realtive to sourceRoot', () => {
+    it('resolves source files realtive to sourceRoot', () => {
       const map: DecodedSourceMap = {
         ...baseMap,
         mappings: [[[0, 0, 0, 0]]],
@@ -154,14 +156,14 @@ describe('MapSource', () => {
 
       const tree = MapSource(new TraceMap(map), [child]);
       const traced = toDecodedMap(traceMappings(tree));
-      expect(traced).toMatchObject({
+      assertMatchObject(traced, {
         // TODO: support sourceRoot
         sourceRoot: undefined,
         sources: ['foo/original.js'],
       });
     });
 
-    test('truncates mappings to the last line with segment', () => {
+    it('truncates mappings to the last line with segment', () => {
       const map: DecodedSourceMap = {
         ...baseMap,
         mappings: [[[0, 0, 0, 0]], [], []],
@@ -170,10 +172,10 @@ describe('MapSource', () => {
 
       const tree = MapSource(new TraceMap(map), [child]);
       const traced = toDecodedMap(traceMappings(tree));
-      expect(traced.mappings).toEqual([[[0, 0, 0, 0]]]);
+      assert.deepEqual(traced.mappings, [[[0, 0, 0, 0]]]);
     });
 
-    test('truncates empty mappings', () => {
+    it('truncates empty mappings', () => {
       const map: DecodedSourceMap = {
         ...baseMap,
         mappings: [[], [], []],
@@ -182,7 +184,7 @@ describe('MapSource', () => {
 
       const tree = MapSource(new TraceMap(map), [child]);
       const traced = toDecodedMap(traceMappings(tree));
-      expect(traced.mappings).toEqual([]);
+      assert.deepEqual(traced.mappings, []);
     });
 
     describe('redundant segments', () => {
@@ -199,7 +201,7 @@ describe('MapSource', () => {
 
         const tree = MapSource(new TraceMap(map), [child]);
         const traced = toDecodedMap(traceMappings(tree));
-        expect(traced.mappings).toEqual([[[0, 0, 0, 0]]]);
+        assert.deepEqual(traced.mappings, [[[0, 0, 0, 0]]]);
       });
 
       it('keeps redundant segments on another line', () => {
@@ -210,7 +212,7 @@ describe('MapSource', () => {
 
         const tree = MapSource(new TraceMap(map), [child]);
         const traced = toDecodedMap(traceMappings(tree));
-        expect(traced.mappings).toEqual([[[0, 0, 0, 0]], [[0, 0, 0, 0]]]);
+        assert.deepEqual(traced.mappings, [[[0, 0, 0, 0]], [[0, 0, 0, 0]]]);
       });
     });
   });
@@ -239,101 +241,101 @@ describe('MapSource', () => {
     };
     const tree = MapSource(new TraceMap(map), [OriginalSource('child.js', '', false)]);
 
-    test('traces LineSegments to the segment with matching generated column', () => {
+    it('traces LineSegments to the segment with matching generated column', () => {
       const trace = originalPositionFor(tree, 0, 4, '');
-      expect(trace).toMatchObject({ line: 1, column: 1 });
+      assertMatchObject(trace, { line: 1, column: 1 });
     });
 
-    test('traces all generated cols on a line back to their source when source had characters removed', () => {
+    it('traces all generated cols on a line back to their source when source had characters removed', () => {
       const expectedCols = [0, 0, 0, 0, 0, 6, 6, 6, 6];
       for (let genCol = 0; genCol < expectedCols.length; genCol++) {
         const trace = originalPositionFor(tree, 4, genCol, '');
-        expect(trace).toMatchObject({ line: 4, column: expectedCols[genCol] });
+        assertMatchObject(trace, { line: 4, column: expectedCols[genCol] });
       }
     });
 
-    test('traces all generated cols on a line back to their source when source had characters added', () => {
+    it('traces all generated cols on a line back to their source when source had characters added', () => {
       const expectedCols = [0, 0, 0, 0, 0, null, 5, 5, 5, 5, 5];
       for (let genCol = 0; genCol < expectedCols.length; genCol++) {
         const trace = originalPositionFor(tree, 5, genCol, '');
         if (expectedCols[genCol] == null) {
-          expect(trace).toMatchObject({ source: '' });
+          assertMatchObject(trace, { source: '' });
         } else {
-          expect(trace).toMatchObject({ line: 5, column: expectedCols[genCol] });
+          assertMatchObject(trace, { line: 5, column: expectedCols[genCol] });
         }
       }
     });
 
-    test('returns null if line is longer than mapping lines', () => {
+    it('returns null if line is longer than mapping lines', () => {
       const trace = originalPositionFor(tree, 10, 0, '');
-      expect(trace).toBe(null);
+      assert.equal(trace, null);
     });
 
-    test('returns null if no matching segment column', () => {
+    it('returns null if no matching segment column', () => {
       //line 1 col 0 of generated doesn't exist in the original source
       const trace = originalPositionFor(tree, 1, 0, '');
-      expect(trace).toBe(null);
+      assert.equal(trace, null);
     });
 
-    test('returns sourceless segment object if segment is 1-length', () => {
+    it('returns sourceless segment object if segment is 1-length', () => {
       const trace = originalPositionFor(tree, 2, 0, '');
-      expect(trace).toMatchObject({ source: '' });
+      assertMatchObject(trace, { source: '' });
     });
 
-    test('passes in outer name to trace', () => {
+    it('passes in outer name to trace', () => {
       const trace = originalPositionFor(tree, 0, 0, 'foo');
-      expect(trace).toMatchObject({ name: 'foo' });
+      assertMatchObject(trace, { name: 'foo' });
     });
 
-    test('overrides name if segment is 5-length', () => {
+    it('overrides name if segment is 5-length', () => {
       const trace = originalPositionFor(tree, 3, 0, 'foo');
-      expect(trace).toMatchObject({ name: 'name' });
+      assertMatchObject(trace, { name: 'name' });
     });
 
     describe('tracing same line multiple times', () => {
       describe('later column', () => {
-        test('returns matching segment after match', () => {
-          expect(originalPositionFor(tree, 0, 1, '')).not.toBe(null);
+        it('returns matching segment after match', () => {
+          assert.notEqual(originalPositionFor(tree, 0, 1, ''), null);
           const trace = originalPositionFor(tree, 0, 4, '');
-          expect(trace).toMatchObject({ line: 1, column: 1 });
+          assertMatchObject(trace, { line: 1, column: 1 });
         });
 
-        test('returns matching segment after null match', () => {
-          expect(originalPositionFor(tree, 1, 0, '')).toBe(null);
+        it('returns matching segment after null match', () => {
+          assert.equal(originalPositionFor(tree, 1, 0, ''), null);
           const trace = originalPositionFor(tree, 1, 2, '');
-          expect(trace).toMatchObject({ line: 0, column: 0 });
+          assertMatchObject(trace, { line: 0, column: 0 });
         });
 
-        test('returns null segment segment after null match', () => {
-          expect(originalPositionFor(tree, 1, 0, '')).toBe(null);
+        it('returns null segment segment after null match', () => {
+          assert.equal(originalPositionFor(tree, 1, 0, ''), null);
           const trace = originalPositionFor(tree, 1, 1, '');
-          expect(trace).toBe(null);
+          assert.equal(trace, null);
         });
 
-        test('returns matching segment after almost match', () => {
-          expect(originalPositionFor(tree, 4, 2, '')).not.toBe(null);
+        it('returns matching segment after almost match', () => {
+          assert.notEqual(originalPositionFor(tree, 4, 2, ''), null);
           const trace = originalPositionFor(tree, 4, 5, '');
-          expect(trace).toMatchObject({ line: 4, column: 6 });
+          assertMatchObject(trace, { line: 4, column: 6 });
         });
       });
 
       describe('earlier column', () => {
-        test('returns matching segment after match', () => {
-          expect(originalPositionFor(tree, 0, 4, '')).not.toBe(null);
+        it('returns matching segment after match', () => {
+          assert.notEqual(originalPositionFor(tree, 0, 4, ''), null);
           const trace = originalPositionFor(tree, 0, 1, '');
-          expect(trace).toMatchObject({ line: 0, column: 0 });
+          assertMatchObject(trace, { line: 0, column: 0 });
         });
 
-        test('returns null segment segment after null match', () => {
-          expect(originalPositionFor(tree, 1, 1, '')).toBe(null);
+        it('returns null segment segment after null match', () => {
+          assert.equal(originalPositionFor(tree, 1, 1, ''), null);
           const trace = originalPositionFor(tree, 1, 0, '');
-          expect(trace).toBe(null);
+          assert.equal(trace, null);
         });
 
-        test('returns matching segment after almost match', () => {
-          expect(originalPositionFor(tree, 4, 2, '')).not.toBe(null);
+        it('returns matching segment after almost match', () => {
+          assert.notEqual(originalPositionFor(tree, 4, 2, ''), null);
           const trace = originalPositionFor(tree, 4, 0, '');
-          expect(trace).toMatchObject({ line: 4, column: 0 });
+          assertMatchObject(trace, { line: 4, column: 0 });
         });
       });
     });

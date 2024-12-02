@@ -1,14 +1,18 @@
-import { readFileSync } from 'fs';
-import type { RawSourceMap } from 'source-map';
-import { SourceMapConsumer } from 'source-map';
+import { readFileSync } from 'node:fs';
+import { SourceMapConsumer, type RawSourceMap } from 'source-map';
 import remapping from '../../../src/remapping';
+import assert from 'node:assert/strict';
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 function read(filename: string): string {
   return readFileSync(`${__dirname}/files/${filename}`, 'utf8');
 }
 
 describe('transpile then minify', () => {
-  test('minify a transpiled source map', () => {
+  it('minify a transpiled source map', () => {
     const map = read('helloworld.min.js.map');
     const remapped = remapping(map, (file) => {
       return file.endsWith('.mjs') ? null : read(`${file}.map`);
@@ -19,7 +23,7 @@ describe('transpile then minify', () => {
       column: 47,
       line: 16,
     });
-    expect(alert).toEqual({
+    assert.deepEqual(alert, {
       column: 20,
       line: 19,
       name: 'alert',
@@ -27,12 +31,12 @@ describe('transpile then minify', () => {
     });
   });
 
-  test('inherits sourcesContent of original source', () => {
+  it('inherits sourcesContent of original source', () => {
     const map = read('helloworld.min.js.map');
     const remapped = remapping(map, (file) => {
       return file.endsWith('.mjs') ? null : read(`${file}.map`);
     });
 
-    expect(remapped.sourcesContent).toEqual([read('helloworld.mjs')]);
+    assert.deepEqual(remapped.sourcesContent, [read('helloworld.mjs')]);
   });
 });

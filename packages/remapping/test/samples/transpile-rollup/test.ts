@@ -1,14 +1,19 @@
-import { readFileSync } from 'fs';
-import type { RawSourceMap } from 'source-map';
-import { SourceMapConsumer } from 'source-map';
+import { readFileSync } from 'node:fs';
+import { SourceMapConsumer, type RawSourceMap } from 'source-map';
 import remapping from '../../../src/remapping';
+import { assertMatchObject } from '../../unit/util';
+import assert from 'node:assert/strict';
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 function read(filename: string): string {
   return readFileSync(`${__dirname}/files/${filename}`, 'utf8');
 }
 
 describe('transpile then concatenate', () => {
-  test('concated sections point to source files', () => {
+  it('concated sections point to source files', () => {
     const map = read('bundle.js.map');
     const remapped = remapping(map, (file) => {
       return file.endsWith('.mjs') ? null : read(`${file}.map`);
@@ -20,7 +25,7 @@ describe('transpile then concatenate', () => {
       column: 11,
       line: 21,
     });
-    expect(a).toMatchObject({
+    assertMatchObject(a, {
       column: 21,
       line: 17,
       source: 'a.mjs',
@@ -30,19 +35,19 @@ describe('transpile then concatenate', () => {
       column: 11,
       line: 40,
     });
-    expect(b).toMatchObject({
+    assertMatchObject(b, {
       column: 21,
       line: 17,
       source: 'b.mjs',
     });
   });
 
-  test('inherits sourcesContent of original sources', () => {
+  it('inherits sourcesContent of original sources', () => {
     const map = read('bundle.js.map');
     const remapped = remapping(map, (file) => {
       return file.endsWith('.mjs') ? null : read(`${file}.map`);
     });
 
-    expect(remapped.sourcesContent).toEqual([read('a.mjs'), read('b.mjs')]);
+    assert.deepEqual(remapped.sourcesContent, [read('a.mjs'), read('b.mjs')]);
   });
 });

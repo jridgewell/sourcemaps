@@ -4,7 +4,7 @@
     "composite": true,
     "esModuleInterop": true,
     "lib": ["es2015", "dom"],
-    "module": "es2015",
+    "module": "esnext",
     "moduleResolution": "bundler",
     "strict": true,
     "target": "es2015",

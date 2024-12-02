@@ -1,4 +1,4 @@
-import { strict as assert } from 'assert';
+import assert from 'node:assert/strict';
 import stripFilename from '../src/strip-filename';
 
 describe('stripFilename', () => {

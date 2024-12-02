@@ -8,7 +8,7 @@ import {
   type GeneratedRange,
   type OriginalScope,
 } from '../src/scopes';
-import { strict as assert } from 'node:assert';
+import assert from 'node:assert/strict';
 
 describe('scopes proposal', () => {
   type Tuple<T> = Pick<T, Extract<keyof T, number>>;
