@@ -1,4 +1,4 @@
-import { SetArray, put, remove } from '@jridgewell/set-array';
+import { SetArray, put, remove } from './set-array';
 import { encode, encodeGeneratedRanges, encodeOriginalScopes } from '@jridgewell/sourcemap-codec';
 import { TraceMap, decodedMappings } from '@jridgewell/trace-mapping';
 

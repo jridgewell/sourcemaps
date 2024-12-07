@@ -49,7 +49,6 @@
   "author": "Justin Ridgewell <justin@ridgewell.name>",
   "license": "MIT",
   "dependencies": {
-    "@jridgewell/set-array": "^1.2.1",
     "@jridgewell/sourcemap-codec": "1.4.16-beta.0",
     "@jridgewell/trace-mapping": "^0.3.24"
   }
