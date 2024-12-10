@@ -50,7 +50,6 @@
   "author": "Justin Ridgewell <justin@ridgewell.name>",
   "license": "MIT",
   "dependencies": {
-    "@jridgewell/resolve-uri": "^3.1.0",
     "@jridgewell/sourcemap-codec": "^1.4.14"
   }
 }

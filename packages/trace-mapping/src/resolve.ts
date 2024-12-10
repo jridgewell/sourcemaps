@@ -1,4 +1,4 @@
-import resolveUri from '@jridgewell/resolve-uri';
+import resolveUri from './resolve-uri';
 import stripFilename from './strip-filename';
 
 type Resolve = (source: string | null) => string;
