@@ -13,7 +13,7 @@
     "outDir": "dist/lib",
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "esModuleInterop": true,
+    "esModuleInterop": true
   },
   "exclude": [
     "dist"
