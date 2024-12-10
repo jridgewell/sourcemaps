@@ -1,6 +1,6 @@
 {
   "name": "@jridgewell/gen-mapping",
-  "version": "0.3.6-beta.4",
+  "version": "0.3.7",
   "description": "Generate source maps",
   "keywords": [
     "source",
@@ -39,7 +39,8 @@
     "test:types": "eslint '{src,test}/**/*.ts'",
     "lint": "run-s -n lint:types lint:format",
     "lint:format": "npm run test:format -- --write",
-    "lint:types": "npm run test:types -- --fix"
+    "lint:types": "npm run test:types -- --fix",
+    "prepublishOnly": "npm run-s -n build test"
   },
   "repository": {
     "type": "git",

@@ -40,7 +40,8 @@
     "test:types": "eslint '{src,test}/**/*.ts'",
     "lint": "run-s -n lint:types lint:format",
     "lint:format": "npm run test:format -- --write",
-    "lint:types": "npm run test:types -- --fix"
+    "lint:types": "npm run test:types -- --fix",
+    "prepublishOnly": "npm run-s -n build test"
   },
   "repository": {
     "type": "git",
