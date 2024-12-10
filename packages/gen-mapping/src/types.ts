@@ -1,4 +1,4 @@
-import type { GeneratedRange, OriginalScope } from '@jridgewell/sourcemap-codec';
+// import type { GeneratedRange, OriginalScope } from '@jridgewell/sourcemap-codec';
 import type { SourceMapSegment } from './sourcemap-segment';
 
 export interface SourceMapV3 {
@@ -13,14 +13,14 @@ export interface SourceMapV3 {
 
 export interface EncodedSourceMap extends SourceMapV3 {
   mappings: string;
-  originalScopes: string[];
-  generatedRanges: string;
+  // originalScopes: string[];
+  // generatedRanges: string;
 }
 
 export interface DecodedSourceMap extends SourceMapV3 {
   mappings: readonly SourceMapSegment[][];
-  originalScopes: readonly OriginalScope[][];
-  generatedRanges: readonly GeneratedRange[];
+  // originalScopes: readonly OriginalScope[][];
+  // generatedRanges: readonly GeneratedRange[];
 }
 
 export interface Pos {
@@ -37,8 +37,8 @@ export interface BindingExpressionRange {
   expression: string;
 }
 
-export type OriginalScopeInfo = [number, number, string[] | undefined];
-export type GeneratedRangeInfo = [GeneratedRange, string[] | undefined];
+// export type OriginalScopeInfo = [number, number, string[] | undefined];
+// export type GeneratedRangeInfo = [GeneratedRange, string[] | undefined];
 
 export type Mapping =
   | {

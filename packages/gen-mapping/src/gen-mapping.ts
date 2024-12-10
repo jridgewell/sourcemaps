@@ -1,5 +1,9 @@
 import { SetArray, put, remove } from './set-array';
-import { encode, encodeGeneratedRanges, encodeOriginalScopes } from '@jridgewell/sourcemap-codec';
+import {
+  encode,
+  // encodeGeneratedRanges,
+  // encodeOriginalScopes
+} from '@jridgewell/sourcemap-codec';
 import { TraceMap, decodedMappings } from '@jridgewell/trace-mapping';
 
 import {
@@ -11,17 +15,17 @@ import {
 } from './sourcemap-segment';
 
 import type { SourceMapInput } from '@jridgewell/trace-mapping';
-import type { OriginalScope, GeneratedRange } from '@jridgewell/sourcemap-codec';
+// import type { OriginalScope, GeneratedRange } from '@jridgewell/sourcemap-codec';
 import type { SourceMapSegment } from './sourcemap-segment';
 import type {
   DecodedSourceMap,
   EncodedSourceMap,
   Pos,
   Mapping,
-  BindingExpressionRange,
-  OriginalPos,
-  OriginalScopeInfo,
-  GeneratedRangeInfo,
+  // BindingExpressionRange,
+  // OriginalPos,
+  // OriginalScopeInfo,
+  // GeneratedRangeInfo,
 } from './types';
 
 export type { DecodedSourceMap, EncodedSourceMap, Mapping };
@@ -41,8 +45,8 @@ export class GenMapping {
   private declare _sources: SetArray<string>;
   private declare _sourcesContent: (string | null)[];
   private declare _mappings: SourceMapSegment[][];
-  private declare _originalScopes: OriginalScope[][];
-  private declare _generatedRanges: GeneratedRange[];
+  // private declare _originalScopes: OriginalScope[][];
+  // private declare _generatedRanges: GeneratedRange[];
   private declare _ignoreList: SetArray<number>;
   declare file: string | null | undefined;
   declare sourceRoot: string | null | undefined;
@@ -52,8 +56,8 @@ export class GenMapping {
     this._sources = new SetArray();
     this._sourcesContent = [];
     this._mappings = [];
-    this._originalScopes = [];
-    this._generatedRanges = [];
+    // this._originalScopes = [];
+    // this._generatedRanges = [];
     this.file = file;
     this.sourceRoot = sourceRoot;
     this._ignoreList = new SetArray();
@@ -65,8 +69,8 @@ interface PublicMap {
   _sources: GenMapping['_sources'];
   _sourcesContent: GenMapping['_sourcesContent'];
   _mappings: GenMapping['_mappings'];
-  _originalScopes: GenMapping['_originalScopes'];
-  _generatedRanges: GenMapping['_generatedRanges'];
+  // _originalScopes: GenMapping['_originalScopes'];
+  // _generatedRanges: GenMapping['_generatedRanges'];
   _ignoreList: GenMapping['_ignoreList'];
 }
 
@@ -226,11 +230,11 @@ export function setSourceContent(map: GenMapping, source: string, content: strin
   const {
     _sources: sources,
     _sourcesContent: sourcesContent,
-    _originalScopes: originalScopes,
+    // _originalScopes: originalScopes,
   } = cast(map);
   const index = put(sources, source);
   sourcesContent[index] = content;
-  if (index === originalScopes.length) originalScopes[index] = [];
+  // if (index === originalScopes.length) originalScopes[index] = [];
 }
 
 export function setIgnore(map: GenMapping, source: string, ignore = true) {
@@ -238,11 +242,11 @@ export function setIgnore(map: GenMapping, source: string, ignore = true) {
     _sources: sources,
     _sourcesContent: sourcesContent,
     _ignoreList: ignoreList,
-    _originalScopes: originalScopes,
+    // _originalScopes: originalScopes,
   } = cast(map);
   const index = put(sources, source);
   if (index === sourcesContent.length) sourcesContent[index] = null;
-  if (index === originalScopes.length) originalScopes[index] = [];
+  // if (index === originalScopes.length) originalScopes[index] = [];
   if (ignore) put(ignoreList, index);
   else remove(ignoreList, index);
 }
@@ -258,8 +262,8 @@ export function toDecodedMap(map: GenMapping): DecodedSourceMap {
     _sourcesContent: sourcesContent,
     _names: names,
     _ignoreList: ignoreList,
-    _originalScopes: originalScopes,
-    _generatedRanges: generatedRanges,
+    // _originalScopes: originalScopes,
+    // _generatedRanges: generatedRanges,
   } = cast(map);
   removeEmptyFinalLines(mappings);
 
@@ -271,8 +275,8 @@ export function toDecodedMap(map: GenMapping): DecodedSourceMap {
     sources: sources.array,
     sourcesContent,
     mappings,
-    originalScopes,
-    generatedRanges,
+    // originalScopes,
+    // generatedRanges,
     ignoreList: ignoreList.array,
   };
 }
@@ -285,8 +289,8 @@ export function toEncodedMap(map: GenMapping): EncodedSourceMap {
   const decoded = toDecodedMap(map);
   return {
     ...decoded,
-    originalScopes: decoded.originalScopes.map((os) => encodeOriginalScopes(os)),
-    generatedRanges: encodeGeneratedRanges(decoded.generatedRanges as GeneratedRange[]),
+    // originalScopes: decoded.originalScopes.map((os) => encodeOriginalScopes(os)),
+    // generatedRanges: encodeGeneratedRanges(decoded.generatedRanges as GeneratedRange[]),
     mappings: encode(decoded.mappings as SourceMapSegment[][]),
   };
 }
@@ -357,7 +361,7 @@ function addSegmentInternal<S extends string | null | undefined>(
     _sources: sources,
     _sourcesContent: sourcesContent,
     _names: names,
-    _originalScopes: originalScopes,
+    // _originalScopes: originalScopes,
   } = cast(map);
   const line = getIndex(mappings, genLine);
   const index = getColumnIndex(line, genColumn);
@@ -375,7 +379,7 @@ function addSegmentInternal<S extends string | null | undefined>(
   const sourcesIndex = put(sources, source);
   const namesIndex = name ? put(names, name) : NO_NAME;
   if (sourcesIndex === sourcesContent.length) sourcesContent[sourcesIndex] = content ?? null;
-  if (sourcesIndex === originalScopes.length) originalScopes[sourcesIndex] = [];
+  // if (sourcesIndex === originalScopes.length) originalScopes[sourcesIndex] = [];
 
   if (skipable && skipSource(line, index, sourcesIndex, sourceLine, sourceColumn, namesIndex)) {
     return;
@@ -507,6 +511,7 @@ function addMappingInternal<S extends string | null | undefined>(
   );
 }
 
+/*
 export function addOriginalScope(
   map: GenMapping,
   data: {
@@ -539,8 +544,10 @@ export function addOriginalScope(
   const len = originalScopes[index].push(scope);
   return [index, len - 1, variables];
 }
+*/
 
 // Generated Ranges
+/*
 export function addGeneratedRange(
   map: GenMapping,
   data: {
@@ -605,3 +612,4 @@ export function addBinding(
     binding.push([put(names, expression.expression), start.line - 1, start.column]);
   }
 }
+*/
