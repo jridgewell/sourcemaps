@@ -1,6 +1,8 @@
 import * as esbuild from 'esbuild';
 import { umdWrapper } from 'esbuild-plugin-umd-wrapper';
+import { readFileSync } from 'node:fs';
 
+const tsconfig = JSON.parse(readFileSync('./tsconfig.json', 'utf8'));
 const files = process.argv.slice(2);
 const umd = process.env.UMD;
 if (files.length === 0) {
@@ -20,6 +22,7 @@ async function build(esm) {
     format: esm ? 'esm' : 'umd',
     plugins: esm ? [] : [umdWrapper({ libraryName: umd })],
     outExtension: esm ? { '.js': '.mjs' } : { '.js': '.umd.js' },
+    target: tsconfig.compilerOptions.target,
   });
   console.log(`Compiled ${esm ? 'esm' : 'umd'}`, build);
 }
