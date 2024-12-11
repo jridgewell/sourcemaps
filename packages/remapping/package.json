@@ -32,7 +32,7 @@
     "benchmark:install": "cd benchmark && npm install",
     "benchmark:only": "node --expose-gc benchmark/index.js",
     "build": "run-s -n build:code build:types",
-    "build:code": "UMD=sourcemapCodec node ../../esbuild.mjs remapping.ts",
+    "build:code": "node ../../esbuild.mjs remapping.ts",
     "build:types": "tsc --project tsconfig.build.json",
     "test": "run-s -n test:types test:only test:format",
     "test:format": "prettier --check '{src,test}/**/*.ts'",
