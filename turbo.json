@@ -3,12 +3,15 @@
     "benchmark": {},
     "build": {
       "dependsOn": ["^build"],
+      "inputs": ["../../esbuild.mjs", "../../tsconfig.json"],
       "outputs": ["dist/**"]
     },
     "test": {
       "dependsOn": ["^build"]
     },
-    "lint": {},
+    "lint": {
+      "inputs": ["../../prettier.config.js", "../../tsconfig.json"]
+    },
     "dev": { "cache": false }
   },
   "globalDependencies": ["tsconfig.json"]
