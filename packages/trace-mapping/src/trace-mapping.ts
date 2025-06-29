@@ -129,7 +129,7 @@ export class TraceMap implements SourceMap {
       this._encoded = undefined;
       this._decoded = maybeSort(mappings, isString);
     } else if ((parsed as unknown as SectionedSourceMap).sections) {
-      throw new Error(`TraceMap passed sectioned source map, please use AnyMap export instead`);
+      throw new Error(`TraceMap passed sectioned source map, please use FlattenMap export instead`);
     } else {
       throw new Error(`invalid source map: ${JSON.stringify(parsed)}`);
     }
