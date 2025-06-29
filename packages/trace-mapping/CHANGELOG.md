@@ -1,14 +1,22 @@
-# [0.3.25] - 2024-03-02
+# [0.3.26] - 2025-06-29
 
-## What's Changed
+- Fix package types for CJS and ESM imports: a924ed3
+- Add `module-sync` exports type for [require(esm)](https://joyeecheung.github.io/blog/2024/03/18/require-esm-in-node-js/): 3836f6c
+- Add type declaration source maps to assist go-to-definition: 9a02665
+- Fix map file resolution to match spec: #36
+- Accept readonly types: cdf32c7
+- Rename AnyMap: 5676069
+- Add error messages for common issues: 13c8987
+
+**Full Changelog**: https://github.com/jridgewell/sourcemaps/compare/trace-mapping/0.3.25...trace-mapping/0.3.26
+
+# [0.3.25] - 2024-03-02
 
 - Support `TraceMap` instances in `SectionedSourceMap`'s `sections` field: https://github.com/jridgewell/trace-mapping/commit/8d8fc353673c9dbd6b03d68c09430dc28880095a
 
 **Full Changelog**: https://github.com/jridgewell/trace-mapping/compare/v0.3.24...v0.3.25
 
 # [0.3.24] - 2024-03-01
-
-## What's Changed
 
 - Add `ignoreList` (and `x_google_ignoreList`) support: https://github.com/jridgewell/trace-mapping/commit/1027ce6bfc068dc71cc16861d2e09b155fee9293
 
@@ -20,23 +28,17 @@
 
 # [0.3.22] - 2024-01-19
 
-## What's Changed
-
 - Specify all exported types to unbreak TS v4.\* by @jridgewell in https://github.com/jridgewell/trace-mapping/pull/34
 
 **Full Changelog**: https://github.com/jridgewell/trace-mapping/compare/v0.3.21...v0.3.22
 
 # [0.3.21] - 2024-01-12
 
-## What's Changed
-
 - Use `export type *` by @jridgewell in https://github.com/jridgewell/trace-mapping/pull/32
 
 **Full Changelog**: https://github.com/jridgewell/trace-mapping/compare/v0.3.20...v0.3.21
 
 # [0.3.20] - 2023-10-17
-
-## What's Changed
 
 - Fix handling of sectioned source maps missing 'names' array by @RandomByte in https://github.com/jridgewell/trace-mapping/pull/29
 
@@ -48,15 +50,11 @@
 
 # [0.3.19] - 2023-08-07
 
-## What's Changed
-
 - Unpins the `@jridgewell/resolve-uri` and `@jridgewell/sourcemap-codec` dependencies so they can be de-duped.
 
 **Full Changelog**: https://github.com/jridgewell/trace-mapping/compare/v0.3.16...v0.3.17
 
 # [0.3.18] - 2023-04-07
-
-## What's Changed
 
 - fix: add "types" field to package.json by @dominikg in https://github.com/jridgewell/trace-mapping/pull/24
 
@@ -68,15 +66,11 @@
 
 # [0.3.17] - 2022-10-14
 
-## What's Changed
-
 - Add support for bias in allGeneratedPositionsFor by @jridgewell in https://github.com/jridgewell/trace-mapping/pull/23
 
 **Full Changelog**: https://github.com/jridgewell/trace-mapping/compare/v0.3.16...v0.3.17
 
 # [0.3.16] - 2022-10-08
-
-## What's Changed
 
 - Add `allGeneratedPositionsFor` by @connor4312 in https://github.com/jridgewell/trace-mapping/pull/19
 - Be more permissive with readonly input types by @jridgewell in https://github.com/jridgewell/trace-mapping/pull/20
@@ -88,8 +82,6 @@
 **Full Changelog**: https://github.com/jridgewell/trace-mapping/compare/v0.3.15...v0.3.16
 
 # [0.3.15] - 2022-08-11
-
-## What's Changed
 
 - Fix presortedDecodedMap to only copy sourcemap fields by @jridgewell in https://github.com/jridgewell/trace-mapping/pull/15
 
@@ -106,15 +98,11 @@
 
 # [0.3.13] - 2022-05-11
 
-## What's Changed
-
 - Always normalize `resolvedSources` by @jridgewell in https://github.com/jridgewell/trace-mapping/pull/10
 
 **Full Changelog**: https://github.com/jridgewell/trace-mapping/compare/v0.3.12...v0.3.13
 
 # [0.3.12] - 2022-05-11
-
-## Changes
 
 - [Return unfrozen objects from originalPositionFor/generatedPositionFor](https://github.com/jridgewell/trace-mapping/commit/5dabccfa2d5a0a00a598efd83dc88eebcd5aa529)
 
@@ -122,15 +110,11 @@
 
 # [0.3.11] - 2022-05-10
 
-## What's Changed
-
 - Add sourceContentFor API by @jridgewell in https://github.com/jridgewell/trace-mapping/pull/8
 
 **Full Changelog**: https://github.com/jridgewell/trace-mapping/compare/v0.3.10...v0.3.11
 
 # [0.3.10] - 2022-05-05
-
-## What's Changed
 
 - Optimize `AnyMap`:
   - [Implement recursive sectioned translation without intermediate TraceMap](https://github.com/jridgewell/trace-mapping/commit/7a6db0f09294945667043d6402763191da2d6659)
@@ -160,7 +144,7 @@
 
 - Add decodedMap and encodedMap helpers by @jridgewell in 0f543e6a466c2f4fcd82868d85bcc8fe558da62f
 
-## Internal Changes
+## Internal
 
 - Extract traceSegmentInternal to top level scope by @jridgewell in 7ac8154dae864b32315389bda712135d20a57001
 
@@ -183,8 +167,6 @@
 **Full Changelog**: https://github.com/jridgewell/trace-mapping/compare/v0.3.5...v0.3.6
 
 # [0.3.5] - 2022-04-20
-
-## What's Changed
 
 - Add `generatedPositionFor` API by @jridgewell in https://github.com/jridgewell/trace-mapping/pull/1
 - Support sectioned sourcemaps with AnyMap by @jridgewell in https://github.com/jridgewell/trace-mapping/pull/3

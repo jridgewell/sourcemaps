@@ -1,6 +1,13 @@
-# [2.3.0] - 2024-03-01
+# [2.3.1] - 2025-06-29
 
-## What's Changed
+- Fix package types for CJS and ESM imports: a924ed3
+- Add `module-sync` exports type for [require(esm)](https://joyeecheung.github.io/blog/2024/03/18/require-esm-in-node-js/): 3836f6c
+- Add type declaration source maps to assist go-to-definition: 9a02665
+- Rename package to `@jridgewell/remapping`: 6882c50
+
+**Full Changelog**: https://github.com/jridgewell/sourcemaps/compare/remapping/2.3.0...remapping/2.3.1
+
+# [2.3.0] - 2024-03-01
 
 - Add `ignoreList` support: https://github.com/ampproject/remapping/commit/72a4ee26b8f1531592065ae88270ad6dc6104bbe
 - Export `SourceMap` return type: https://github.com/ampproject/remapping/commit/94a9b772aa992ba3bbd7c94f0b879f8767dae12b

@@ -1,6 +1,16 @@
-# [1.4.15] - 2023-04-07
+# [1.5.1] - 2025-06-29
 
-## What's Changed
+- Fix package types for CJS and ESM imports: a924ed3
+- Add `module-sync` exports type for [require(esm)](https://joyeecheung.github.io/blog/2024/03/18/require-esm-in-node-js/): 3836f6c
+- Add type declaration source maps to assist go-to-definition: 9a02665
+
+**Full Changelog**: https://github.com/jridgewell/sourcemaps/compare/sourcemap-codec/1.5.0...sourcemap-codec/1.5.1
+
+# [1.5.0] - 2024-07-09
+
+**Full Changelog**: https://github.com/jridgewell/sourcemaps/compare/sourcemap-codec/1.4.15...sourcemap-codec/1.5.0
+
+# [1.4.15] - 2023-04-07
 
 - Fix `types` field name by @benmccann in https://github.com/jridgewell/sourcemap-codec/pull/1
 
@@ -20,8 +30,6 @@
 **Full Changelog**: https://github.com/jridgewell/sourcemap-codec/compare/v1.4.13...v1.4.14
 
 # [1.4.13] - 2022-05-05
-
-## What's Changed
 
 - [Add types field to exports](https://github.com/jridgewell/sourcemap-codec/commit/28b48c04e9175ab2c80a8fbb5d00ee1a963403db)
 

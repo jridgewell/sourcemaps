@@ -1,6 +1,15 @@
-# [0.3.5] - 2024-03-01
+# [0.3.9] - 2025-06-29
 
-## What's Changed
+- Fix package types for CJS and ESM imports: a924ed3
+- fix: use stable version of sourcemap-codec dependency: #26 (thanks @benmccann)
+- Add `module-sync` exports type for [require(esm)](https://joyeecheung.github.io/blog/2024/03/18/require-esm-in-node-js/): 3836f6c
+- Add type declaration source maps to assist go-to-definition: 9a02665
+- Temporarily remove scopes/ranges APIs: 7575b63
+- Include set-array source directly in gen-mapping project: #1 (thanks @benmccann)
+
+**Full Changelog**: https://github.com/jridgewell/sourcemaps/compare/gen-mapping/0.3.5...gen-mapping/0.3.9
+
+# [0.3.5] - 2024-03-01
 
 - Add `ignoreList` support: https://github.com/jridgewell/gen-mapping/commit/9add0c20b3058a0f98c5d1a730405b3726479269
 
@@ -28,8 +37,6 @@
 **Full Changelog**: https://github.com/jridgewell/gen-mapping/compare/v0.3.1...v0.3.2
 
 # [0.3.1] - 2022-05-05
-
-## What's Changed
 
 - [Add ability to set content while adding marking](https://github.com/jridgewell/gen-mapping/commit/30a8f00f000c3fcac65f57cbfd38e816c14e7f60)
 - [Add types field to exports](https://github.com/jridgewell/gen-mapping/commit/8c1834672b1451ac19c37b0f44cf55f1e2997d4d)
