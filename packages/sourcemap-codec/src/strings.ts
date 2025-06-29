@@ -43,7 +43,7 @@ export class StringWriter {
 
 export class StringReader {
   pos = 0;
-  private declare buffer: string;
+  declare private buffer: string;
 
   constructor(buffer: string) {
     this.buffer = buffer;

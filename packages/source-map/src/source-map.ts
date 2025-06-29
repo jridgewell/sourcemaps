@@ -28,7 +28,7 @@ import type { Mapping, EncodedSourceMap } from '@jridgewell/gen-mapping';
 export type { Mapping, EncodedSourceMap };
 
 export class SourceMapConsumer {
-  private declare _map: TraceMap;
+  declare private _map: TraceMap;
   declare file: TraceMap['file'];
   declare names: TraceMap['names'];
   declare sourceRoot: TraceMap['sourceRoot'];
@@ -123,7 +123,7 @@ export class SourceMapConsumer {
 }
 
 export class SourceMapGenerator {
-  private declare _map: GenMapping;
+  declare private _map: GenMapping;
 
   constructor(opts: ConstructorParameters<typeof GenMapping>[0] | GenMapping) {
     // TODO :: should this be duck-typed ?

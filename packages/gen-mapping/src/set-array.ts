@@ -9,7 +9,7 @@ type Key = string | number | symbol;
  * and there are never duplicates.
  */
 export class SetArray<T extends Key = Key> {
-  private declare _indexes: Record<T, number | undefined>;
+  declare private _indexes: Record<T, number | undefined>;
   declare array: readonly T[];
 
   constructor() {

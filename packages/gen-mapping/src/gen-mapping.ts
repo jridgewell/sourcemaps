@@ -41,13 +41,13 @@ const NO_NAME = -1;
  * Provides the state to generate a sourcemap.
  */
 export class GenMapping {
-  private declare _names: SetArray<string>;
-  private declare _sources: SetArray<string>;
-  private declare _sourcesContent: (string | null)[];
-  private declare _mappings: SourceMapSegment[][];
+  declare private _names: SetArray<string>;
+  declare private _sources: SetArray<string>;
+  declare private _sourcesContent: (string | null)[];
+  declare private _mappings: SourceMapSegment[][];
   // private declare _originalScopes: OriginalScope[][];
   // private declare _generatedRanges: GeneratedRange[];
-  private declare _ignoreList: SetArray<number>;
+  declare private _ignoreList: SetArray<number>;
   declare file: string | null | undefined;
   declare sourceRoot: string | null | undefined;
 

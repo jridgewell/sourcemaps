@@ -9,7 +9,7 @@
     "clean": { "cache": false },
     "dev": { "cache": false },
     "lint": {
-      "inputs": ["../../prettier.config.js", "../../tsconfig.json"]
+      "inputs": ["../../prettier.config.js", "../../tsconfig.json", "src/**"]
     },
     "test": {
       "dependsOn": ["^build"]

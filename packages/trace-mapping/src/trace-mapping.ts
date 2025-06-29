@@ -95,13 +95,13 @@ export class TraceMap implements SourceMap {
   declare ignoreList: SourceMapV3['ignoreList'];
 
   declare resolvedSources: string[];
-  private declare _encoded: string | undefined;
+  declare private _encoded: string | undefined;
 
-  private declare _decoded: SourceMapSegment[][] | undefined;
-  private declare _decodedMemo: MemoState;
+  declare private _decoded: SourceMapSegment[][] | undefined;
+  declare private _decodedMemo: MemoState;
 
-  private declare _bySources: Source[] | undefined;
-  private declare _bySourceMemos: MemoState[] | undefined;
+  declare private _bySources: Source[] | undefined;
+  declare private _bySourceMemos: MemoState[] | undefined;
 
   constructor(map: Ro<SourceMapInput>, mapUrl?: string | null) {
     const isString = typeof map === 'string';
