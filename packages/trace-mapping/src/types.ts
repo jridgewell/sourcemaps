@@ -110,5 +110,5 @@ type RoArray<T> = Ro<T>[];
 type RoObject<T> = { [K in keyof T]: T[K] | Ro<T[K]> };
 
 export function parse<T>(map: T): Exclude<T, string> {
-  return typeof map === 'string' ? JSON.parse(map) : map;
+  return typeof map === 'string' ? JSON.parse(map) : (map as Exclude<T, string>);
 }
