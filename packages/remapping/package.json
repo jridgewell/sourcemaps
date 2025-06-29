@@ -9,7 +9,7 @@
   ],
   "main": "dist/remapping.umd.js",
   "module": "dist/remapping.mjs",
-  "types": "types/remapping.d.ts",
+  "types": "types/remapping.d.cts",
   "files": [
     "dist",
     "src",
@@ -18,10 +18,18 @@
   "exports": {
     ".": [
       {
-        "types": "./types/remapping.d.ts",
-        "browser": "./dist/remapping.umd.js",
-        "require": "./dist/remapping.umd.js",
-        "import": "./dist/remapping.mjs"
+        "browser": {
+          "types": "./types/remapping.d.cts",
+          "default": "./dist/remapping.umd.js"
+        },
+        "require": {
+          "types": "./types/remapping.d.cts",
+          "default": "./dist/remapping.umd.js"
+        },
+        "import": {
+          "types": "./types/remapping.d.mts",
+          "default": "./dist/remapping.mjs"
+        }
       },
       "./dist/remapping.umd.js"
     ],
@@ -33,7 +41,10 @@
     "benchmark:only": "node --expose-gc benchmark/index.js",
     "build": "run-s -n build:code build:types",
     "build:code": "node ../../esbuild.mjs remapping.ts",
-    "build:types": "tsc --project tsconfig.build.json",
+    "build:types": "run-s build:types:force build:types:emit build:types:mts",
+    "build:types:force": "rimraf tsconfig.build.tsbuildinfo",
+    "build:types:emit": "tsc --project tsconfig.build.json",
+    "build:types:mts": "node ../../mts-types.mjs",
     "clean": "run-s -n clean:code clean:types",
     "clean:code": "tsc --build --clean tsconfig.build.json",
     "clean:types": "rimraf dist types",

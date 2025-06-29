@@ -9,7 +9,7 @@
   ],
   "main": "dist/source-map.umd.js",
   "module": "dist/source-map.mjs",
-  "types": "types/source-map.d.ts",
+  "types": "types/source-map.d.cts",
   "files": [
     "dist",
     "src",
@@ -18,10 +18,18 @@
   "exports": {
     ".": [
       {
-        "types": "./types/source-map.d.ts",
-        "browser": "./dist/source-map.umd.js",
-        "require": "./dist/source-map.umd.js",
-        "import": "./dist/source-map.mjs"
+        "browser": {
+          "types": "./types/source-map.d.cts",
+          "default": "./dist/source-map.umd.js"
+        },
+        "require": {
+          "types": "./types/source-map.d.cts",
+          "default": "./dist/source-map.umd.js"
+        },
+        "import": {
+          "types": "./types/source-map.d.mts",
+          "default": "./dist/source-map.mjs"
+        }
       },
       "./dist/source-map.umd.js"
     ],
@@ -33,7 +41,10 @@
     "benchmark:only": "node --expose-gc benchmark/index.js",
     "build": "run-s -n build:code build:types",
     "build:code": "node ../../esbuild.mjs source-map.ts",
-    "build:types": "tsc --project tsconfig.build.json",
+    "build:types": "run-s build:types:force build:types:emit build:types:mts",
+    "build:types:force": "rimraf tsconfig.build.tsbuildinfo",
+    "build:types:emit": "tsc --project tsconfig.build.json",
+    "build:types:mts": "node ../../mts-types.mjs",
     "clean": "run-s -n clean:code clean:types",
     "clean:code": "tsc --build --clean tsconfig.build.json",
     "clean:types": "rimraf dist types",

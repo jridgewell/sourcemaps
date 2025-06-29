@@ -1,13 +1,14 @@
 {
   "compilerOptions": {
+    "allowImportingTsExtensions": true,
     "allowSyntheticDefaultImports": true,
     "composite": true,
     "declaration": true,
-    "declarationMap": true,
     "esModuleInterop": true,
     "lib": ["es2015", "dom"],
-    "module": "esnext",
-    "moduleResolution": "bundler",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "rewriteRelativeImportExtensions": true,
     "sourceMap": true,
     "strict": true,
     "target": "es2015",

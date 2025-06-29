@@ -8,7 +8,7 @@
   ],
   "main": "dist/trace-mapping.umd.js",
   "module": "dist/trace-mapping.mjs",
-  "types": "types/trace-mapping.d.ts",
+  "types": "types/trace-mapping.d.cts",
   "files": [
     "dist",
     "src",
@@ -17,10 +17,18 @@
   "exports": {
     ".": [
       {
-        "types": "./types/trace-mapping.d.ts",
-        "browser": "./dist/trace-mapping.umd.js",
-        "require": "./dist/trace-mapping.umd.js",
-        "import": "./dist/trace-mapping.mjs"
+        "browser": {
+          "types": "./types/trace-mapping.d.cts",
+          "default": "./dist/trace-mapping.umd.js"
+        },
+        "require": {
+          "types": "./types/trace-mapping.d.cts",
+          "default": "./dist/trace-mapping.umd.js"
+        },
+        "import": {
+          "types": "./types/trace-mapping.d.mts",
+          "default": "./dist/trace-mapping.mjs"
+        }
       },
       "./dist/trace-mapping.umd.js"
     ],
@@ -32,7 +40,10 @@
     "benchmark:only": "node --expose-gc benchmark/index.js",
     "build": "run-s -n build:code build:types",
     "build:code": "node ../../esbuild.mjs trace-mapping.ts",
-    "build:types": "tsc --project tsconfig.build.json",
+    "build:types": "run-s build:types:force build:types:emit build:types:mts",
+    "build:types:force": "rimraf tsconfig.build.tsbuildinfo",
+    "build:types:emit": "tsc --project tsconfig.build.json",
+    "build:types:mts": "node ../../mts-types.mjs",
     "clean": "run-s -n clean:code clean:types",
     "clean:code": "tsc --build --clean tsconfig.build.json",
     "clean:types": "rimraf dist types",
