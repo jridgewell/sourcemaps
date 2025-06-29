@@ -21,15 +21,15 @@
           "types": "./types/gen-mapping.d.cts",
           "default": "./dist/gen-mapping.umd.js"
         },
+        "module-sync": {
+          "types": "./types/gen-mapping.d.mts",
+          "default": "./dist/gen-mapping.mjs"
+        },
         "require": {
           "types": "./types/gen-mapping.d.cts",
           "default": "./dist/gen-mapping.umd.js"
         },
         "import": {
-          "types": "./types/gen-mapping.d.mts",
-          "default": "./dist/gen-mapping.mjs"
-        },
-        "module-sync": {
           "types": "./types/gen-mapping.d.mts",
           "default": "./dist/gen-mapping.mjs"
         }

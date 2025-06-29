@@ -22,15 +22,15 @@
           "types": "./types/remapping.d.cts",
           "default": "./dist/remapping.umd.js"
         },
+        "module-sync": {
+          "types": "./types/remapping.d.mts",
+          "default": "./dist/remapping.mjs"
+        },
         "require": {
           "types": "./types/remapping.d.cts",
           "default": "./dist/remapping.umd.js"
         },
         "import": {
-          "types": "./types/remapping.d.mts",
-          "default": "./dist/remapping.mjs"
-        },
-        "module-sync": {
           "types": "./types/remapping.d.mts",
           "default": "./dist/remapping.mjs"
         }

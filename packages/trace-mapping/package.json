@@ -21,15 +21,15 @@
           "types": "./types/trace-mapping.d.cts",
           "default": "./dist/trace-mapping.umd.js"
         },
+        "module-sync": {
+          "types": "./types/trace-mapping.d.mts",
+          "default": "./dist/trace-mapping.mjs"
+        },
         "require": {
           "types": "./types/trace-mapping.d.cts",
           "default": "./dist/trace-mapping.umd.js"
         },
         "import": {
-          "types": "./types/trace-mapping.d.mts",
-          "default": "./dist/trace-mapping.mjs"
-        },
-        "module-sync": {
           "types": "./types/trace-mapping.d.mts",
           "default": "./dist/trace-mapping.mjs"
         }
