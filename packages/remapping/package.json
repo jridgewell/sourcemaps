@@ -29,6 +29,10 @@
         "import": {
           "types": "./types/remapping.d.mts",
           "default": "./dist/remapping.mjs"
+        },
+        "module-sync": {
+          "types": "./types/remapping.d.mts",
+          "default": "./dist/remapping.mjs"
         }
       },
       "./dist/remapping.umd.js"

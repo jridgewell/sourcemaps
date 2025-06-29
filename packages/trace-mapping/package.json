@@ -28,6 +28,10 @@
         "import": {
           "types": "./types/trace-mapping.d.mts",
           "default": "./dist/trace-mapping.mjs"
+        },
+        "module-sync": {
+          "types": "./types/trace-mapping.d.mts",
+          "default": "./dist/trace-mapping.mjs"
         }
       },
       "./dist/trace-mapping.umd.js"

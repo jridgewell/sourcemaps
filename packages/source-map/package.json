@@ -29,6 +29,10 @@
         "import": {
           "types": "./types/source-map.d.mts",
           "default": "./dist/source-map.mjs"
+        },
+        "module-sync": {
+          "types": "./types/source-map.d.mts",
+          "default": "./dist/source-map.mjs"
         }
       },
       "./dist/source-map.umd.js"

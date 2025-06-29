@@ -28,6 +28,10 @@
         "import": {
           "types": "./types/gen-mapping.d.mts",
           "default": "./dist/gen-mapping.mjs"
+        },
+        "module-sync": {
+          "types": "./types/gen-mapping.d.mts",
+          "default": "./dist/gen-mapping.mjs"
         }
       },
       "./dist/gen-mapping.umd.js"
