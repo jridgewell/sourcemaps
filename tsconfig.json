@@ -2,10 +2,13 @@
   "compilerOptions": {
     "allowSyntheticDefaultImports": true,
     "composite": true,
+    "declaration": true,
+    "declarationMap": true,
     "esModuleInterop": true,
     "lib": ["es2015", "dom"],
     "module": "esnext",
     "moduleResolution": "bundler",
+    "sourceMap": true,
     "strict": true,
     "target": "es2015",
     "typeRoots": ["node_modules/@types"]

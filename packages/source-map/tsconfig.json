@@ -1,25 +1,10 @@
 {
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "moduleResolution": "node",
-    "target": "es2015",
-    "module":"CommonJS",
-    "lib": ["es2015", "dom"],
-    "strict": true,
-    "sourceMap": true,
-    "inlineSources": true,
-    "declaration": true,
-    "allowSyntheticDefaultImports": true,
-    "declarationDir": "dist/types",
-    "outDir": "dist/lib",
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "esModuleInterop": true
+    "declarationDir": "types",
+    "outDir": "dist"
   },
-  "exclude": [
-    "dist"
-  ],
-  "include": [
-    "src",
-    "test"
-  ]
+  "include": ["src", "test"],
+  "exclude": ["dist"]
 }
+

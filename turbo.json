@@ -4,15 +4,16 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["../../esbuild.mjs", "../../tsconfig.json"],
-      "outputs": ["dist/**"]
+      "outputs": ["dist/**", "types/**"]
     },
-    "test": {
-      "dependsOn": ["^build"]
-    },
+    "clean": { "cache": false },
+    "dev": { "cache": false },
     "lint": {
       "inputs": ["../../prettier.config.js", "../../tsconfig.json"]
     },
-    "dev": { "cache": false }
+    "test": {
+      "dependsOn": ["^build"]
+    }
   },
   "globalDependencies": ["tsconfig.json"]
 }
