@@ -60,6 +60,7 @@
     "lint:types": "npm run test:types -- --fix",
     "prepublishOnly": "npm run-s -n build test"
   },
+  "homepage": "https://github.com/jridgewell/sourcemaps/tree/main/packages/gen-mapping",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jridgewell/sourcemaps.git",
