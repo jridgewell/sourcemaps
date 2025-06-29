@@ -3,7 +3,7 @@
     "benchmark": {},
     "build": {
       "dependsOn": ["^build"],
-      "inputs": ["../../esbuild.mjs", "../../tsconfig.json", "../../mts-types.mjs"],
+      "inputs": ["../../esbuild.mjs", "../../tsconfig.json", "../../mts-types.mjs", "src/**"],
       "outputs": ["dist/**", "types/**"]
     },
     "clean": { "cache": false },
