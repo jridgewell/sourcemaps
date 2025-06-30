@@ -1,3 +1,10 @@
+# [0.3.9] - 2025-06-30
+
+- Update UMD Wrapper to fix webpack build issue: #33
+- Add `getOwnPropertyDescriptors` polyfill to support Node v6: #34
+
+**Full Changelog**: https://github.com/jridgewell/sourcemaps/compare/source-map/0.3.8...source-map/0.3.9
+
 # [0.3.8] - 2025-06-30
 
 - Remove `require(esm)` support to fix bug with Node v22: https://github.com/jridgewell/sourcemaps/commit/e95784217661cdd44c3c1bd5b3c42bbb8a24b69c
