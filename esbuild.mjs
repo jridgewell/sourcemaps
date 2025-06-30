@@ -37,24 +37,41 @@ const externalize = {
   },
 };
 
+// Babel still supports Node v6, which doesn't have getOwnPropertyDescriptors.
+const getOwnPropertyDescriptorsPolyfill = `if (!Object.getOwnPropertyDescriptors) Object.getOwnPropertyDescriptors = function(value) {
+  return Reflect.ownKeys(value).reduce(function (acc, key) {
+    Object.defineProperty(acc, key, Object.getOwnPropertyDescriptor(value, key))
+    return acc;
+  }, {});
+}`;
+
 /** @type {esbuild.Plugin} */
 const umd = {
   name: 'umd',
   setup(build) {
     const dependencies = Object.keys(packageJson.dependencies || {});
-    const browserDeps = dependencies.map((d) => `global.${external[d]}`).join(', ');
-    const requireDeps = dependencies.map((d) => `require_keep('${d}')`).join(', ');
-    const amdDeps = dependencies.map((d) => `'${d}'`).join(', ');
-    const locals = dependencies.map((d) => `require_${external[d]}`).join(', ');
+    const browserDeps = dependencies.map((d) => `global.${external[d]}`);
+    const requireDeps = dependencies.map((d) => `require_keep('${d}')`);
+    const amdDeps = dependencies.map((d) => `'${d}'`);
+    const locals = dependencies.map((d) => `require_${external[d]}`);
     const browserGlobal = external[packageJson.name];
+
+    // Babel still supports Node v6, which doesn't support trailing commas, so we prepend an empty
+    // item to have it insert a comma after the last item in the static syntax list.
+    browserDeps.unshift('');
+    requireDeps.unshift('');
+    amdDeps.unshift('');
+    locals.unshift('');
 
     build.initialOptions.banner = {
       js: `
 (function (global, factory, e, m) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, module, ${requireDeps}) :
-    typeof define === 'function' && define.amd ? define(['exports', 'module', ${amdDeps}], factory) :
-    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(e = {}, m = { exports: e }, ${browserDeps}), global.${browserGlobal} = 'default' in m.exports ? m.exports.default : m.exports);
-})(this, (function (exports, module, ${locals}) {
+    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, module${requireDeps}) :
+    typeof define === 'function' && define.amd ? define(['exports', 'module'${amdDeps}], factory) :
+    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(e = {}, m = { exports: e }${browserDeps}), global.${browserGlobal} = 'default' in m.exports ? m.exports.default : m.exports);
+})(this, (function (exports, module${locals}) {
+"use strict";
+${getOwnPropertyDescriptorsPolyfill}
       `.trim(),
     };
     build.initialOptions.footer = {
