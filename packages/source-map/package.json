@@ -22,10 +22,6 @@
           "types": "./types/source-map.d.cts",
           "default": "./dist/source-map.umd.js"
         },
-        "module-sync": {
-          "types": "./types/source-map.d.mts",
-          "default": "./dist/source-map.mjs"
-        },
         "require": {
           "types": "./types/source-map.d.cts",
           "default": "./dist/source-map.umd.js"
