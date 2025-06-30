@@ -1,12 +1,18 @@
+# [0.3.27] - 2025-06-30
+
+- Remove `require(esm)` support to fix bug with Node v22: e95784217661cdd44c3c1bd5b3c42bbb8a24b69c
+
+**Full Changelog**: https://github.com/jridgewell/sourcemaps/compare/trace-mapping/0.3.26...trace-mapping/0.3.27
+
 # [0.3.26] - 2025-06-29
 
-- Fix package types for CJS and ESM imports: a924ed3
-- Add `module-sync` exports type for [require(esm)](https://joyeecheung.github.io/blog/2024/03/18/require-esm-in-node-js/): 3836f6c
-- Add type declaration source maps to assist go-to-definition: 9a02665
+- Fix package types for CJS and ESM imports: a924ed32ebfa27e49bc0ff4196118e791eaff22d
+- Add `module-sync` exports type for [require(esm)](https://joyeecheung.github.io/blog/2024/03/18/require-esm-in-node-js/): 3836f6c8aee41d47119a642c7f88042b1a8ed239
+- Add type declaration source maps to assist go-to-definition: 9a0266518d2877047da27cbaf3290a4e6e3cb556
 - Fix map file resolution to match spec: #36
-- Accept readonly types: cdf32c7
-- Rename AnyMap: 5676069
-- Add error messages for common issues: 13c8987
+- Accept readonly types: cdf32c7dc8cde4b3963306ea2d316a675002e296
+- Rename AnyMap: 5676069c80ca426f2d60b2ccfafca0944c79c039
+- Add error messages for common issues: 13c8987c4067c0e42d3b2b7192d23daedbb99a1b
 
 **Full Changelog**: https://github.com/jridgewell/sourcemaps/compare/trace-mapping/0.3.25...trace-mapping/0.3.26
 

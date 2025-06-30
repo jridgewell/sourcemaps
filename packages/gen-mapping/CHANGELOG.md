@@ -1,10 +1,16 @@
+# [0.3.10] - 2025-06-30
+
+- Remove `require(esm)` support to fix bug with Node v22: e95784217661cdd44c3c1bd5b3c42bbb8a24b69c
+
+**Full Changelog**: https://github.com/jridgewell/sourcemaps/compare/gen-mapping/0.3.9...gen-mapping/0.3.10
+
 # [0.3.9] - 2025-06-29
 
-- Fix package types for CJS and ESM imports: a924ed3
+- Fix package types for CJS and ESM imports: a924ed32ebfa27e49bc0ff4196118e791eaff22d
 - fix: use stable version of sourcemap-codec dependency: #26 (thanks @benmccann)
-- Add `module-sync` exports type for [require(esm)](https://joyeecheung.github.io/blog/2024/03/18/require-esm-in-node-js/): 3836f6c
-- Add type declaration source maps to assist go-to-definition: 9a02665
-- Temporarily remove scopes/ranges APIs: 7575b63
+- Add `module-sync` exports type for [require(esm)](https://joyeecheung.github.io/blog/2024/03/18/require-esm-in-node-js/): 3836f6c8aee41d47119a642c7f88042b1a8ed239
+- Add type declaration source maps to assist go-to-definition: 9a0266518d2877047da27cbaf3290a4e6e3cb556
+- Temporarily remove scopes/ranges APIs: 7575b63bc3f70388c2cafc33efc8b47254ff4b4c
 - Include set-array source directly in gen-mapping project: #1 (thanks @benmccann)
 
 **Full Changelog**: https://github.com/jridgewell/sourcemaps/compare/gen-mapping/0.3.5...gen-mapping/0.3.9

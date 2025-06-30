@@ -1,8 +1,14 @@
+# [0.3.8] - 2025-06-30
+
+- Remove `require(esm)` support to fix bug with Node v22: e95784217661cdd44c3c1bd5b3c42bbb8a24b69c
+
+**Full Changelog**: https://github.com/jridgewell/sourcemaps/compare/source-map/0.3.7...source-map/0.3.8
+
 # [0.3.7] - 2025-06-29
 
-- Fix package types for CJS and ESM imports: a924ed3
-- Add `module-sync` exports type for [require(esm)](https://joyeecheung.github.io/blog/2024/03/18/require-esm-in-node-js/): 3836f6c
-- Add type declaration source maps to assist go-to-definition: 9a02665
+- Fix package types for CJS and ESM imports: a924ed32ebfa27e49bc0ff4196118e791eaff22d
+- Add `module-sync` exports type for [require(esm)](https://joyeecheung.github.io/blog/2024/03/18/require-esm-in-node-js/): 3836f6c8aee41d47119a642c7f88042b1a8ed239
+- Add type declaration source maps to assist go-to-definition: 9a0266518d2877047da27cbaf3290a4e6e3cb556
 - fix: remove extra comma to fix build: #24 (thanks @benmccann)
 
 **Full Changelog**: https://github.com/jridgewell/sourcemaps/compare/source-map/0.3.6...source-map/0.3.7
