@@ -1,6 +1,6 @@
 {
   "name": "@jridgewell/sourcemap-codec",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "description": "Encode/decode sourcemap mappings",
   "keywords": [
     "sourcemap",
