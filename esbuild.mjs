@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as esbuild from 'esbuild';
@@ -43,7 +43,7 @@ const umd = {
   setup(build) {
     const dependencies = Object.keys(packageJson.dependencies || {});
     const browserDeps = dependencies.map((d) => `global.${external[d]}`).join(', ');
-    const requireDeps = dependencies.map((d) => `require('${d}')`).join(', ');
+    const requireDeps = dependencies.map((d) => `require_keep('${d}')`).join(', ');
     const amdDeps = dependencies.map((d) => `'${d}'`).join(', ');
     const locals = dependencies.map((d) => `require_${external[d]}`).join(', ');
     const browserGlobal = external[packageJson.name];
@@ -83,6 +83,7 @@ async function build(esm) {
     }
     process.exit(1);
   }
+  mkdirSync('dist', { recursive: true });
 
   for (const file of build.outputFiles) {
     if (!file.path.endsWith('.umd.js')) {
@@ -90,9 +91,12 @@ async function build(esm) {
       continue;
     }
 
-    const contents = file.text.replace(/\brequire\(['"]([^'"]*)['"]\)/g, (_match, spec) => {
-      return `require_${external[spec]}`;
-    });
+    const contents = file.text.replace(
+      /\brequire(_keep)?\(['"]([^'"]*)['"]\)/g,
+      (_match, keep, spec) => {
+        return keep ? `require('${spec}')` : `require_${external[spec]}`;
+      },
+    );
     writeFileSync(file.path, contents);
   }
 
