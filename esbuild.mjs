@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as esbuild from 'esbuild';
@@ -17,7 +17,7 @@ const [tsconfig, packageJson] = [
 
 const external = {
   '@jridgewell/gen-mapping': 'genMapping',
-  '@ampproject/remapping': 'remapping',
+  '@jridgewell/remapping': 'remapping',
   '@jridgewell/source-map': 'sourceMap',
   '@jridgewell/sourcemap-codec': 'sourcemapCodec',
   '@jridgewell/trace-mapping': 'traceMapping',
@@ -41,19 +41,20 @@ const externalize = {
 const umd = {
   name: 'umd',
   setup(build) {
-    const dependencies = Object.keys(packageJson.dependencies || {}).map((d) => {
-      return `"${d}": global.${external[d]}`;
-    });
+    const dependencies = Object.keys(packageJson.dependencies || {});
+    const browserDeps = dependencies.map((d) => `global.${external[d]}`).join(', ');
+    const requireDeps = dependencies.map((d) => `require_keep('${d}')`).join(', ');
+    const amdDeps = dependencies.map((d) => `'${d}'`).join(', ');
+    const locals = dependencies.map((d) => `require_${external[d]}`).join(', ');
+    const browserGlobal = external[packageJson.name];
 
     build.initialOptions.banner = {
       js: `
 (function (global, factory, e, m) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory(require, exports, module) :
-    typeof define === 'function' && define.amd ? define(factory) :
-    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(function(spec) {
-        return {${dependencies.join(', ')}}[spec];
-    }, e = {}, m = { exports: e }), global.${external[packageJson.name]} = m.exports);
-})(this, (function (require, exports, module) {
+    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, module, ${requireDeps}) :
+    typeof define === 'function' && define.amd ? define(['exports', 'module', ${amdDeps}], factory) :
+    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(e = {}, m = { exports: e }, ${browserDeps}), global.${browserGlobal} = 'default' in m.exports ? m.exports.default : m.exports);
+})(this, (function (exports, module, ${locals}) {
       `.trim(),
     };
     build.initialOptions.footer = {
@@ -73,6 +74,7 @@ async function build(esm) {
     plugins: esm ? [externalize] : [externalize, umd],
     outExtension: esm ? { '.js': '.mjs' } : { '.js': '.umd.js' },
     target: tsconfig.compilerOptions.target,
+    write: false,
   });
 
   if (build.errors.length > 0) {
@@ -80,6 +82,22 @@ async function build(esm) {
       console.error(message);
     }
     process.exit(1);
+  }
+  mkdirSync('dist', { recursive: true });
+
+  for (const file of build.outputFiles) {
+    if (!file.path.endsWith('.umd.js')) {
+      writeFileSync(file.path, file.contents);
+      continue;
+    }
+
+    const contents = file.text.replace(
+      /\brequire(_keep)?\(['"]([^'"]*)['"]\)/g,
+      (_match, keep, spec) => {
+        return keep ? `require('${spec}')` : `require_${external[spec]}`;
+      },
+    );
+    writeFileSync(file.path, contents);
   }
 
   console.log(`Compiled ${esm ? 'esm' : 'cjs'}`);
