@@ -287,12 +287,11 @@ export function toDecodedMap(map: GenMapping): DecodedSourceMap {
  */
 export function toEncodedMap(map: GenMapping): EncodedSourceMap {
   const decoded = toDecodedMap(map);
-  return {
-    ...decoded,
+  return Object.assign({}, decoded, {
     // originalScopes: decoded.originalScopes.map((os) => encodeOriginalScopes(os)),
     // generatedRanges: encodeGeneratedRanges(decoded.generatedRanges as GeneratedRange[]),
     mappings: encode(decoded.mappings as SourceMapSegment[][]),
-  };
+  });
 }
 
 /**
