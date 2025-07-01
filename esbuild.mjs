@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as esbuild from 'esbuild';
@@ -115,6 +115,7 @@ async function build(esm) {
     process.exit(1);
   }
 
+  mkdirSync('dist', { recursive: true });
   for (const file of build.outputFiles) {
     if (!file.path.endsWith('.umd.js')) {
       writeFileSync(file.path, file.contents);
