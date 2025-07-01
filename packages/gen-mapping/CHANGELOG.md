@@ -1,3 +1,11 @@
+# [0.3.12] - 2025-06-30
+
+- Use `Object.assign` to avoid polyfill in old Node versions: https://github.com/jridgewell/sourcemaps/commit/dd0615a
+- Optimize UMD wrapper: https://github.com/jridgewell/sourcemaps/commit/557ca37
+- Reorder subpath exports to improve import usage: #35
+
+**Full Changelog**: https://github.com/jridgewell/sourcemaps/compare/gen-mapping/0.3.11...gen-mapping/0.3.12
+
 # [0.3.11] - 2025-06-30
 
 - Update UMD Wrapper to fix webpack build issue: #33
