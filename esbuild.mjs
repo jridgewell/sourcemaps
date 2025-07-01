@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as esbuild from 'esbuild';
@@ -38,15 +38,6 @@ const externalize = {
     });
   },
 };
-
-// Babel still supports Node v6, which doesn't have getOwnPropertyDescriptors.
-const getOwnPropertyDescriptorsPolyfill = `
-(v) =>
-  Reflect.ownKeys(v).reduce((o, k) =>
-    Object.defineProperty(o, k, Object.getOwnPropertyDescriptor(value, k)), {})
-`
-  .trim()
-  .replace(/\n\s*/g, ' ');
 
 /** @type {esbuild.Plugin} */
 const umd = {
@@ -105,7 +96,6 @@ async function build(esm) {
     plugins: esm ? [externalize] : [umd],
     outExtension: esm ? { '.js': '.mjs' } : { '.js': '.umd.js' },
     target: tsconfig.compilerOptions.target,
-    write: false,
   });
 
   if (build.errors.length > 0) {
@@ -113,21 +103,6 @@ async function build(esm) {
       console.error(message);
     }
     process.exit(1);
-  }
-
-  mkdirSync('dist', { recursive: true });
-  for (const file of build.outputFiles) {
-    if (!file.path.endsWith('.umd.js')) {
-      writeFileSync(file.path, file.contents);
-      continue;
-    }
-
-    const getOwnPropDescsHelper = '__getOwnPropDescs = Object.getOwnPropertyDescriptors';
-    const contents = file.text.replace(
-      getOwnPropDescsHelper,
-      `${getOwnPropDescsHelper} || (${getOwnPropertyDescriptorsPolyfill})`,
-    );
-    writeFileSync(file.path, contents);
   }
 
   console.log(`Compiled ${esm ? 'esm' : 'cjs'}`);
