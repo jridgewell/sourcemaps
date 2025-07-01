@@ -3,7 +3,6 @@ node_modules
 dist
 types
 coverage
-package-lock.json
 .idea
 .turbo
 *.tsbuildinfo
