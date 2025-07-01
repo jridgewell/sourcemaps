@@ -1,3 +1,10 @@
+# [0.3.29] - 2025-07-01
+
+- Optimize UMD wrapper: https://github.com/jridgewell/sourcemaps/commit/557ca37
+- Reorder subpath exports to improve import usage: #35
+
+**Full Changelog**: https://github.com/jridgewell/sourcemaps/compare/trace-mapping/0.3.28...trace-mapping/0.3.29
+
 # [0.3.28] - 2025-06-30
 
 - Update UMD Wrapper to fix webpack build issue: #33
