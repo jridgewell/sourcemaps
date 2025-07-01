@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as esbuild from 'esbuild';
@@ -24,11 +24,13 @@ const external = {
   '@jridgewell/resolve-uri': 'resolveURI',
 };
 
+const externalSpec = /^[^./]/;
+
 /** @type {esbuild.Plugin} */
 const externalize = {
   name: 'externalize',
   setup(build) {
-    build.onResolve({ filter: /^[^./]/ }, ({ path }) => {
+    build.onResolve({ filter: externalSpec }, ({ path }) => {
       if (!external[path]) {
         throw new Error(`unregistered external module "${path}"`);
       }
@@ -38,12 +40,13 @@ const externalize = {
 };
 
 // Babel still supports Node v6, which doesn't have getOwnPropertyDescriptors.
-const getOwnPropertyDescriptorsPolyfill = `if (!Object.getOwnPropertyDescriptors) Object.getOwnPropertyDescriptors = function(value) {
-  return Reflect.ownKeys(value).reduce(function (acc, key) {
-    Object.defineProperty(acc, key, Object.getOwnPropertyDescriptor(value, key))
-    return acc;
-  }, {});
-}`;
+const getOwnPropertyDescriptorsPolyfill = `
+(v) =>
+  Reflect.ownKeys(v).reduce((o, k) =>
+    Object.defineProperty(o, k, Object.getOwnPropertyDescriptor(value, k)), {})
+`
+  .trim()
+  .replace(/\n\s*/g, ' ');
 
 /** @type {esbuild.Plugin} */
 const umd = {
@@ -51,7 +54,7 @@ const umd = {
   setup(build) {
     const dependencies = Object.keys(packageJson.dependencies || {});
     const browserDeps = dependencies.map((d) => `global.${external[d]}`);
-    const requireDeps = dependencies.map((d) => `require_keep('${d}')`);
+    const requireDeps = dependencies.map((d) => `require('${d}')`);
     const amdDeps = dependencies.map((d) => `'${d}'`);
     const locals = dependencies.map((d) => `require_${external[d]}`);
     const browserGlobal = external[packageJson.name];
@@ -65,18 +68,29 @@ const umd = {
 
     build.initialOptions.banner = {
       js: `
-(function (global, factory, e, m) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, module${requireDeps}) :
-    typeof define === 'function' && define.amd ? define(['exports', 'module'${amdDeps}], factory) :
-    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(e = {}, m = { exports: e }${browserDeps}), global.${browserGlobal} = 'default' in m.exports ? m.exports.default : m.exports);
-})(this, (function (exports, module${locals}) {
-"use strict";
-${getOwnPropertyDescriptorsPolyfill}
+(function (global, factory, m) {
+    typeof exports === 'object' && typeof module !== 'undefined' ? factory(module${requireDeps.join(', ')}) :
+    typeof define === 'function' && define.amd ? define(['module'${amdDeps.join(', ')}], factory) :
+    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(m = { exports: {} }${browserDeps.join(', ')}), global.${browserGlobal} = 'default' in m.exports ? m.exports.default : m.exports);
+})(this, (function (module${locals.join(', ')}) {
       `.trim(),
     };
     build.initialOptions.footer = {
       js: '}));',
     };
+
+    build.onResolve({ filter: externalSpec }, ({ path }) => {
+      if (!external[path]) {
+        throw new Error(`unregistered external module "${path}"`);
+      }
+      return { path, namespace: 'umd' };
+    });
+
+    build.onLoad({ filter: /.*/, namespace: 'umd' }, ({ path }) => {
+      return {
+        contents: `module.exports = require_${external[path]}`,
+      };
+    });
   },
 };
 
@@ -88,7 +102,7 @@ async function build(esm) {
     sourcemap: 'linked',
     sourcesContent: false,
     format: esm ? 'esm' : 'cjs',
-    plugins: esm ? [externalize] : [externalize, umd],
+    plugins: esm ? [externalize] : [umd],
     outExtension: esm ? { '.js': '.mjs' } : { '.js': '.umd.js' },
     target: tsconfig.compilerOptions.target,
     write: false,
@@ -100,7 +114,6 @@ async function build(esm) {
     }
     process.exit(1);
   }
-  mkdirSync('dist', { recursive: true });
 
   for (const file of build.outputFiles) {
     if (!file.path.endsWith('.umd.js')) {
@@ -108,11 +121,10 @@ async function build(esm) {
       continue;
     }
 
+    const getOwnPropDescsHelper = '__getOwnPropDescs = Object.getOwnPropertyDescriptors';
     const contents = file.text.replace(
-      /\brequire(_keep)?\(['"]([^'"]*)['"]\)/g,
-      (_match, keep, spec) => {
-        return keep ? `require('${spec}')` : `require_${external[spec]}`;
-      },
+      getOwnPropDescsHelper,
+      `${getOwnPropDescsHelper} || (${getOwnPropertyDescriptorsPolyfill})`,
     );
     writeFileSync(file.path, contents);
   }
