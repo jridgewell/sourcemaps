@@ -1,4 +1,4 @@
-# [0.3.12] - 2025-06-30
+# [0.3.12] - 2025-07-01
 
 - Use `Object.assign` to avoid polyfill in old Node versions: https://github.com/jridgewell/sourcemaps/commit/dd0615a
 - Optimize UMD wrapper: https://github.com/jridgewell/sourcemaps/commit/557ca37
