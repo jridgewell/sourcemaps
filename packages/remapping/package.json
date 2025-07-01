@@ -18,17 +18,17 @@
   "exports": {
     ".": [
       {
-        "browser": {
-          "types": "./types/remapping.d.cts",
-          "default": "./dist/remapping.umd.js"
+        "import": {
+          "types": "./types/remapping.d.mts",
+          "default": "./dist/remapping.mjs"
         },
         "require": {
           "types": "./types/remapping.d.cts",
           "default": "./dist/remapping.umd.js"
         },
-        "import": {
-          "types": "./types/remapping.d.mts",
-          "default": "./dist/remapping.mjs"
+        "browser": {
+          "types": "./types/remapping.d.cts",
+          "default": "./dist/remapping.umd.js"
         }
       },
       "./dist/remapping.umd.js"
