@@ -18,17 +18,17 @@
   "exports": {
     ".": [
       {
-        "browser": {
-          "types": "./types/source-map.d.cts",
-          "default": "./dist/source-map.umd.js"
+        "import": {
+          "types": "./types/source-map.d.mts",
+          "default": "./dist/source-map.mjs"
         },
         "require": {
           "types": "./types/source-map.d.cts",
           "default": "./dist/source-map.umd.js"
         },
-        "import": {
-          "types": "./types/source-map.d.mts",
-          "default": "./dist/source-map.mjs"
+        "browser": {
+          "types": "./types/source-map.d.cts",
+          "default": "./dist/source-map.umd.js"
         }
       },
       "./dist/source-map.umd.js"

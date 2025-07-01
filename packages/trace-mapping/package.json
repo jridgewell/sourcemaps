@@ -17,17 +17,17 @@
   "exports": {
     ".": [
       {
-        "browser": {
-          "types": "./types/trace-mapping.d.cts",
-          "default": "./dist/trace-mapping.umd.js"
+        "import": {
+          "types": "./types/trace-mapping.d.mts",
+          "default": "./dist/trace-mapping.mjs"
         },
         "require": {
           "types": "./types/trace-mapping.d.cts",
           "default": "./dist/trace-mapping.umd.js"
         },
-        "import": {
-          "types": "./types/trace-mapping.d.mts",
-          "default": "./dist/trace-mapping.mjs"
+        "browser": {
+          "types": "./types/trace-mapping.d.cts",
+          "default": "./dist/trace-mapping.umd.js"
         }
       },
       "./dist/trace-mapping.umd.js"
