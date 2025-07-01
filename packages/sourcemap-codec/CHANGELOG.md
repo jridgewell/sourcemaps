@@ -1,3 +1,10 @@
+# [1.5.4] - 2025-07-01
+
+- Optimize UMD wrapper: https://github.com/jridgewell/sourcemaps/commit/557ca37
+- Reorder subpath exports to improve import usage: #35
+
+**Full Changelog**: https://github.com/jridgewell/sourcemaps/compare/sourcemap-codec/1.5.3...sourcemap-codec/1.5.4
+
 # [1.5.3] - 2025-06-30
 
 - Update UMD Wrapper to fix webpack build issue: #33
