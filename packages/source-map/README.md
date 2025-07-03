@@ -180,5 +180,5 @@ This implementation has some differences with `source-map` and `source-map-js`.
 - `SourceMapGenerator.prototype.applySourceMap()`
   - Not implemented
 
-[trace-mapping]: https://github.com/jridgewell/trace-mapping/
-[gen-mapping]: https://github.com/jridgewell/gen-mapping/
+[trace-mapping]: https://github.com/jridgewell/sourcemaps/tree/main/packages/trace-mapping/
+[gen-mapping]: https://github.com/jridgewell/sourcemaps/tree/main/packages/gen-mapping/
