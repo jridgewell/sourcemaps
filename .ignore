@@ -1,0 +1,5 @@
+# The map files are very long and crash vimgrep
+**/*.map
+
+# I never want to search for things in the lockfile.
+package-lock.json
