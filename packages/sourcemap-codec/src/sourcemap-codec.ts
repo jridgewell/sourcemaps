@@ -9,12 +9,7 @@ import {
 } from './vlq';
 import { StringWriter, StringReader } from './strings';
 
-export {
-  decodeOriginalScopes,
-  encodeOriginalScopes,
-  decodeGeneratedRanges,
-  encodeGeneratedRanges,
-} from './scopes';
+export { decodeScopes, encodeScopes } from './scopes';
 export type { OriginalScope, GeneratedRange, CallSite, BindingExpressionRange } from './scopes';
 
 export type SourceMapSegment =

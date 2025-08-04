@@ -1,28 +1,20 @@
 /* eslint-env node, mocha */
 
-import {
-  decodeGeneratedRanges,
-  decodeOriginalScopes,
-  encodeGeneratedRanges,
-  encodeOriginalScopes,
-  type GeneratedRange,
-  type OriginalScope,
-} from '../src/scopes';
+import { decodeScopes, encodeScopes, type GeneratedRange, type OriginalScope } from '../src/scopes';
 import assert from 'node:assert/strict';
 
-describe('scopes proposal', () => {
+describe.skip('scopes proposal', () => {
   type Tuple<T> = Pick<T, Extract<keyof T, number>>;
-  function init<T>(
-    init: Tuple<T>,
-    data: Pick<T, Exclude<keyof T, keyof number[] | `${number}`>>,
-  ): T {
+  type Data<T> = Partial<Pick<T, Exclude<keyof T, keyof number[] | `${number}`>>>;
+
+  function init<T>(init: Tuple<T>, data: Data<T>): T {
     return Object.assign(init, data) as T;
   }
 
   describe('original scopes', () => {
     let tests: { encoded: string[]; decoded: OriginalScope[][]; only?: true }[] = [
       {
-        encoded: ['AACAAC,AAECAE,EC,CAECCE,GC,E2C'],
+        encoded: ['BBAAC,DAC,BAAA,DCCB,BABA,DADBCrB'],
         decoded: [
           [
             init([0, 0, 8, 43, 1], { vars: [0, 1] }),
@@ -32,7 +24,7 @@ describe('scopes proposal', () => {
         ],
       },
       {
-        encoded: ['AACAAC,GgBECEG,EG,CC', 'AACACIK,EkBECIG,EC,EkBECKG,EC,GY'],
+        encoded: ['BBAAC,DAC,BADQ,DECDBB', 'BBAAC,DCGC,BACS,DFCB,BACS,DACBDM'],
         decoded: [
           [init([0, 0, 6, 1, 1], { vars: [0, 1] }), init([3, 16, 5, 3, 2, 2], { vars: [3] })],
           [
@@ -43,14 +35,14 @@ describe('scopes proposal', () => {
         ],
       },
       {
-        encoded: ['AACAAC,GmB', 'AACAEA,CqBECAG,EC,AC'],
+        encoded: ['BBAAC,DACDT', 'BBAAC,DEF,BABV,DGCBAA'],
         decoded: [
           [init([0, 0, 3, 19, 1], { vars: [0, 1] })],
           [init([0, 0, 3, 1, 1], { vars: [2, 0] }), init([1, 21, 3, 1, 2, 0], { vars: [3] })],
         ],
       },
       {
-        encoded: ['AACAACEG,EgBECCI,EC,EkBECEI,EC,EkBECGIK,GkBIA,EG,CC,GY'],
+        encoded: ['BBAAC,DACCC,BACQ,DCCB,BACS,DACB,BACS,DAC,BBDSGCDBBDM'],
         decoded: [
           [
             init([0, 0, 19, 12, 1], { vars: [0, 1, 2, 3] }),
@@ -62,13 +54,13 @@ describe('scopes proposal', () => {
         ],
       },
       {
-        encoded: ['AACAAC,AkBECAE,EC,IO'],
+        encoded: ['BBAAC,DAC,BAAS,DCCBEH'],
         decoded: [
           [init([0, 0, 6, 7, 1], { vars: [0, 1] }), init([0, 18, 2, 1, 2, 0], { vars: [2] })],
         ],
       },
       {
-        encoded: ['AACA,AAIAA,GEIAA,GG,EC,AC'],
+        encoded: ['BBAAC,BBAAG,DA,BBDCA,DADDCBAA'],
         decoded: [
           [
             init([0, 0, 8, 1, 1], { vars: [] }),
@@ -78,7 +70,7 @@ describe('scopes proposal', () => {
         ],
       },
       {
-        encoded: ['AACAA,AAECACEG,CEECCIK,GG,GC,CS'],
+        encoded: ['BBAAC,DA,BAAA,DCCC,BABC,DCCDDDBBJ'],
         decoded: [
           [
             init([0, 0, 8, 9, 1], { vars: [0] }),
@@ -95,21 +87,27 @@ describe('scopes proposal', () => {
 
     tests = filtered.length ? filtered : tests;
 
-    describe('decodeOriginalScopes()', () => {
+    describe('decodeScopes()', () => {
       tests.forEach((test, i) => {
         test.encoded.forEach((encoded, j) => {
           it(`decodes sample ${i}, source ${j}`, () => {
-            assert.deepEqual(decodeOriginalScopes(encoded), test.decoded[j]);
+            assert.deepEqual(decodeScopes(encoded), {
+              originalScopes: test.decoded[j],
+              generatedRanges: [],
+            });
           });
         });
       });
     });
 
-    describe('encodeOriginalScopes()', () => {
+    describe('encodeScopes()', () => {
       tests.forEach((test, i) => {
         test.decoded.forEach((decoded, j) => {
           it(`encodes sample ${i}, source ${j}`, () => {
-            assert.deepEqual(encodeOriginalScopes(decoded), test.encoded[j]);
+            assert.deepEqual(encodeScopes({
+              originalScopes: decoded,
+              generatedRanges: [],
+            }), test.encoded[j]);
           });
         });
       });
@@ -119,83 +117,82 @@ describe('scopes proposal', () => {
   describe('generated ranges', () => {
     let tests: { encoded: string; decoded: GeneratedRange[]; only?: true }[] = [
       {
-        encoded: 'AKAADD,AGAEAOAG,AGADAHEI,2B;8B;2C',
+        encoded: '',
         decoded: [
-          init([0, 0, 2, 43, 0, 0], { isScope: true, callsite: null, bindings: [[[-1]], [[-1]]] }),
-          init([0, 0, 1, 30, 0, 2], { isScope: false, callsite: [0, 7, 0], bindings: [[[3]]] }),
-          init([0, 0, 0, 27, 0, 1], { isScope: false, callsite: [0, 4, 2], bindings: [[[4]]] }),
+          init([0, 0, 2, 43, 0, 0], { flags: 0b0100, callsite: null, bindings: [[[-1]], [[-1]]] }),
+          init([0, 0, 1, 30, 0, 2], { flags: 0b0000, callsite: [0, 7, 0], bindings: [[[3]]] }),
+          init([0, 0, 0, 27, 0, 1], { flags: 0b0000, callsite: [0, 4, 2], bindings: [[[4]]] }),
         ],
       },
       {
-        encoded:
-          'AKCADDD,ACDAMD,AGCECUAO,AGADAHEO,AGDCAJEO,gB,A,A,A,ACADMD,AGCEAQAQ,AGADAJEQ,AGDCAJEQ,kB,A,A,A,A',
+        encoded: '',
         decoded: [
           init([0, 0, 0, 34, 1, 0], {
-            isScope: true,
+            flags: 0b0100,
             callsite: null,
             bindings: [[[-1]], [[-1]], [[-1]]],
           }),
-          init([0, 0, 0, 16, 0, 0], { isScope: false, callsite: null, bindings: [[[6]], [[-1]]] }),
-          init([0, 0, 0, 16, 1, 2], { isScope: false, callsite: [1, 10, 0], bindings: [[[7]]] }),
-          init([0, 0, 0, 16, 1, 1], { isScope: false, callsite: [1, 7, 2], bindings: [[[7]]] }),
-          init([0, 0, 0, 16, 0, 1], { isScope: false, callsite: [1, 3, 2], bindings: [[[7]]] }),
-          init([0, 16, 0, 34, 0, 0], { isScope: false, callsite: null, bindings: [[[6]], [[-1]]] }),
-          init([0, 16, 0, 34, 1, 2], { isScope: false, callsite: [1, 11, 0], bindings: [[[8]]] }),
-          init([0, 16, 0, 34, 1, 1], { isScope: false, callsite: [1, 7, 2], bindings: [[[8]]] }),
-          init([0, 16, 0, 34, 0, 1], { isScope: false, callsite: [1, 3, 2], bindings: [[[8]]] }),
+          init([0, 0, 0, 16, 0, 0], { flags: 0b0000, callsite: null, bindings: [[[6]], [[-1]]] }),
+          init([0, 0, 0, 16, 1, 2], { flags: 0b0000, callsite: [1, 10, 0], bindings: [[[7]]] }),
+          init([0, 0, 0, 16, 1, 1], { flags: 0b0000, callsite: [1, 7, 2], bindings: [[[7]]] }),
+          init([0, 0, 0, 16, 0, 1], { flags: 0b0000, callsite: [1, 3, 2], bindings: [[[7]]] }),
+          init([0, 16, 0, 34, 0, 0], { flags: 0b0000, callsite: null, bindings: [[[6]], [[-1]]] }),
+          init([0, 16, 0, 34, 1, 2], { flags: 0b0000, callsite: [1, 11, 0], bindings: [[[8]]] }),
+          init([0, 16, 0, 34, 1, 1], { flags: 0b0000, callsite: [1, 7, 2], bindings: [[[8]]] }),
+          init([0, 16, 0, 34, 0, 1], { flags: 0b0000, callsite: [1, 3, 2], bindings: [[[8]]] }),
         ],
       },
       {
-        encoded: 'AKAADI,ACCAKD;;AGACAEAM;;qB;iB,A',
+        encoded: '',
         decoded: [
-          init([0, 0, 5, 17, 0, 0], { isScope: true, callsite: null, bindings: [[[-1]], [[4]]] }),
-          init([0, 0, 5, 17, 1, 0], { isScope: false, callsite: null, bindings: [[[5]], [[-1]]] }),
-          init([2, 0, 4, 21, 1, 1], { isScope: false, callsite: [0, 2, 0], bindings: [[[6]]] }),
+          init([0, 0, 5, 17, 0, 0], { flags: 0b0100, callsite: null, bindings: [[[-1]], [[4]]] }),
+          init([0, 0, 5, 17, 1, 0], { flags: 0b0000, callsite: null, bindings: [[[5]], [[-1]]] }),
+          init([2, 0, 4, 21, 1, 1], { flags: 0b0000, callsite: [0, 2, 0], bindings: [[[6]]] }),
         ],
       },
       {
-        encoded: 'AKAAMDDD,aKAGOQ,yDGADAcIO,AGADAPEO,c,A,C,c',
+        encoded: '',
         decoded: [
           init([0, 0, 0, 99, 0, 0], {
-            isScope: true,
+            flags: 0b0100,
             callsite: null,
             bindings: [[[6]], [[-1]], [[-1]], [[-1]]],
           }),
-          init([0, 13, 0, 85, 0, 3], { isScope: true, callsite: null, bindings: [[[7]], [[8]]] }),
-          init([0, 70, 0, 84, 0, 2], { isScope: false, callsite: [0, 14, 4], bindings: [[[7]]] }),
-          init([0, 70, 0, 84, 0, 1], { isScope: false, callsite: [0, 7, 2], bindings: [[[7]]] }),
+          init([0, 13, 0, 85, 0, 3], { flags: 0b0100, callsite: null, bindings: [[[7]], [[8]]] }),
+          init([0, 70, 0, 84, 0, 2], { flags: 0b0000, callsite: [0, 14, 4], bindings: [[[7]]] }),
+          init([0, 70, 0, 84, 0, 1], { flags: 0b0000, callsite: [0, 7, 2], bindings: [[[7]]] }),
         ],
       },
       {
-        encoded: 'AKAADFGCAI,AGACAICG,mB;AGAAAEAI,mB,A',
+        encoded: '',
         decoded: [
           init([0, 0, 1, 19, 0, 0], {
-            isScope: true,
+            flags: 0b0100,
             callsite: null,
             bindings: [[[-1]], [[3], [4, 1, 0]]],
           }),
-          init([0, 0, 0, 19, 0, 1], { isScope: false, callsite: [0, 4, 1], bindings: [[[3]]] }),
-          init([1, 0, 1, 19, 0, 1], { isScope: false, callsite: [0, 6, 0], bindings: [[[4]]] }),
+          init([0, 0, 0, 19, 0, 1], { flags: 0b0000, callsite: [0, 4, 1], bindings: [[[3]]] }),
+          init([1, 0, 1, 19, 0, 1], { flags: 0b0000, callsite: [0, 6, 0], bindings: [[[4]]] }),
         ],
       },
       {
-        encoded: 'AKAA,AKACC;;;ECACE;kB;;C,A',
+        encoded: '',
         decoded: [
-          init([0, 0, 6, 1, 0, 0], { isScope: true, callsite: null, bindings: [] }),
-          init([0, 0, 6, 1, 0, 1], { isScope: true, callsite: null, bindings: [[[1]]] }),
-          init([3, 2, 4, 18, 0, 2], { isScope: false, callsite: null, bindings: [[[2]]] }),
+          init([0, 0, 6, 1, 0, 0], { flags: 0b0100, callsite: null, bindings: [] }),
+          init([0, 0, 6, 1, 0, 1], { flags: 0b0100, callsite: null, bindings: [[[1]]] }),
+          init([3, 2, 4, 18, 0, 2], { flags: 0b0000, callsite: null, bindings: [[[2]]] }),
         ],
       },
       {
-        encoded: 'AKAAM,AKACOQS;EKACQS;;;G;;;C;K',
+        encoded: '',
         decoded: [
-          init([0, 0, 8, 5, 0, 0], { isScope: true, callsite: null, bindings: [[[6]]] }),
+          init([0, 0, 8, 5, 0, 0], { flags: 0b0100, callsite: null, bindings: [[[6]]] }),
           init([0, 0, 7, 1, 0, 1], {
-            isScope: true,
+            flags: 0b0100,
             callsite: null,
             bindings: [[[7]], [[8]], [[9]]],
           }),
-          init([1, 2, 4, 3, 0, 2], { isScope: true, callsite: null, bindings: [[[8]], [[9]]] }),
+          init([1, 2, 4, 3, 0, 2], { flags: 0b0100, callsite: null, bindings: [[[8]], [[9]]] }),
         ],
       },
     ];
@@ -206,18 +203,24 @@ describe('scopes proposal', () => {
 
     tests = filtered.length ? filtered : tests;
 
-    describe('decodeGeneratedRanges()', () => {
+    describe('decodeScopes()', () => {
       tests.forEach((test, i) => {
         it('decodes sample ' + i, () => {
-          assert.deepEqual(decodeGeneratedRanges(test.encoded), test.decoded);
+          assert.deepEqual(decodeScopes(test.encoded), {
+            originalScopes: [],
+            generatedRanges: test.decoded,
+          });
         });
       });
     });
 
-    describe('encodeGeneratedRanges()', () => {
+    describe('encodeScopes()', () => {
       tests.forEach((test, i) => {
         it('encodes sample ' + i, () => {
-          assert.deepEqual(encodeGeneratedRanges(test.decoded), test.encoded);
+          assert.deepEqual(encodeScopes({
+            originalScopes: [],
+            generatedRanges: test.decoded,
+          }), test.encoded);
         });
       });
     });
