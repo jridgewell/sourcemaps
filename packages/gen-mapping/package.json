@@ -21,11 +21,7 @@
           "types": "./types/gen-mapping.d.mts",
           "default": "./dist/gen-mapping.mjs"
         },
-        "require": {
-          "types": "./types/gen-mapping.d.cts",
-          "default": "./dist/gen-mapping.umd.js"
-        },
-        "browser": {
+        "default": {
           "types": "./types/gen-mapping.d.cts",
           "default": "./dist/gen-mapping.umd.js"
         }

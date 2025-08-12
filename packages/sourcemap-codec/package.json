@@ -21,11 +21,7 @@
           "types": "./types/sourcemap-codec.d.mts",
           "default": "./dist/sourcemap-codec.mjs"
         },
-        "require": {
-          "types": "./types/sourcemap-codec.d.cts",
-          "default": "./dist/sourcemap-codec.umd.js"
-        },
-        "browser": {
+        "default": {
           "types": "./types/sourcemap-codec.d.cts",
           "default": "./dist/sourcemap-codec.umd.js"
         }
