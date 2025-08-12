@@ -1,3 +1,10 @@
+# [0.3.11] - 2025-08-12
+
+- Use `default` subpath export: https://github.com/jridgewell/sourcemaps/commit/aab8d72
+- Transform `export default` into `module.exports =` in UMD plugin: https://github.com/jridgewell/sourcemaps/commit/cf85c75
+
+**Full Changelog**: https://github.com/jridgewell/sourcemaps/compare/source-map/0.3.10...source-map/0.3.11
+
 # [0.3.10] - 2025-07-01
 
 - Optimize UMD wrapper: https://github.com/jridgewell/sourcemaps/commit/557ca37
