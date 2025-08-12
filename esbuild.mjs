@@ -59,10 +59,22 @@ const umd = {
 
     build.initialOptions.banner = {
       js: `
-(function (global, factory, m) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory(module${requireDeps.join(', ')}) :
-    typeof define === 'function' && define.amd ? define(['module'${amdDeps.join(', ')}], factory) :
-    (global = typeof globalThis !== 'undefined' ? globalThis : global || self, factory(m = { exports: {} }${browserDeps.join(', ')}), global.${browserGlobal} = 'default' in m.exports ? m.exports.default : m.exports);
+(function (global, factory) {
+  if (typeof exports === 'object' && typeof module !== 'undefined') {
+    factory(module${requireDeps.join(', ')});
+    module.exports = def(module);
+  } else if (typeof define === 'function' && define.amd) {
+    define(['module'${amdDeps.join(', ')}], function(mod) {
+      factory.apply(this, arguments);
+      mod.exports = def(mod);
+    });
+  } else {
+    const mod = { exports: {} };
+    factory(mod${browserDeps.join(', ')});
+    global = typeof globalThis !== 'undefined' ? globalThis : global || self;
+    global.${browserGlobal} = def(mod);
+  }
+  function def(m) { return 'default' in m.exports ? m.exports.default : m.exports; }
 })(this, (function (module${locals.join(', ')}) {
       `.trim(),
     };
