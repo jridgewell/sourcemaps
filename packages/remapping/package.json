@@ -22,11 +22,7 @@
           "types": "./types/remapping.d.mts",
           "default": "./dist/remapping.mjs"
         },
-        "require": {
-          "types": "./types/remapping.d.cts",
-          "default": "./dist/remapping.umd.js"
-        },
-        "browser": {
+        "default": {
           "types": "./types/remapping.d.cts",
           "default": "./dist/remapping.umd.js"
         }
