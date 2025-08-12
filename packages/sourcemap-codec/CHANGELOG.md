@@ -1,3 +1,10 @@
+# [1.5.5] - 2025-08-12
+
+- Use `default` subpath export: https://github.com/jridgewell/sourcemaps/commit/aab8d72
+- Transform `export default` into `module.exports =` in UMD plugin: https://github.com/jridgewell/sourcemaps/commit/cf85c75
+
+**Full Changelog**: https://github.com/jridgewell/sourcemaps/compare/sourcemap-codec/1.5.4...sourcemap-codec/1.5.5
+
 # [1.5.4] - 2025-07-01
 
 - Optimize UMD wrapper: https://github.com/jridgewell/sourcemaps/commit/557ca37
