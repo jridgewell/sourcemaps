@@ -1,3 +1,10 @@
+# [0.3.13] - 2025-08-12
+
+- Use `default` subpath export: https://github.com/jridgewell/sourcemaps/commit/aab8d72
+- Transform `export default` into `module.exports =` in UMD plugin: https://github.com/jridgewell/sourcemaps/commit/cf85c75
+
+**Full Changelog**: https://github.com/jridgewell/sourcemaps/compare/gen-mapping/0.3.12...gen-mapping/0.3.13
+
 # [0.3.12] - 2025-07-01
 
 - Use `Object.assign` to avoid polyfill in old Node versions: https://github.com/jridgewell/sourcemaps/commit/dd0615a
