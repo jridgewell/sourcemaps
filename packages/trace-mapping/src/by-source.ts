@@ -28,7 +28,7 @@ export default function buildBySources(
       const sourceLine = seg[SOURCE_LINE];
       const sourceColumn = seg[SOURCE_COLUMN];
 
-      todo[sourceIndex] ||=[];
+      todo[sourceIndex] ||= [];
       (todo[sourceIndex][sourceLine] ||= []).push([sourceColumn, i, seg[COLUMN]]);
     }
   }
@@ -102,8 +102,8 @@ function jointArray<T>(a: T[], b: T[], bOffset: number): T[] {
       const index = typeof p === 'symbol' ? NaN : parseInt(p, 10);
       if (isNaN(index)) return (a as any)[p];
       return index < a.length ? a[index] : b[index - bOffset];
-    }
-  })
+    },
+  });
 }
 
 function insert<T>(array: T[], index: number, value: T) {
