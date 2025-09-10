@@ -8,11 +8,13 @@ import { decode } from '@jridgewell/sourcemap-codec';
 import {
   TraceMap as CurrentTraceMap,
   traceSegment as currentTraceSegment,
+  generatedPositionFor as currentGeneratedPositionFor,
 } from '../dist/trace-mapping.mjs';
 import {
   TraceMap as LatestTraceMap,
   traceSegment as latestTraceSegment,
-} from '../dist/trace-mapping.mjs';
+  generatedPositionFor as latestGeneratedPositionFor,
+} from 'trace-map';
 import { SourceMapConsumer as SourceMapConsumerJs } from 'source-map-js';
 import { SourceMapConsumer as SourceMapConsumer061 } from 'source-map';
 import { SourceMapConsumer as SourceMapConsumerWasm } from 'source-map-wasm';
@@ -383,6 +385,163 @@ async function bench(file) {
     })
     .run({});
 
+  console.log('');
+
+  console.log('Generated Positions init:');
+  const firstSource = currentDecoded.sources[0];
+  benchmark = new Benchmark.Suite()
+    .add('trace-mapping:    decoded generatedPositionFor', () => {
+      const decoded = new CurrentTraceMap(decodedMapData);
+      currentGeneratedPositionFor(decoded, {
+        source: firstSource,
+        line: 6,
+        column: 0,
+        bias: 1,
+      });
+    })
+    .add('trace-mapping:    encoded generatedPositionFor', () => {
+      const encoded = new CurrentTraceMap(encodedMapData);
+      currentGeneratedPositionFor(encoded, {
+        source: firstSource,
+        line: 6,
+        column: 0,
+        bias: 1,
+      });
+    });
+  if (diff) {
+    benchmark = benchmark
+      .add('trace-mapping latest:    decoded generatedPositionFor', () => {
+        const decoded = new LatestTraceMap(decodedMapData);
+        latestGeneratedPositionFor(decoded, {
+          source: firstSource,
+          line: 6,
+          column: 0,
+        });
+      })
+      .add('trace-mapping latest:    encoded generatedPositionFor', () => {
+        const encoded = new LatestTraceMap(encodedMapData);
+        latestGeneratedPositionFor(encoded, {
+          source: firstSource,
+          line: 6,
+          column: 0,
+        });
+      });
+  } else {
+    benchmark = benchmark
+      .add('source-map-js:    encoded generatedPositionFor', () => {
+        const smcjs = new SourceMapConsumerJs(encodedMapData);
+        smcjs.generatedPositionFor({
+          source: firstSource,
+          line: 6,
+          column: 0,
+        });
+      })
+      .add('source-map-0.6.1: encoded generatedPositionFor', () => {
+        const smc061 = new SourceMapConsumer061(encodedMapData);
+        smc061.generatedPositionFor({
+          source: firstSource,
+          line: 6,
+          column: 0,
+        });
+      })
+      .add('source-map-0.8.0: encoded generatedPositionFor', () => {
+        smcWasm.destroy();
+        smcWasm.generatedPositionFor({
+          source: firstSource,
+          line: 6,
+          column: 0,
+        });
+      })
+      .add('Chrome dev tools: encoded generatedPositionFor', () => {
+        const chromeMap = new ChromeMap('url', encodedMapData);
+        chromeMap.findEntryReversed(firstSource, 6);
+      });
+  }
+  // add listeners
+  benchmark
+    .on('error', (event) => console.error(event.target.error))
+    .on('cycle', (event) => {
+      console.log(String(event.target));
+    })
+    .on('complete', function () {
+      console.log('Fastest is ' + this.filter('fastest').map('name'));
+    })
+    .run({});
+
+  console.log('');
+
+  console.log('Generated Positions speed:');
+  benchmark = new Benchmark.Suite()
+    .add('trace-mapping:    decoded generatedPositionFor', () => {
+      currentGeneratedPositionFor(currentDecoded, {
+        source: firstSource,
+        line: 6,
+        column: 0,
+        bias: 1,
+      });
+    })
+    .add('trace-mapping:    encoded generatedPositionFor', () => {
+      currentGeneratedPositionFor(currentEncoded, {
+        source: firstSource,
+        line: 6,
+        column: 0,
+        bias: 1,
+      });
+    });
+  if (diff) {
+    benchmark = benchmark
+      .add('trace-mapping latest:    decoded generatedPositionFor', () => {
+        latestGeneratedPositionFor(latestDecoded, {
+          source: firstSource,
+          line: 6,
+          column: 0,
+        });
+      })
+      .add('trace-mapping latest:    encoded generatedPositionFor', () => {
+        latestGeneratedPositionFor(latestEncoded, {
+          source: firstSource,
+          line: 6,
+          column: 0,
+        });
+      });
+  } else {
+    benchmark = benchmark
+      .add('source-map-js:    encoded generatedPositionFor', () => {
+        smcjs.generatedPositionFor({
+          source: firstSource,
+          line: 6,
+          column: 0,
+        });
+      })
+      .add('source-map-0.6.1: encoded generatedPositionFor', () => {
+        smc061.generatedPositionFor({
+          source: firstSource,
+          line: 6,
+          column: 0,
+        });
+      })
+      .add('source-map-0.8.0: encoded generatedPositionFor', () => {
+        smcWasm.generatedPositionFor({
+          source: firstSource,
+          line: 6,
+          column: 0,
+        });
+      })
+      .add('Chrome dev tools: encoded generatedPositionFor', () => {
+        chromeMap.findEntryReversed(firstSource, 6);
+      });
+  }
+  // add listeners
+  benchmark
+    .on('error', (event) => console.error(event.target.error))
+    .on('cycle', (event) => {
+      console.log(String(event.target));
+    })
+    .on('complete', function () {
+      console.log('Fastest is ' + this.filter('fastest').map('name'));
+    })
+    .run({});
+
   if (smcWasm) smcWasm.destroy();
 }
 
@@ -390,7 +549,7 @@ async function run(files) {
   let first = true;
   for (const file of files) {
     if (!file.endsWith('.map')) continue;
-    if (file !== 'vscode.map') continue;
+    if (file !== 'issue-41.js.map') continue;
 
     if (!first) console.log('\n\n***\n\n');
     first = false;
