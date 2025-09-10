@@ -1,3 +1,9 @@
+# [0.3.31] - 2025-09-10
+
+- Improve the performance of `generatedPositionFor`: #42
+
+**Full Changelog**: https://github.com/jridgewell/sourcemaps/compare/trace-mapping/0.3.30...trace-mapping/0.3.31
+
 # [0.3.30] - 2025-08-12
 
 - Use `default` subpath export: https://github.com/jridgewell/sourcemaps/commit/aab8d72
