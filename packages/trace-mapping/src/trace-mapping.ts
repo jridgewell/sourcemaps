@@ -484,10 +484,8 @@ function generatedPosition(
   if (sourceIndex === -1) sourceIndex = resolvedSources.indexOf(source);
   if (sourceIndex === -1) return all ? [] : GMapping(null, null);
 
-  const generated = (cast(map)._bySources ||= buildBySources(
-    decodedMappings(map),
-    (cast(map)._bySourceMemos = sources.map(memoizedState)),
-  ));
+  cast(map)._bySourceMemos = sources.map(memoizedState);
+  const generated = (cast(map)._bySources ||= buildBySources(decodedMappings(map), sources.length));
 
   const segments = generated[sourceIndex][line];
   if (segments == null) return all ? [] : GMapping(null, null);
