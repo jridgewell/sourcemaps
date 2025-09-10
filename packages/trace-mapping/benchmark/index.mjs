@@ -21,7 +21,7 @@ import { SourceMapConsumer as SourceMapConsumerWasm } from 'source-map-wasm';
 import { SourceMap as ChromeMap } from './chrome.mjs';
 
 const dir = relative(process.cwd(), dirname(fileURLToPath(import.meta.url)));
-const diff = !!process.env.DIFF;
+const { DIFF, FILE } = process.env;
 
 console.log(`node ${process.version}\n`);
 
@@ -76,43 +76,53 @@ async function bench(file) {
   currentDecoded = await track('trace-mapping decoded', results, () => {
     const decoded = new CurrentTraceMap(decodedMapData);
     currentTraceSegment(decoded, 0, 0);
+    currentGeneratedPositionFor(decoded, { source: decoded.sources[0], line: 1, column: 0 });
     return decoded;
   });
+  const firstSource = currentDecoded.sources[0];
   currentEncoded = await track('trace-mapping encoded', results, () => {
     const encoded = new CurrentTraceMap(encodedMapData);
     currentTraceSegment(encoded, 0, 0);
+    currentGeneratedPositionFor(encoded, { source: firstSource, line: 1, column: 0 });
     return encoded;
   });
-  if (diff) {
+  if (DIFF) {
     latestDecoded = await track('trace-mapping latest decoded', results, () => {
       const decoded = new LatestTraceMap(decodedMapData);
       latestTraceSegment(decoded, 0, 0);
+      latestGeneratedPositionFor(decoded, { source: firstSource, line: 1, column: 0 });
       return decoded;
     });
     latestEncoded = await track('trace-mapping latest encoded', results, () => {
       const encoded = new LatestTraceMap(encodedMapData);
       latestTraceSegment(encoded, 0, 0);
+      latestGeneratedPositionFor(encoded, { source: firstSource, line: 1, column: 0 });
       return encoded;
     });
   } else {
     smcjs = await track('source-map-js', results, () => {
       const smcjs = new SourceMapConsumerJs(encodedMapData);
       smcjs.originalPositionFor({ line: 1, column: 0 });
+      smcjs.generatedPositionFor({ source: firstSource, line: 1, column: 0 });
       return smcjs;
     });
     smc061 = await track('source-map-0.6.1', results, () => {
       const smc061 = new SourceMapConsumer061(encodedMapData);
       smc061.originalPositionFor({ line: 1, column: 0 });
+      smc061.generatedPositionFor({ source: firstSource, line: 1, column: 0 });
       return smc061;
     });
     smcWasm = await track('source-map-0.8.0', results, async () => {
       const smcWasm = await new SourceMapConsumerWasm(encodedMapData);
       smcWasm.originalPositionFor({ line: 1, column: 0 });
+      smcWasm.generatedPositionFor({ source: firstSource, line: 1, column: 0 });
       return smcWasm;
     });
     chromeMap = await track('Chrome dev tools', results, async () => {
       const map = new ChromeMap('url', encodedMapData);
       map.findEntry(0, 0);
+      const firstSource = map.sources()[0];
+      map.findEntryReversed(firstSource, 6);
       return map;
     });
   }
@@ -138,7 +148,7 @@ async function bench(file) {
     .add('trace-mapping:    encoded Object input', () => {
       currentTraceSegment(new CurrentTraceMap(encodedMapData), 0, 0);
     });
-  if (diff) {
+  if (DIFF) {
     benchmark = benchmark
       .add('trace-mapping latest:    decoded JSON input', () => {
         latestTraceSegment(new LatestTraceMap(decodedMapDataJson), 0, 0);
@@ -203,7 +213,7 @@ async function bench(file) {
         currentTraceSegment(currentEncoded, i, column);
       }
     });
-  if (diff) {
+  if (DIFF) {
     benchmark = benchmark
       .add('trace-mapping latest:    decoded originalPositionFor', () => {
         const i = Math.floor(Math.random() * lines.length);
@@ -309,7 +319,7 @@ async function bench(file) {
         currentTraceSegment(currentEncoded, i, column);
       }
     });
-  if (diff) {
+  if (DIFF) {
     benchmark = benchmark
       .add('trace-mapping latest:    decoded originalPositionFor', () => {
         const i = Math.floor(Math.random() * lines.length);
@@ -388,7 +398,6 @@ async function bench(file) {
   console.log('');
 
   console.log('Generated Positions init:');
-  const firstSource = currentDecoded.sources[0];
   benchmark = new Benchmark.Suite()
     .add('trace-mapping:    decoded generatedPositionFor', () => {
       const decoded = new CurrentTraceMap(decodedMapData);
@@ -396,7 +405,6 @@ async function bench(file) {
         source: firstSource,
         line: 6,
         column: 0,
-        bias: 1,
       });
     })
     .add('trace-mapping:    encoded generatedPositionFor', () => {
@@ -405,10 +413,9 @@ async function bench(file) {
         source: firstSource,
         line: 6,
         column: 0,
-        bias: 1,
       });
     });
-  if (diff) {
+  if (DIFF) {
     benchmark = benchmark
       .add('trace-mapping latest:    decoded generatedPositionFor', () => {
         const decoded = new LatestTraceMap(decodedMapData);
@@ -454,6 +461,7 @@ async function bench(file) {
       })
       .add('Chrome dev tools: encoded generatedPositionFor', () => {
         const chromeMap = new ChromeMap('url', encodedMapData);
+        const firstSource = chromeMap.sources()[0];
         chromeMap.findEntryReversed(firstSource, 6);
       });
   }
@@ -473,62 +481,76 @@ async function bench(file) {
   console.log('Generated Positions speed:');
   benchmark = new Benchmark.Suite()
     .add('trace-mapping:    decoded generatedPositionFor', () => {
-      currentGeneratedPositionFor(currentDecoded, {
-        source: firstSource,
-        line: 6,
-        column: 0,
-        bias: 1,
-      });
+      for (const source of currentDecoded.sources) {
+        currentGeneratedPositionFor(currentDecoded, {
+          source,
+          line: 6,
+          column: 0,
+        });
+      }
     })
     .add('trace-mapping:    encoded generatedPositionFor', () => {
-      currentGeneratedPositionFor(currentEncoded, {
-        source: firstSource,
-        line: 6,
-        column: 0,
-        bias: 1,
-      });
+      for (const source of currentEncoded.sources) {
+        currentGeneratedPositionFor(currentEncoded, {
+          source,
+          line: 6,
+          column: 0,
+        });
+      }
     });
-  if (diff) {
+  if (DIFF) {
     benchmark = benchmark
       .add('trace-mapping latest:    decoded generatedPositionFor', () => {
-        latestGeneratedPositionFor(latestDecoded, {
-          source: firstSource,
-          line: 6,
-          column: 0,
-        });
+        for (const source of latestDecoded.sources) {
+          latestGeneratedPositionFor(latestDecoded, {
+            source,
+            line: 6,
+            column: 0,
+          });
+        }
       })
       .add('trace-mapping latest:    encoded generatedPositionFor', () => {
-        latestGeneratedPositionFor(latestEncoded, {
-          source: firstSource,
-          line: 6,
-          column: 0,
-        });
+        for (const source of latestEncoded.sources) {
+          latestGeneratedPositionFor(latestEncoded, {
+            source,
+            line: 6,
+            column: 0,
+          });
+        }
       });
   } else {
     benchmark = benchmark
       .add('source-map-js:    encoded generatedPositionFor', () => {
-        smcjs.generatedPositionFor({
-          source: firstSource,
-          line: 6,
-          column: 0,
-        });
+        for (const source of smcjs.sources) {
+          smcjs.generatedPositionFor({
+            source,
+            line: 6,
+            column: 0,
+          });
+        }
       })
       .add('source-map-0.6.1: encoded generatedPositionFor', () => {
-        smc061.generatedPositionFor({
-          source: firstSource,
-          line: 6,
-          column: 0,
-        });
+        for (const source of smc061.sources) {
+          smc061.generatedPositionFor({
+            source,
+            line: 6,
+            column: 0,
+          });
+        }
       })
       .add('source-map-0.8.0: encoded generatedPositionFor', () => {
-        smcWasm.generatedPositionFor({
-          source: firstSource,
-          line: 6,
-          column: 0,
-        });
+        for (const source of smcWasm.sources) {
+          smcWasm.generatedPositionFor({
+            source,
+            line: 6,
+            column: 0,
+          });
+        }
       })
       .add('Chrome dev tools: encoded generatedPositionFor', () => {
-        chromeMap.findEntryReversed(firstSource, 6);
+        for (const source of chromeMap.sources()) {
+          chromeMap.findEntryReversed(source, 6);
+        }
       });
   }
   // add listeners
@@ -549,7 +571,7 @@ async function run(files) {
   let first = true;
   for (const file of files) {
     if (!file.endsWith('.map')) continue;
-    if (file !== 'issue-41.js.map') continue;
+    if (FILE && file !== FILE) continue;
 
     if (!first) console.log('\n\n***\n\n');
     first = false;

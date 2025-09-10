@@ -1,20 +1,17 @@
 import { COLUMN, SOURCES_INDEX, SOURCE_LINE, SOURCE_COLUMN } from './sourcemap-segment';
+import { sortComparator } from './sort';
 
 import type { ReverseSegment, SourceMapSegment } from './sourcemap-segment';
 
-export type Source = {
-  __proto__: null;
-  length: number;
-  [line: number]: Exclude<ReverseSegment, [number]>[];
-};
+export type Source = ReverseSegment[][];
 
 // Rebuilds the original source files, with mappings that are ordered by source line/column instead
 // of generated line/column.
 export default function buildBySources(
   decoded: readonly SourceMapSegment[][],
-  sourcesCount: number,
+  memos: unknown[],
 ): Source[] {
-  const sources: Source[] = Array.from({ length: sourcesCount }, buildNullArray<Source>);
+  const sources: Source[] = memos.map(() => []);
 
   for (let i = 0; i < decoded.length; i++) {
     const line = decoded[i];
@@ -27,26 +24,18 @@ export default function buildBySources(
       const sourceColumn = seg[SOURCE_COLUMN];
 
       const source = sources[sourceIndex];
-      source.length = Math.max(source.length || 0, sourceLine + 1);
-      (source[sourceLine] ||= []).push([sourceColumn, i, seg[COLUMN]]);
+      const segs = (source[sourceLine] ||= []);
+      segs.push([sourceColumn, i, seg[COLUMN]]);
     }
   }
 
-  for (let sourceIndex = 0; sourceIndex < sources.length; sourceIndex++) {
-    const source = sources[sourceIndex];
-    for (let line = 0; line < source.length; line++) {
-      source[line]?.sort((a, b) => a[0] - b[0]);
+  for (let i = 0; i < sources.length; i++) {
+    const source = sources[i];
+    for (let j = 0; j < source.length; j++) {
+      const line = source[j];
+      if (line) line.sort(sortComparator);
     }
   }
 
   return sources;
-}
-
-// Null arrays allow us to use ordered index keys without actually allocating contiguous memory like
-// a real array. We use a null-prototype object to avoid prototype pollution and deoptimizations.
-// Numeric properties on objects are magically sorted in ascending order by the engine regardless of
-// the insertion order. So, by setting any numeric keys, even out of order, we'll get ascending
-// order when iterating with for-in.
-function buildNullArray<T extends { __proto__: null }>(): T {
-  return { __proto__: null } as T;
 }
