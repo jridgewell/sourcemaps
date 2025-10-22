@@ -9,6 +9,9 @@ export {
 } from './scopes';
 export type { OriginalScope, GeneratedRange, CallSite, BindingExpressionRange } from './scopes';
 
+export { decodeRangeMappings, encodeRangeMappings } from './range-mappings';
+export type { MappingIndex, RangeMappings } from './range-mappings';
+
 export type SourceMapSegment =
   | [number]
   | [number, number, number, number]
