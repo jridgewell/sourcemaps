@@ -13,7 +13,11 @@ for (let i = 0; i < chars.length; i++) {
   charToInt[c] = i;
 }
 
-export function decodeInteger(reader: StringReader, relative: number): number {
+export function decodeInteger(
+  reader: StringReader,
+  relative: number,
+  signed: boolean = true,
+): number {
   let value = 0;
   let shift = 0;
   let integer = 0;
@@ -25,8 +29,10 @@ export function decodeInteger(reader: StringReader, relative: number): number {
     shift += 5;
   } while (integer & 32);
 
-  const shouldNegate = value & 1;
-  value >>>= 1;
+  const shouldNegate = signed && value & 1;
+  if (signed) {
+    value >>>= 1;
+  }
 
   if (shouldNegate) {
     value = -0x80000000 | -value;
@@ -35,10 +41,16 @@ export function decodeInteger(reader: StringReader, relative: number): number {
   return relative + value;
 }
 
-export function encodeInteger(builder: StringWriter, num: number, relative: number): number {
+export function encodeInteger(
+  builder: StringWriter,
+  num: number,
+  relative: number,
+  signed: boolean = true,
+): number {
   let delta = num - relative;
+  const shift = signed ? 1 : 0;
 
-  delta = delta < 0 ? (-delta << 1) | 1 : delta << 1;
+  delta = delta < 0 ? (-delta << 1) | 1 : delta << shift;
   do {
     let clamped = delta & 0b011111;
     delta >>>= 5;
