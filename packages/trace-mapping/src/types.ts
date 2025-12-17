@@ -9,6 +9,7 @@ export interface SourceMapV3 {
   sourcesContent?: (string | null)[];
   version: 3;
   ignoreList?: number[];
+  scopes?: string;
 }
 
 export interface EncodedSourceMap extends SourceMapV3 {
@@ -112,3 +113,5 @@ type RoObject<T> = { [K in keyof T]: T[K] | Ro<T[K]> };
 export function parse<T>(map: T): Exclude<T, string> {
   return typeof map === 'string' ? JSON.parse(map) : (map as Exclude<T, string>);
 }
+
+// Temporary, until we optimize the data structure

@@ -10,7 +10,12 @@ import {
 import { StringWriter, StringReader } from './strings';
 
 export { decodeScopes, encodeScopes } from './scopes';
-export type { OriginalScope, GeneratedRange, CallSite, BindingExpressionRange } from './scopes';
+export type {
+  GeneratedRanges,
+  GeneratedRangeRecord,
+  OriginalScopes,
+  OriginalScopeRecord,
+} from './scopes';
 
 export type SourceMapSegment =
   | [number]

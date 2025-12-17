@@ -35,13 +35,13 @@ export default [
       '@typescript-eslint/consistent-type-imports': 'error',
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',
-
+      '@typescript-eslint/triple-slash-reference': 'off',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
 
       'no-constant-condition': 'off',
       'no-unused-labels': 'off',
       'prefer-rest-params': 'off',
-      'prefer-const': ['error', { destructuring: 'all' }],
+      'prefer-const': 'off',
     },
   },
   {

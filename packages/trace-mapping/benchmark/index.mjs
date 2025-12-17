@@ -26,7 +26,8 @@ const { DIFF, FILE } = process.env;
 console.log(`node ${process.version}\n`);
 
 async function track(label, results, cb) {
-  if (global.gc) global.gc();
+  // TODO: force a major gc
+  if (global.gc) global.gc({ type: 'major' });
   const before = process.memoryUsage();
   const ret = await cb();
   const after = process.memoryUsage();

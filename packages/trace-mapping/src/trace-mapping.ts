@@ -1,4 +1,10 @@
-import { encode, decode } from '@jridgewell/sourcemap-codec';
+import {
+  encode,
+  decode,
+  decodeScopes,
+  OriginalScopes,
+  GeneratedRanges,
+} from '@jridgewell/sourcemap-codec';
 
 import resolver from './resolve';
 import maybeSort from './sort';
@@ -75,6 +81,9 @@ interface PublicMap {
   _decodedMemo: TraceMap['_decodedMemo'];
   _bySources: TraceMap['_bySources'];
   _bySourceMemos: TraceMap['_bySourceMemos'];
+  _scopes: TraceMap['_scopes'];
+  _decodedScopes: TraceMap['_decodedScopes'];
+  _decodedRanges: TraceMap['_decodedRanges'];
 }
 
 const LINE_GTR_ZERO = '`line` must be greater than 0 (lines start at line 1)';
@@ -103,6 +112,10 @@ export class TraceMap implements SourceMap {
   declare private _bySources: Source[] | undefined;
   declare private _bySourceMemos: MemoState[] | undefined;
 
+  declare private _scopes: string | undefined;
+  declare private _decodedScopes: OriginalScopes | undefined;
+  declare private _decodedRanges: GeneratedRanges | undefined;
+
   constructor(map: Ro<SourceMapInput>, mapUrl?: string | null) {
     const isString = typeof map === 'string';
     if (!isString && (map as unknown as { _decodedMemo: any })._decodedMemo) return map as TraceMap;
@@ -121,7 +134,7 @@ export class TraceMap implements SourceMap {
     const resolve = resolver(mapUrl, sourceRoot);
     this.resolvedSources = sources.map(resolve);
 
-    const { mappings } = parsed;
+    const { mappings, scopes } = parsed;
     if (typeof mappings === 'string') {
       this._encoded = mappings;
       this._decoded = undefined;
@@ -133,6 +146,10 @@ export class TraceMap implements SourceMap {
     } else {
       throw new Error(`invalid source map: ${JSON.stringify(parsed)}`);
     }
+
+    this._scopes = scopes;
+    this._decodedScopes = undefined;
+    this._decodedRanges = undefined;
 
     this._decodedMemo = memoizedState();
     this._bySources = undefined;
@@ -160,6 +177,16 @@ export function encodedMappings(map: TraceMap): EncodedSourceMap['mappings'] {
  */
 export function decodedMappings(map: TraceMap): Readonly<DecodedSourceMap['mappings']> {
   return (cast(map)._decoded ||= decode(cast(map)._encoded!));
+}
+
+export function encodedScopes(map: TraceMap): TraceMap['_scopes'] {
+  return cast(map)._scopes;
+}
+export function decodedOriginalScopes(map: TraceMap): Readonly<TraceMap['_decodedScopes']> {
+  return maybeDecodeScopes(map)._decodedScopes;
+}
+export function decodedGeneratedRanges(map: TraceMap): Readonly<TraceMap['_decodedRanges']> {
+  return maybeDecodeScopes(map)._decodedRanges;
 }
 
 /**
@@ -321,7 +348,7 @@ export function isIgnored(map: TraceMap, source: string): boolean {
  * maps.
  */
 export function presortedDecodedMap(map: DecodedSourceMap, mapUrl?: string): TraceMap {
-  const tracer = new TraceMap(clone(map, []), mapUrl);
+  const tracer = new TraceMap(clone(map, [], map.scopes), mapUrl);
   cast(tracer)._decoded = map.mappings;
   return tracer;
 }
@@ -333,7 +360,7 @@ export function presortedDecodedMap(map: DecodedSourceMap, mapUrl?: string): Tra
 export function decodedMap(
   map: TraceMap,
 ): Omit<DecodedSourceMap, 'mappings'> & { mappings: readonly SourceMapSegment[][] } {
-  return clone(map, decodedMappings(map));
+  return clone(map, decodedMappings(map), cast(map)._scopes);
 }
 
 /**
@@ -341,12 +368,13 @@ export function decodedMap(
  * a sourcemap, or to JSON.stringify.
  */
 export function encodedMap(map: TraceMap): EncodedSourceMap {
-  return clone(map, encodedMappings(map));
+  return clone(map, encodedMappings(map), cast(map)._scopes);
 }
 
 function clone<T extends string | readonly SourceMapSegment[][]>(
   map: TraceMap | DecodedSourceMap,
   mappings: T,
+  scopes: string | undefined,
 ): T extends string ? EncodedSourceMap : DecodedSourceMap {
   return {
     version: map.version,
@@ -357,6 +385,7 @@ function clone<T extends string | readonly SourceMapSegment[][]>(
     sourcesContent: map.sourcesContent,
     mappings,
     ignoreList: map.ignoreList || (map as XInput).x_google_ignoreList,
+    scopes,
   } as any;
 }
 
@@ -499,4 +528,15 @@ function generatedPosition(
 
   const segment = segments[index];
   return GMapping(segment[REV_GENERATED_LINE] + 1, segment[REV_GENERATED_COLUMN]);
+}
+
+function maybeDecodeScopes(map: TraceMap): PublicMap {
+  const pub = cast(map);
+  const { _scopes, _decodedRanges } = pub;
+  if (_decodedRanges || !_scopes) return pub;
+
+  const { scopes, ranges } = decodeScopes(_scopes, map.names);
+  pub._decodedScopes = scopes;
+  pub._decodedRanges = ranges;
+  return pub;
 }

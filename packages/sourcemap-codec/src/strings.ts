@@ -57,6 +57,10 @@ export class StringReader {
     return this.buffer.charCodeAt(this.pos);
   }
 
+  done(): boolean {
+    return this.pos >= this.buffer.length;
+  }
+
   indexOf(char: string): number {
     const { buffer, pos } = this;
     const idx = buffer.indexOf(char, pos);

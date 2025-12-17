@@ -1,4 +1,3 @@
-
 /// <reference path="../source-map-record.d.ts" />
 
 interface SourceMapRecord {
@@ -6,7 +5,7 @@ interface SourceMapRecord {
 }
 
 interface SourceRecord {
-  scope: OriginalScopeRecord|null;
+  scope: OriginalScopeRecord | null;
 }
 
 /**
@@ -15,8 +14,8 @@ interface SourceRecord {
 interface OriginalScopeRecord {
   start: PositionRecord;
   end: PositionRecord;
-  name: string|null;
-  kind: string|null;
+  name: string | null;
+  kind: string | null;
   isStackFrame: boolean;
   variables: string[];
   children: OriginalScopeRecord[];
@@ -32,10 +31,10 @@ interface GeneratedRangeRecord {
    * An index into a flattened list of {@link OriginalScopeRecord}. The flattened list is obtained by iterating
    * {@link SourceMapRecord.sources} from `0` to `SourceMapRecord.sources.length` and traverse each {@link SourceRecord.scope} in [pre-order](https://en.wikipedia.org/wiki/Tree_traversal#Pre-order,_NLR).
    */
-  definitionIndex: number|null;
-  stackFrameType: 'none'|'original'|'hidden';
+  definitionIndex: number | null;
+  stackFrameType: 'none' | 'original' | 'hidden';
   bindings: BindingRecord[][];
-  callSite: OriginalPositionRecord|null;
+  callSite: OriginalPositionRecord | null;
   children: GeneratedRangeRecord[];
 }
 
@@ -44,5 +43,5 @@ interface GeneratedRangeRecord {
  */
 interface BindingRecord {
   from: PositionRecord;
-  binding: string|null;
+  binding: string | null;
 }
