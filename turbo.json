@@ -12,6 +12,17 @@
       "inputs": ["../../prettier.config.js", "../../tsconfig.json", "src/**"],
       "outputs": ["src/**"]
     },
+    "lint:format": {
+      "inputs": [
+        "../../prettier.config.js",
+        "src/**",
+        "test/**"
+      ],
+      "outputs": [
+        "src/**",
+        "test/**"
+      ]
+    },
     "test": {
       "dependsOn": ["^build"]
     }
