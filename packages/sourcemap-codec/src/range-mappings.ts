@@ -8,16 +8,15 @@ export function decodeRangeMappings(input: string): RangeMappings {
   const { length } = input;
   const reader = new StringReader(input);
   const rangeMappings: RangeMappings = [];
-  let offset = 0;
 
   do {
     const semi = reader.indexOf(';');
     const indices: MappingIndex[] = [];
-    offset = 0;
+    let index = -1;
 
     while (reader.pos < semi) {
-      offset += decodeInteger(reader);
-      indices.push(offset - 1);
+      index += decodeInteger(reader);
+      indices.push(index);
     }
 
     rangeMappings.push(indices);
@@ -32,12 +31,15 @@ export function encodeRangeMappings(decoded: RangeMappings): string {
 
   const writer = new StringWriter();
 
-  for (const [index, line] of decoded.entries()) {
-    if (index > 0) writer.write(semicolon);
-    let lastOffset = 0;
-    for (const offset of line) {
-      encodeInteger(writer, offset + 1 - lastOffset);
-      lastOffset = offset + 1;
+  for (let i = 0; i < decoded.length; i++) {
+    const indices = decoded[i];
+    if (i > 0) writer.write(semicolon);
+
+    let index = -1;
+    for (let j = 0; j < indices.length; j++) {
+      const offset = indices[j];
+      encodeInteger(writer, offset - index);
+      index = offset;
     }
   }
 
