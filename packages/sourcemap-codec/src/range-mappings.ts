@@ -16,7 +16,7 @@ export function decodeRangeMappings(input: string): RangeMappings {
     offset = 0;
 
     while (reader.pos < semi) {
-      offset = decodeInteger(reader, offset, false);
+      offset += decodeInteger(reader);
       indices.push(offset - 1);
     }
 
@@ -36,7 +36,7 @@ export function encodeRangeMappings(decoded: RangeMappings): string {
     if (index > 0) writer.write(semicolon);
     let lastOffset = 0;
     for (const offset of line) {
-      encodeInteger(writer, offset + 1, lastOffset, false);
+      encodeInteger(writer, offset + 1 - lastOffset);
       lastOffset = offset + 1;
     }
   }
