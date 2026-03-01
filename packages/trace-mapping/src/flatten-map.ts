@@ -10,8 +10,6 @@ import { assertExhaustive, parse } from './util';
 
 import type {
   DecodedSourceMap,
-  DecodedSourceMapXInput,
-  EncodedSourceMapXInput,
   SectionedSourceMapXInput,
   SectionedSourceMapInput,
   SectionXInput,
@@ -29,10 +27,10 @@ type FlattenMap = {
  * FlattenMap recursively flattens a SectionedSourceMap into a DecodedSourceMap.
  */
 export const FlattenMap: FlattenMap = function (map, mapUrl) {
-  const parsed = parse(map as SectionedSourceMapInput);
+  const parsed = parse(map);
 
   if (!('sections' in parsed)) {
-    return new TraceMap(parsed as DecodedSourceMapXInput | EncodedSourceMapXInput, mapUrl);
+    return new TraceMap(parsed, mapUrl);
   }
 
   const mappings: SourceMapSegment[][] = [];
@@ -43,7 +41,7 @@ export const FlattenMap: FlattenMap = function (map, mapUrl) {
   const rangeMappings: number[][] = [];
 
   recurse(
-    parsed,
+    parsed as SectionedSourceMapXInput,
     mapUrl,
     mappings,
     sources,
@@ -164,7 +162,9 @@ function addSection(
   if (contents != null) append(sourcesContent, contents);
   else for (let i = 0; i < resolvedSources.length; i++) sourcesContent.push(null);
 
-  if (ignores != null) for (let i = 0; i < ignores.length; i++) ignoreList.push(ignores[i] + sourcesOffset);
+  if (ignores != null) {
+    for (let i = 0; i < ignores.length; i++) ignoreList.push(ignores[i] + sourcesOffset);
+  }
 
   for (let i = 0; i < decoded.length; i++) {
     const lineI = lineOffset + i;

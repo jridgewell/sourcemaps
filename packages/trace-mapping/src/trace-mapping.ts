@@ -223,7 +223,7 @@ export function traceSegment(
   const rangeSegments = initRangeSegments(map, decoded);
 
   return traceSegmentInternal(
-    decoded as SourceMapSegment[][],
+    decoded,
     rangeSegments,
     cast(map)._decodedMemo,
     line,
@@ -250,7 +250,7 @@ export function originalPositionFor(
   const rangeSegments = initRangeSegments(map, decoded);
 
   const segment = traceSegmentInternal(
-    decoded as SourceMapSegment[][],
+    decoded,
     rangeSegments,
     cast(map)._decodedMemo,
     line,
@@ -443,7 +443,7 @@ function GMapping(
  * Returns the segment that contains the given line and column.
  */
 function traceSegmentInternal<T extends SourceMapSegment | ReverseSegment>(
-  lines: T[][],
+  lines: readonly T[][],
   rangeSegments: Set<T>,
   memo: MemoState,
   line: number,
@@ -451,7 +451,7 @@ function traceSegmentInternal<T extends SourceMapSegment | ReverseSegment>(
   bias: Bias,
 ): T | null;
 function traceSegmentInternal<T extends SourceMapSegment | ReverseSegment>(
-  lines: T[][],
+  lines: readonly T[][],
   rangeSegments: Set<T>,
   memo: MemoState,
   line: number,
@@ -459,7 +459,7 @@ function traceSegmentInternal<T extends SourceMapSegment | ReverseSegment>(
   bias: Bias,
 ): T | null;
 function traceSegmentInternal<T extends SourceMapSegment | ReverseSegment>(
-  lines: T[][],
+  lines: readonly T[][],
   rangeSegments: Set<T>,
   memo: MemoState,
   line: number,
@@ -650,7 +650,7 @@ function generatedPosition(
 
 /**
  * Initializes the range segments for the map.
- * 
+ *
  * This is done on demand, since we cannot run this without first decoding the mappings.
  */
 function initRangeSegments(map: TraceMap, decoded: readonly SourceMapSegment[][]) {
@@ -679,7 +679,7 @@ function initRangeSegments(map: TraceMap, decoded: readonly SourceMapSegment[][]
  * line that has a segment.
  */
 function findPreviousSegmentLine<T extends SourceMapSegment | ReverseSegment>(
-  lines: T[][],
+  lines: readonly T[][],
   line: number,
   index: number,
 ): number {
