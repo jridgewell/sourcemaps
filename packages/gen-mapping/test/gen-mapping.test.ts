@@ -13,6 +13,7 @@ import {
   setIgnore,
   setRangeSegment,
 } from '../src/gen-mapping';
+import type { DecodedSourceMap, EncodedSourceMap } from '@jridgewell/trace-mapping';
 
 describe('GenMapping', () => {
   describe('toDecodedMap', () => {
@@ -503,118 +504,118 @@ describe('GenMapping', () => {
 
   describe('fromMap', () => {
     it('copies version', () => {
-      const input = /** @type {import('@jridgewell/trace-mapping').DecodedSourceMap} */ {
+      const input = {
         version: 3,
         names: [],
         sources: ['input.js'],
         sourcesContent: [],
         mappings: [],
-      };
+      } satisfies DecodedSourceMap;
       const map = fromMap(input);
 
       assert.equal(toDecodedMap(map).version, 3);
     });
 
     it('copies file name', () => {
-      const input = /** @type {import('@jridgewell/trace-mapping').DecodedSourceMap} */ {
+      const input = {
         version: 3,
         file: 'output.js',
         names: [],
         sources: ['input.js'],
         sourcesContent: [],
         mappings: [],
-      };
+      } satisfies DecodedSourceMap;
       const map = fromMap(input);
 
       assert.equal(toDecodedMap(map).file, 'output.js');
     });
 
     it('copies sourceRoot', () => {
-      const input = /** @type {import('@jridgewell/trace-mapping').DecodedSourceMap} */ {
+      const input = {
         version: 3,
         names: [],
         sourceRoot: 'foo/',
         sources: ['input.js'],
         sourcesContent: [],
         mappings: [],
-      };
+      } satisfies DecodedSourceMap;
       const map = fromMap(input);
 
       assert.equal(toDecodedMap(map).sourceRoot, 'foo/');
     });
 
     it('copies sources', () => {
-      const input = /** @type {import('@jridgewell/trace-mapping').DecodedSourceMap} */ {
+      const input = {
         version: 3,
         names: [],
         sources: ['input.js'],
         sourcesContent: [],
         mappings: [],
-      };
+      } satisfies DecodedSourceMap;
       const map = fromMap(input);
 
       assert.deepEqual(toDecodedMap(map).sources, ['input.js']);
     });
 
     it('copies sourcesContent', () => {
-      const input = /** @type {import('@jridgewell/trace-mapping').DecodedSourceMap} */ {
+      const input = {
         version: 3,
         names: [],
         sources: ['input.js'],
         sourcesContent: ['input'],
         mappings: [],
-      };
+      } satisfies DecodedSourceMap;
       const map = fromMap(input);
 
       assert.deepEqual(toDecodedMap(map).sourcesContent, ['input']);
     });
 
     it('creates sourcesContent', () => {
-      const input = /** @type {import('@jridgewell/trace-mapping').DecodedSourceMap} */ {
+      const input = {
         version: 3,
         names: [],
         sources: ['input.js'],
         mappings: [],
-      };
+      } satisfies DecodedSourceMap;
       const map = fromMap(input);
 
       assert.deepEqual(toDecodedMap(map).sourcesContent, [null]);
     });
 
     it('copies names', () => {
-      const input = /** @type {import('@jridgewell/trace-mapping').DecodedSourceMap} */ {
+      const input = {
         version: 3,
         names: ['foo'],
         sources: ['input.js'],
         sourcesContent: [],
         mappings: [[[0, 0, 0, 0, 0]]],
-      };
+      } satisfies DecodedSourceMap;
       const map = fromMap(input);
 
       assert.deepEqual(toDecodedMap(map).names, ['foo']);
     });
 
     it('copies decoded mappings', () => {
-      const input = /** @type {import('@jridgewell/trace-mapping').DecodedSourceMap} */ {
+      const input = {
         version: 3,
         names: [],
         sources: ['input.js'],
         sourcesContent: [],
         mappings: [[[1, 0, 2, 3, 0]]],
-      };
+      } satisfies DecodedSourceMap;
       const map = fromMap(input);
 
       assert.deepEqual(toDecodedMap(map).mappings, [[[1, 0, 2, 3, 0]]]);
     });
 
     it('copies encoded mappings', () => {
-      const input = /** @type {import('@jridgewell/trace-mapping').EncodedSourceMap} */ {
+      const input = {
         version: 3,
         names: [],
         sources: ['input.js'],
         sourcesContent: [],
         mappings: 'CAEGA',
-      };
+      } satisfies EncodedSourceMap;
       const map = fromMap(input);
 
       assert.deepEqual(toDecodedMap(map).mappings, [[[1, 0, 2, 3, 0]]]);
