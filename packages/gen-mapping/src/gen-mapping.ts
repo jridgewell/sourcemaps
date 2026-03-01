@@ -13,6 +13,7 @@ import {
 import type { SourceMapInput } from '@jridgewell/trace-mapping';
 import type { SourceMapSegment } from './sourcemap-segment';
 import type { DecodedSourceMap, EncodedSourceMap, Pos, Mapping } from './types';
+import type { MappingIndex } from './range-mappings';
 
 export type { DecodedSourceMap, EncodedSourceMap, Mapping };
 
@@ -38,6 +39,7 @@ export class GenMapping {
   declare private _sourcesContent: (string | null)[];
   declare private _mappings: SourceMapSegment[][];
   declare private _ignoreList: SetArray<number>;
+  declare private _rangeMappings: MappingIndex[][];
 
   /**
    * An optional relative path to the generated file this sourcemap represents.
@@ -57,6 +59,7 @@ export class GenMapping {
     this.file = file;
     this.sourceRoot = sourceRoot;
     this._ignoreList = new SetArray();
+    this._rangeMappings = [];
   }
 }
 
@@ -66,6 +69,7 @@ interface PublicMap {
   _sourcesContent: GenMapping['_sourcesContent'];
   _mappings: GenMapping['_mappings'];
   _ignoreList: GenMapping['_ignoreList'];
+  _rangeMappings: GenMapping['_rangeMappings'];
 }
 
 /**
@@ -131,24 +135,26 @@ export function addSegment(
  */
 export function addMapping(
   map: GenMapping,
-  // Sourceless mapping
+  // Sourceless mapping, with optional isRange flag
   mapping: {
     generated: Pos;
     source?: null;
     original?: null;
     name?: null;
     content?: null;
+    isRange?: boolean;
   },
 ): void;
 export function addMapping(
   map: GenMapping,
-  // Mapping with source, and optional name and content
+  // Mapping with source, and optional name, content, and isRange flag
   mapping: {
     generated: Pos;
     source: string;
     original: Pos;
     name?: null | string;
     content?: null | string;
+    isRange?: boolean;
   },
 ): void;
 export function addMapping(
@@ -159,6 +165,7 @@ export function addMapping(
     original?: Pos | null;
     name?: string | null;
     content?: string | null;
+    isRange?: boolean;
   },
 ): void {
   return addMappingInternal(false, map, mapping as Parameters<typeof addMappingInternal>[2]);
@@ -225,6 +232,28 @@ export function setIgnore(map: GenMapping, source: string, ignore = true) {
 }
 
 /**
+ * A low-level API to add/remove a range mapping. Line and column here are
+ * 0-based.
+ */
+export function setRangeSegment(map: GenMapping, line: number, column: number, add = true) {
+  const { _mappings: mappings, _rangeMappings: rangeMappings } = cast(map);
+  const segments = getLine(mappings, line);
+  const index = getSegmentIndex(segments, column) - 1;
+
+  const ranges = getLine(rangeMappings, line);
+  const i = getRangeIndex(ranges, index);
+  // If the index is positive, then the range already exists. If negative, then
+  // the negation is the index to insert the range.
+  if (add) {
+    if (i >= 0) return;
+    insert(ranges, ~i, index);
+  } else {
+    if (i < 0) return;
+    ranges.splice(i, 1);
+  }
+}
+
+/**
  * Returns a sourcemap object (with decoded mappings) suitable for passing to a library that expects
  * a sourcemap, or to JSON.stringify.
  */
@@ -234,9 +263,11 @@ export function toDecodedMap(map: GenMapping): DecodedSourceMap {
     _sources: sources,
     _sourcesContent: sourcesContent,
     _names: names,
-    _ignoreList: ignoreList,
+    _ignoreList: { array: ignoreList },
+    _rangeMappings: rangeMappings,
   } = cast(map);
   removeEmptyFinalLines(mappings);
+  removeEmptyFinalLines(rangeMappings);
 
   return {
     version: 3,
@@ -246,7 +277,8 @@ export function toDecodedMap(map: GenMapping): DecodedSourceMap {
     sources: sources.array,
     sourcesContent,
     mappings,
-    ignoreList: ignoreList.array,
+    ignoreList: ignoreList.length > 0 ? ignoreList : undefined,
+    rangeMappings: rangeMappings.length > 0 ? rangeMappings : undefined,
   };
 }
 
@@ -329,6 +361,7 @@ function addSegmentInternal<S extends string | null | undefined>(
     _sources: sources,
     _sourcesContent: sourcesContent,
     _names: names,
+    _rangeMappings: rangeMappings,
   } = cast(map);
   const line = getLine(mappings, genLine);
   const index = getSegmentIndex(line, genColumn);
@@ -337,7 +370,9 @@ function addSegmentInternal<S extends string | null | undefined>(
     // If this sourceless segment doesn't end a source segment, then it provides
     // no value.
     if (skipable && skipSourceless(line, index)) return;
-    return insert(line, index, [genColumn]);
+    if (index < line.length) adjustRangeMappings(rangeMappings, genLine, index);
+    insert(line, index, [genColumn]);
+    return;
   }
 
   // Sigh, TypeScript can't figure out sourceLine and sourceColumn aren't nullish if source
@@ -358,7 +393,8 @@ function addSegmentInternal<S extends string | null | undefined>(
     return;
   }
 
-  return insert(
+  if (index < line.length) adjustRangeMappings(rangeMappings, genLine, index);
+  insert(
     line,
     index,
     // The ternary allows us to create arrays with the exact size, which is
@@ -410,7 +446,7 @@ function insert<T>(array: T[], index: number, value: T) {
 /**
  * Removes any lines at the tail of the sourcemap that do not contain any mappings.
  */
-function removeEmptyFinalLines(mappings: SourceMapSegment[][]) {
+function removeEmptyFinalLines(mappings: unknown[][]) {
   for (let i = mappings.length - 1; i >= 0; i--) {
     if (mappings[i].length > 0) break;
     mappings.pop();
@@ -423,6 +459,32 @@ function removeEmptyFinalLines(mappings: SourceMapSegment[][]) {
 function putAll<T extends string | number>(setarr: SetArray<T>, array: T[]) {
   for (let i = 0; i < array.length; i++) put(setarr, array[i]);
 }
+
+/**
+ * Gets the index of the matching range mapping, or the bitwise NOT of the index
+ * where it should be inserted.
+ */
+function getRangeIndex(ranges: MappingIndex[], index: MappingIndex): number {
+  for (let i = ranges.length; i > 0; i--) {
+    const range = ranges[i - 1];
+    if (range === index) return i - 1;
+    if (range < index) return ~i
+  }
+  return ~0;
+}
+
+/**
+ * Adjusts the range mappings when a new segment is inserted.
+ */
+function adjustRangeMappings(rangeMappings: MappingIndex[][], genLine: number, index: number) {
+  if (genLine >= rangeMappings.length) return;
+  const line = rangeMappings[genLine];
+  for (let i = line.length - 1; i >= 0; i--) {
+    if (line[i] < index) break;
+    line[i]++;
+  }
+}
+
 
 /**
  * Returns true if we should skip adding a sourceless segment at the given index.
@@ -483,11 +545,12 @@ function addMappingInternal<S extends string | null | undefined>(
     original: S extends string ? Pos : null | undefined;
     name: S extends string ? string | null | undefined : null | undefined;
     content: S extends string ? string | null | undefined : null | undefined;
+    isRange?: boolean;
   },
 ) {
-  const { generated, source, original, name, content } = mapping;
+  const { generated, source, original, name, content, isRange } = mapping;
   if (!source) {
-    return addSegmentInternal(
+    addSegmentInternal(
       skipable,
       map,
       generated.line - 1,
@@ -498,17 +561,19 @@ function addMappingInternal<S extends string | null | undefined>(
       null,
       null,
     );
+  } else {
+    assert<Pos>(original);
+    addSegmentInternal(
+      skipable,
+      map,
+      generated.line - 1,
+      generated.column,
+      source as string,
+      original.line - 1,
+      original.column,
+      name,
+      content,
+    );
   }
-  assert<Pos>(original);
-  return addSegmentInternal(
-    skipable,
-    map,
-    generated.line - 1,
-    generated.column,
-    source as string,
-    original.line - 1,
-    original.column,
-    name,
-    content,
-  );
+  if (isRange) setRangeSegment(map, generated.line - 1, generated.column);
 }

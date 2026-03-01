@@ -11,6 +11,7 @@ import {
   maybeAddSegment,
   maybeAddMapping,
   setIgnore,
+  setRangeSegment,
 } from '../src/gen-mapping';
 
 describe('GenMapping', () => {
@@ -121,6 +122,26 @@ describe('GenMapping', () => {
       setIgnore(map, 'input.js');
 
       assert.deepEqual(toDecodedMap(map).ignoreList, [0]);
+    });
+
+    it('excludes ignoreList when empty', () => {
+      const map = new GenMapping();
+
+      assert.deepEqual(toDecodedMap(map).ignoreList, undefined);
+    });
+
+    it('has rangeMappings', () => {
+      const map = new GenMapping();
+      addSegment(map, 0, 1, 'input.js', 2, 3, 'foo');
+      setRangeSegment(map, 0, 1);
+
+      assert.deepEqual(toDecodedMap(map).rangeMappings, [[0]]);
+    });
+
+    it('excludes rangeMappings when empty', () => {
+      const map = new GenMapping();
+
+      assert.deepEqual(toDecodedMap(map).rangeMappings, undefined);
     });
   });
 
@@ -929,7 +950,104 @@ describe('GenMapping', () => {
       setIgnore(map, 'input.js');
       setIgnore(map, 'input.js', false);
 
-      assert.deepEqual(toDecodedMap(map).ignoreList, []);
+      assert.deepEqual(toDecodedMap(map).ignoreList, undefined);
+    });
+  });
+
+  describe('rangeMappings', () => {
+    it('adds range segment index', () => {
+      const map = new GenMapping();
+      addSegment(map, 0, 1, 'input.js', 2, 3);
+      setRangeSegment(map, 0, 1);
+
+      assert.deepEqual(toDecodedMap(map).rangeMappings, [[0]]);
+    });
+
+    it('associates with correct segment index', () => {
+      const map = new GenMapping();
+      addSegment(map, 0, 0, 'first.js', 0, 0);
+      addSegment(map, 0, 10, 'second.js', 0, 0);
+
+      setRangeSegment(map, 0, 5); // Should be segment 0
+      setRangeSegment(map, 0, 15); // Should be segment 1
+
+      assert.deepEqual(toDecodedMap(map).rangeMappings, [[0, 1]]);
+    });
+
+    it('sorts range indices', () => {
+      const map = new GenMapping();
+      addSegment(map, 0, 0, 'first.js', 0, 0);
+      addSegment(map, 0, 10, 'second.js', 0, 0);
+      addSegment(map, 0, 20, 'third.js', 0, 0);
+
+      setRangeSegment(map, 0, 25); // idx 2
+      setRangeSegment(map, 0, 5); // idx 0
+
+      assert.deepEqual(toDecodedMap(map).rangeMappings, [[0, 2]]);
+    });
+
+    it('ignores duplicates', () => {
+      const map = new GenMapping();
+      addSegment(map, 0, 0, 'first.js', 0, 0);
+
+      setRangeSegment(map, 0, 5);
+      setRangeSegment(map, 0, 6);
+
+      assert.deepEqual(toDecodedMap(map).rangeMappings, [[0]]);
+    });
+
+    it('supports multiple lines', () => {
+      const map = new GenMapping();
+      addSegment(map, 0, 0, 'first.js', 0, 0);
+      addSegment(map, 1, 0, 'second.js', 0, 0);
+
+      setRangeSegment(map, 0, 0);
+      setRangeSegment(map, 1, 0);
+
+      assert.deepEqual(toDecodedMap(map).rangeMappings, [[0], [0]]);
+    });
+
+    it('removes range mapping when add is false', () => {
+      const map = new GenMapping();
+      addSegment(map, 0, 0, 'first.js', 0, 0);
+
+      setRangeSegment(map, 0, 0);
+      setRangeSegment(map, 0, 0, false);
+
+      assert.deepEqual(toDecodedMap(map).rangeMappings, undefined);
+    });
+
+    it('does nothing when removing non-existent mapping', () => {
+      const map = new GenMapping();
+      addSegment(map, 0, 0, 'first.js', 0, 0);
+
+      setRangeSegment(map, 0, 0, false);
+
+      assert.deepEqual(toDecodedMap(map).rangeMappings, undefined);
+    });
+
+    it('updates rangeMappings when segments are inserted in the middle', () => {
+      const map = new GenMapping();
+      addSegment(map, 0, 0, 'first.js', 0, 0);
+      addSegment(map, 0, 20, 'third.js', 0, 0);
+      setRangeSegment(map, 0, 25); // index 1
+
+      // Insert in middle
+      addSegment(map, 0, 10, 'second.js', 0, 0); // new index 1, old index 1 becomes 2
+
+      assert.deepEqual(toDecodedMap(map).rangeMappings, [[2]]);
+    });
+
+    it('works with addMapping', () => {
+      const map = new GenMapping();
+      addMapping(map, {
+        generated: { line: 1, column: 0 },
+        source: 'first.js',
+        original: { line: 1, column: 0 },
+        isRange: true,
+      });
+
+      assert.deepEqual(toDecodedMap(map).rangeMappings, [[0]]);
     });
   });
 });

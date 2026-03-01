@@ -1,3 +1,4 @@
+import type { MappingIndex } from './range-mappings';
 import type { SourceMapSegment } from './sourcemap-segment';
 
 /**
@@ -40,6 +41,12 @@ export interface SourceMapV3 {
    * An optional array of indices of sources that should be ignored.
    */
   ignoreList?: readonly number[];
+
+  /**
+   * An optional array of mapping indicies which cover a range of generated
+   * code and source code.
+   */
+  rangeMappings?: MappingIndex[][];
 }
 
 /**
