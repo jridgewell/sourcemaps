@@ -1,3 +1,12 @@
+# UNRELEASED
+
+- Add Range Mapping support: https://github.com/jridgewell/sourcemaps/commit/7b8154b
+  - `FlattenMap` (`AnyMap`) now flattens SectionedSourceMap's with range mappings
+  - `traceSegment` will offset the returned segment by the range mapping's offset
+  - `originalPositionFor` will offset the returned position by the range mapping's offset
+  - `generatedPositionFor` will offset the returned position by the range mapping's offset
+  - `allGeneratedPositionsFor` will offset returned positions by the range mapping's offset
+
 # [0.3.31] - 2025-09-10
 
 - Improve the performance of `generatedPositionFor`: #42

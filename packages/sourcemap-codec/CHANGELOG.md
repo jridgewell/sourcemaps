@@ -1,3 +1,8 @@
+# UNRELEASED
+
+- Add Range Mapping support: #45
+  - includes new `decodeRangeMappings` and `encodeRangeMappings` APIs
+
 # [1.5.5] - 2025-08-12
 
 - Use `default` subpath export: https://github.com/jridgewell/sourcemaps/commit/aab8d72

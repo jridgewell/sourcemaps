@@ -1,3 +1,10 @@
+# UNRELEASED
+
+- Add Range Mapping support: https://github.com/jridgewell/sourcemaps/commit/cad54c0
+  - includes a new `rangeMappings` field for `GenMapping`
+  - includes a new `isRange` option for `addMapping`
+  - includes a new `setRangeSegment` API
+
 # [0.3.13] - 2025-08-12
 
 - Use `default` subpath export: https://github.com/jridgewell/sourcemaps/commit/aab8d72
