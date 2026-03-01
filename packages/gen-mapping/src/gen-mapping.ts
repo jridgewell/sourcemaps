@@ -16,11 +16,17 @@ import type { DecodedSourceMap, EncodedSourceMap, Pos, Mapping } from './types';
 
 export type { DecodedSourceMap, EncodedSourceMap, Mapping };
 
+/**
+ * Options for creating a new `GenMapping`.
+ */
 export type Options = {
   file?: string | null;
   sourceRoot?: string | null;
 };
 
+/**
+ * Sentinel value for a name that is not present in the names array.
+ */
 const NO_NAME = -1;
 
 /**
@@ -32,7 +38,15 @@ export class GenMapping {
   declare private _sourcesContent: (string | null)[];
   declare private _mappings: SourceMapSegment[][];
   declare private _ignoreList: SetArray<number>;
+
+  /**
+   * An optional relative path to the generated file this sourcemap represents.
+   */
   declare file: string | null | undefined;
+
+  /**
+   * An optional prefix which is prepended to all sources.
+   */
   declare sourceRoot: string | null | undefined;
 
   constructor({ file, sourceRoot }: Options = {}) {
@@ -68,6 +82,7 @@ function cast(map: unknown): PublicMap {
  */
 export function addSegment(
   map: GenMapping,
+  // Sourceless segment
   genLine: number,
   genColumn: number,
   source?: null,
@@ -78,23 +93,14 @@ export function addSegment(
 ): void;
 export function addSegment(
   map: GenMapping,
+  // Segment with source, and optional name and content
   genLine: number,
   genColumn: number,
   source: string,
   sourceLine: number,
   sourceColumn: number,
-  name?: null,
-  content?: string | null,
-): void;
-export function addSegment(
-  map: GenMapping,
-  genLine: number,
-  genColumn: number,
-  source: string,
-  sourceLine: number,
-  sourceColumn: number,
-  name: string,
-  content?: string | null,
+  name?: null | string,
+  content?: null | string,
 ): void;
 export function addSegment(
   map: GenMapping,
@@ -125,6 +131,7 @@ export function addSegment(
  */
 export function addMapping(
   map: GenMapping,
+  // Sourceless mapping
   mapping: {
     generated: Pos;
     source?: null;
@@ -135,22 +142,13 @@ export function addMapping(
 ): void;
 export function addMapping(
   map: GenMapping,
+  // Mapping with source, and optional name and content
   mapping: {
     generated: Pos;
     source: string;
     original: Pos;
-    name?: null;
-    content?: string | null;
-  },
-): void;
-export function addMapping(
-  map: GenMapping,
-  mapping: {
-    generated: Pos;
-    source: string;
-    original: Pos;
-    name: string;
-    content?: string | null;
+    name?: null | string;
+    content?: null | string;
   },
 ): void;
 export function addMapping(
@@ -212,10 +210,16 @@ export function setSourceContent(map: GenMapping, source: string, content: strin
   sourcesContent[index] = content;
 }
 
+/**
+ * Adds/removes the source from the ignore list.
+ */
 export function setIgnore(map: GenMapping, source: string, ignore = true) {
   const { _sources: sources, _sourcesContent: sourcesContent, _ignoreList: ignoreList } = cast(map);
   const index = put(sources, source);
+
+  // If we put a new source in, keep the sourcesContent's length in sync.
   if (index === sourcesContent.length) sourcesContent[index] = null;
+
   if (ignore) put(ignoreList, index);
   else remove(ignoreList, index);
 }
@@ -252,9 +256,9 @@ export function toDecodedMap(map: GenMapping): DecodedSourceMap {
  */
 export function toEncodedMap(map: GenMapping): EncodedSourceMap {
   const decoded = toDecodedMap(map);
-  return Object.assign({}, decoded, {
-    mappings: encode(decoded.mappings as SourceMapSegment[][]),
-  });
+  const encoded = decoded as unknown as EncodedSourceMap;
+  encoded.mappings = encode(decoded.mappings as SourceMapSegment[][]);
+  return encoded;
 }
 
 /**
@@ -279,7 +283,11 @@ export function fromMap(input: SourceMapInput): GenMapping {
  */
 export function allMappings(map: GenMapping): Mapping[] {
   const out: Mapping[] = [];
-  const { _mappings: mappings, _sources: sources, _names: names } = cast(map);
+  const {
+    _mappings: mappings,
+    _sources: { array: sources },
+    _names: { array: names },
+  } = cast(map);
 
   for (let i = 0; i < mappings.length; i++) {
     const line = mappings[i];
@@ -292,10 +300,10 @@ export function allMappings(map: GenMapping): Mapping[] {
       let name: string | undefined = undefined;
 
       if (seg.length !== 1) {
-        source = sources.array[seg[SOURCES_INDEX]];
+        source = sources[seg[SOURCES_INDEX]];
         original = { line: seg[SOURCE_LINE] + 1, column: seg[SOURCE_COLUMN] };
 
-        if (seg.length === 5) name = names.array[seg[NAMES_INDEX]];
+        if (seg.length === 5) name = names[seg[NAMES_INDEX]];
       }
 
       out.push({ generated, source, original, name } as Mapping);
@@ -305,7 +313,6 @@ export function allMappings(map: GenMapping): Mapping[] {
   return out;
 }
 
-// This split declaration is only so that terser can elminiate the static initialization block.
 function addSegmentInternal<S extends string | null | undefined>(
   skipable: boolean,
   map: GenMapping,
@@ -323,10 +330,12 @@ function addSegmentInternal<S extends string | null | undefined>(
     _sourcesContent: sourcesContent,
     _names: names,
   } = cast(map);
-  const line = getIndex(mappings, genLine);
-  const index = getColumnIndex(line, genColumn);
+  const line = getLine(mappings, genLine);
+  const index = getSegmentIndex(line, genColumn);
 
   if (!source) {
+    // If this sourceless segment doesn't end a source segment, then it provides
+    // no value.
     if (skipable && skipSourceless(line, index)) return;
     return insert(line, index, [genColumn]);
   }
@@ -338,8 +347,13 @@ function addSegmentInternal<S extends string | null | undefined>(
 
   const sourcesIndex = put(sources, source);
   const namesIndex = name ? put(names, name) : NO_NAME;
+
+  // If we put a new source in, keep the sourcesContent's length in sync.
   if (sourcesIndex === sourcesContent.length) sourcesContent[sourcesIndex] = content ?? null;
 
+  // If this source segment isn't different from the previous source segment, or
+  // start a source segment after a sourceless segment, then it provides no
+  // value.
   if (skipable && skipSource(line, index, sourcesIndex, sourceLine, sourceColumn, namesIndex)) {
     return;
   }
@@ -347,6 +361,8 @@ function addSegmentInternal<S extends string | null | undefined>(
   return insert(
     line,
     index,
+    // The ternary allows us to create arrays with the exact size, which is
+    // required for later checking if the tuple carries name information.
     name
       ? [genColumn, sourcesIndex, sourceLine, sourceColumn, namesIndex]
       : [genColumn, sourcesIndex, sourceLine, sourceColumn],
@@ -357,22 +373,33 @@ function assert<T>(_val: unknown): asserts _val is T {
   // noop.
 }
 
-function getIndex<T>(arr: T[][], index: number): T[] {
+/**
+ * Gets the line at the given index, filling in empty lines along the way.
+ */
+function getLine<T>(arr: T[][], index: number): T[] {
   for (let i = arr.length; i <= index; i++) {
     arr[i] = [];
   }
   return arr[index];
 }
 
-function getColumnIndex(line: SourceMapSegment[], genColumn: number): number {
-  let index = line.length;
-  for (let i = index - 1; i >= 0; index = i--) {
-    const current = line[i];
-    if (genColumn >= current[COLUMN]) break;
+/**
+ * Gets the index at which to insert the new segment.
+ */
+function getSegmentIndex(line: SourceMapSegment[], genColumn: number): number {
+  // This intentionally uses reverse iteration instead of binary search, because
+  // we assume generators are being written out in order of the generated code.
+  // Going backwards in the generated code is an edge case.
+  for (let i = line.length; i > 0; i--) {
+    const current = line[i - 1];
+    if (genColumn >= current[COLUMN]) return i;
   }
-  return index;
+  return 0;
 }
 
+/**
+ * Inserts a value into an array at the given index, shifting all subsequent values to the right.
+ */
 function insert<T>(array: T[], index: number, value: T) {
   for (let i = array.length; i > index; i--) {
     array[i] = array[i - 1];
@@ -380,19 +407,30 @@ function insert<T>(array: T[], index: number, value: T) {
   array[index] = value;
 }
 
+/**
+ * Removes any lines at the tail of the sourcemap that do not contain any mappings.
+ */
 function removeEmptyFinalLines(mappings: SourceMapSegment[][]) {
-  const { length } = mappings;
-  let len = length;
-  for (let i = len - 1; i >= 0; len = i, i--) {
+  for (let i = mappings.length - 1; i >= 0; i--) {
     if (mappings[i].length > 0) break;
+    mappings.pop();
   }
-  if (len < length) mappings.length = len;
 }
 
+/**
+ * Puts all values from an array into a SetArray.
+ */
 function putAll<T extends string | number>(setarr: SetArray<T>, array: T[]) {
   for (let i = 0; i < array.length; i++) put(setarr, array[i]);
 }
 
+/**
+ * Returns true if we should skip adding a sourceless segment at the given index.
+ *
+ * This skips in 2 cases:
+ * 1. We're trying to insert this segment at the start of a line
+ * 2. The previous segment is also sourceless
+ */
 function skipSourceless(line: SourceMapSegment[], index: number): boolean {
   // The start of a line is already sourceless, so adding a sourceless segment to the beginning
   // doesn't generate any useful information.
@@ -405,6 +443,11 @@ function skipSourceless(line: SourceMapSegment[], index: number): boolean {
   return prev.length === 1;
 }
 
+/**
+ * Returns true if we should skip adding a source/named segment at the given index.
+ *
+ * This skips only if the previous segment matches the new segment exactly.
+ */
 function skipSource(
   line: SourceMapSegment[],
   index: number,
