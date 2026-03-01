@@ -9,6 +9,7 @@ export interface SourceMapV3 {
   sourcesContent?: (string | null)[];
   version: 3;
   ignoreList?: number[];
+  rangeMappings?: number[][];
 }
 
 export interface EncodedSourceMap extends SourceMapV3 {
@@ -98,6 +99,7 @@ export abstract class SourceMap {
   declare sourcesContent: SourceMapV3['sourcesContent'];
   declare resolvedSources: SourceMapV3['sources'];
   declare ignoreList: SourceMapV3['ignoreList'];
+  declare rangeMappings: SourceMapV3['rangeMappings'];
 }
 
 export type Ro<T> =
@@ -108,7 +110,3 @@ export type Ro<T> =
       : T;
 type RoArray<T> = Ro<T>[];
 type RoObject<T> = { [K in keyof T]: T[K] | Ro<T[K]> };
-
-export function parse<T>(map: T): Exclude<T, string> {
-  return typeof map === 'string' ? JSON.parse(map) : (map as Exclude<T, string>);
-}

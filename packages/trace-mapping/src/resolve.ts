@@ -1,11 +1,16 @@
 import resolveUri from '@jridgewell/resolve-uri';
 import stripFilename from './strip-filename';
 
-type Resolve = (source: string | null) => string;
+type Resolver = (source: string | null) => string;
+
+/**
+ * Creates a resolver function that resolves source paths relative to the
+ * sourcemap's URL, with an optional sourceRoot prefix.
+ */
 export default function resolver(
   mapUrl: string | null | undefined,
   sourceRoot: string | undefined,
-): Resolve {
+): Resolver {
   const from = stripFilename(mapUrl);
   // The sourceRoot is always treated as a directory, if it's not empty.
   // https://github.com/mozilla/source-map/blob/8cb3ee57/lib/util.js#L327

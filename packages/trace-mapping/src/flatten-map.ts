@@ -6,7 +6,7 @@ import {
   SOURCE_COLUMN,
   NAMES_INDEX,
 } from './sourcemap-segment';
-import { parse } from './types';
+import { assertExhaustive, parse, EMPTY } from './util';
 
 import type {
   DecodedSourceMap,
@@ -19,11 +19,15 @@ import type {
 } from './types';
 import type { SourceMapSegment } from './sourcemap-segment';
 
+// A utility type that allows FlattenMap to be called or new'd.
 type FlattenMap = {
   new (map: Ro<SectionedSourceMapInput>, mapUrl?: string | null): TraceMap;
   (map: Ro<SectionedSourceMapInput>, mapUrl?: string | null): TraceMap;
 };
 
+/**
+ * FlattenMap recursively flattens a SectionedSourceMap into a DecodedSourceMap.
+ */
 export const FlattenMap: FlattenMap = function (map, mapUrl) {
   const parsed = parse(map as SectionedSourceMapInput);
 
@@ -36,6 +40,7 @@ export const FlattenMap: FlattenMap = function (map, mapUrl) {
   const sourcesContent: (string | null)[] = [];
   const names: string[] = [];
   const ignoreList: number[] = [];
+  const rangeMappings: number[][] = [];
 
   recurse(
     parsed,
@@ -45,13 +50,14 @@ export const FlattenMap: FlattenMap = function (map, mapUrl) {
     sourcesContent,
     names,
     ignoreList,
+    rangeMappings,
     0,
     0,
     Infinity,
     Infinity,
   );
 
-  const joined: DecodedSourceMap = {
+  const joined = {
     version: 3,
     file: parsed.file,
     names,
@@ -59,11 +65,18 @@ export const FlattenMap: FlattenMap = function (map, mapUrl) {
     sourcesContent,
     mappings,
     ignoreList,
-  };
+    rangeMappings,
+  } satisfies DecodedSourceMap;
+  assertExhaustive(
+    undefined as Exclude<keyof DecodedSourceMap, keyof typeof joined | 'sourceRoot'>,
+  );
 
   return presortedDecodedMap(joined);
 } as FlattenMap;
 
+/**
+ * Recursively flattens a SectionedSourceMap into a DecodedSourceMap.
+ */
 function recurse(
   input: SectionedSourceMapXInput,
   mapUrl: string | null | undefined,
@@ -72,6 +85,7 @@ function recurse(
   sourcesContent: (string | null)[],
   names: string[],
   ignoreList: number[],
+  rangeMappings: number[][],
   lineOffset: number,
   columnOffset: number,
   stopLine: number,
@@ -81,17 +95,19 @@ function recurse(
   for (let i = 0; i < sections.length; i++) {
     const { map, offset } = sections[i];
 
+    // For each section, we need to adjust the stopLine and stopColumn to be the
+    // line/column of the next section. The final section just uses the recursive
+    // stopLine and stopColumn.
     let sl = stopLine;
     let sc = stopColumn;
     if (i + 1 < sections.length) {
       const nextOffset = sections[i + 1].offset;
       sl = Math.min(stopLine, lineOffset + nextOffset.line);
+      sc = columnOffset + nextOffset.column;
 
-      if (sl === stopLine) {
-        sc = Math.min(stopColumn, columnOffset + nextOffset.column);
-      } else if (sl < stopLine) {
-        sc = columnOffset + nextOffset.column;
-      }
+      // If the next section starts on the same line as the recursive stopLine, then we need to
+      // constrain the next stopColumn to be within the recusrive stopColumn.
+      if (sl === stopLine) sc = Math.min(stopColumn, sc);
     }
 
     addSection(
@@ -102,6 +118,7 @@ function recurse(
       sourcesContent,
       names,
       ignoreList,
+      rangeMappings,
       lineOffset + offset.line,
       columnOffset + offset.column,
       sl,
@@ -110,6 +127,9 @@ function recurse(
   }
 }
 
+/**
+ * Merges this section's data into the flattened map.
+ */
 function addSection(
   input: SectionXInput['map'],
   mapUrl: string | null | undefined,
@@ -118,6 +138,7 @@ function addSection(
   sourcesContent: (string | null)[],
   names: string[],
   ignoreList: number[],
+  rangeMappings: number[][],
   lineOffset: number,
   columnOffset: number,
   stopLine: number,
@@ -130,7 +151,12 @@ function addSection(
   const sourcesOffset = sources.length;
   const namesOffset = names.length;
   const decoded = decodedMappings(map);
-  const { resolvedSources, sourcesContent: contents, ignoreList: ignores } = map;
+  const {
+    resolvedSources,
+    sourcesContent: contents,
+    ignoreList: ignores,
+    rangeMappings: ranges,
+  } = map;
 
   append(sources, resolvedSources);
   append(names, map.names);
@@ -152,6 +178,15 @@ function addSection(
     // The out line may already exist in mappings (if we're continuing the line started by a
     // previous section). Or, we may have jumped ahead several lines to start this section.
     const out = getLine(mappings, lineI);
+
+    let rangeIn = EMPTY;
+    let rangeOut = EMPTY;
+    let rIndex = 0;
+    if (ranges && i < ranges.length) {
+      rangeIn = ranges[i];
+      rangeOut = getLine(rangeMappings, lineI);
+    }
+
     // On the 0th loop, the section's column offset shifts us forward. On all other lines (since the
     // map can be multiple lines), it doesn't.
     const cOffset = i === 0 ? columnOffset : 0;
@@ -165,6 +200,13 @@ function addSection(
       // to stop early.
       if (lineI === stopLine && column >= stopColumn) return;
 
+      // If the current segment is a range mapping, then we need to record the
+      // flattened index as one too.
+      if (rIndex < rangeIn.length && j === rangeIn[rIndex]) {
+        rIndex++;
+        rangeOut.push(out.length);
+      }
+
       if (seg.length === 1) {
         out.push([column]);
         continue;
@@ -174,6 +216,8 @@ function addSection(
       const sourceLine = seg[SOURCE_LINE];
       const sourceColumn = seg[SOURCE_COLUMN];
       out.push(
+        // The ternary allows us to create arrays with the exact size, which is
+        // required for later checking if the tuple carries name information.
         seg.length === 4
           ? [column, sourcesIndex, sourceLine, sourceColumn]
           : [column, sourcesIndex, sourceLine, sourceColumn, namesOffset + seg[NAMES_INDEX]],

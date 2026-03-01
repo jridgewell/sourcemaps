@@ -57,6 +57,7 @@ describe('FlattenMap', () => {
                 sourcesContent: ['thirdsource'],
                 sourceRoot: 'nested',
                 mappings: 'AAAAA,CAAA;AAAA',
+                rangeMappings: [[0]],
               },
             },
             {
@@ -68,6 +69,7 @@ describe('FlattenMap', () => {
                 sourcesContent: ['fourthsource'],
                 mappings: [[[0, 0, 0, 0]]],
                 ignoreList: [0],
+                rangeMappings: [[0]],
               },
             },
           ],
@@ -135,6 +137,11 @@ describe('FlattenMap', () => {
     it('ignoreList', () => {
       const tracer = new FlattenMap(map);
       assert.deepEqual(tracer.ignoreList, [0, 3]);
+    });
+
+    it('rangeMappings', () => {
+      const tracer = new FlattenMap(map);
+      assert.deepEqual(tracer.rangeMappings, [[], [], [0, 1]]);
     });
   });
 

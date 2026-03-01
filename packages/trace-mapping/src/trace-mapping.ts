@@ -5,7 +5,7 @@ import maybeSort from './sort';
 import buildBySources from './by-source';
 import {
   memoizedState,
-  memoizedBinarySearch,
+  memoizedBinarySearchSegments,
   upperBound,
   lowerBound,
   found as bsFound,
@@ -19,7 +19,7 @@ import {
   REV_GENERATED_LINE,
   REV_GENERATED_COLUMN,
 } from './sourcemap-segment';
-import { parse } from './types';
+import { assertExhaustive, EMPTY, parse } from './util';
 
 import type { SourceMapSegment, ReverseSegment } from './sourcemap-segment';
 import type {
@@ -80,7 +80,16 @@ interface PublicMap {
 const LINE_GTR_ZERO = '`line` must be greater than 0 (lines start at line 1)';
 const COL_GTR_EQ_ZERO = '`column` must be greater than or equal to 0 (columns start at column 0)';
 
+/**
+ * During tracing, if no exact match is found, then we return the segment whose
+ * generated column is just less than the target column.
+ */
 export const LEAST_UPPER_BOUND = -1;
+
+/**
+ * During tracing, if no exact match is found, then we return the segment whose
+ * generated column is just greater than the target column.
+ */
 export const GREATEST_LOWER_BOUND = 1;
 
 export { FlattenMap, FlattenMap as AnyMap } from './flatten-map';
@@ -93,6 +102,7 @@ export class TraceMap implements SourceMap {
   declare sources: SourceMapV3['sources'];
   declare sourcesContent: SourceMapV3['sourcesContent'];
   declare ignoreList: SourceMapV3['ignoreList'];
+  declare rangeMappings: SourceMapV3['rangeMappings'];
 
   declare resolvedSources: string[];
   declare private _encoded: string | undefined;
@@ -116,7 +126,8 @@ export class TraceMap implements SourceMap {
     this.sourceRoot = sourceRoot;
     this.sources = sources;
     this.sourcesContent = sourcesContent;
-    this.ignoreList = parsed.ignoreList || (parsed as XInput).x_google_ignoreList || undefined;
+    this.ignoreList = parsed.ignoreList || (parsed as XInput).x_google_ignoreList;
+    this.rangeMappings = parsed.rangeMappings;
 
     const resolve = resolver(mapUrl, sourceRoot);
     this.resolvedSources = sources.map(resolve);
@@ -199,9 +210,10 @@ export function originalPositionFor(
   needle: Needle,
 ): OriginalMapping | InvalidOriginalMapping {
   let { line, column, bias } = needle;
-  line--;
-  if (line < 0) throw new Error(LINE_GTR_ZERO);
+  if (line <= 0) throw new Error(LINE_GTR_ZERO);
   if (column < 0) throw new Error(COL_GTR_EQ_ZERO);
+
+  line--;
 
   const decoded = decodedMappings(map);
 
@@ -289,6 +301,9 @@ export function eachMapping(map: TraceMap, cb: (mapping: EachMapping) => void): 
   }
 }
 
+/**
+ * Searches sources and resolvedSources for the provided source file.
+ */
 function sourceIndex(map: TraceMap, source: string): number {
   const { sources, resolvedSources } = map;
   let index = sources.indexOf(source);
@@ -344,22 +359,32 @@ export function encodedMap(map: TraceMap): EncodedSourceMap {
   return clone(map, encodedMappings(map));
 }
 
+/**
+ * Clones the public fields of a sourcemap, without copying internal fields if
+ * the input is a TraceMap.
+ */
 function clone<T extends string | readonly SourceMapSegment[][]>(
   map: TraceMap | DecodedSourceMap,
   mappings: T,
 ): T extends string ? EncodedSourceMap : DecodedSourceMap {
-  return {
+  const clone = {
     version: map.version,
     file: map.file,
     names: map.names,
     sourceRoot: map.sourceRoot,
     sources: map.sources,
     sourcesContent: map.sourcesContent,
-    mappings,
+    mappings: mappings as any,
     ignoreList: map.ignoreList || (map as XInput).x_google_ignoreList,
-  } as any;
+    rangeMappings: map.rangeMappings,
+  } satisfies DecodedSourceMap | EncodedSourceMap;
+  assertExhaustive(undefined as Exclude<keyof DecodedSourceMap, keyof typeof clone>);
+  return clone;
 }
 
+/**
+ * Returns an OriginalMapping object.
+ */
 function OMapping(source: null, line: null, column: null, name: null): InvalidOriginalMapping;
 function OMapping(
   source: string,
@@ -376,6 +401,9 @@ function OMapping(
   return { source, line, column, name } as any;
 }
 
+/**
+ * Returns a GeneratedMapping object.
+ */
 function GMapping(line: null, column: null): InvalidGeneratedMapping;
 function GMapping(line: number, column: number): GeneratedMapping;
 function GMapping(
@@ -406,15 +434,24 @@ function traceSegmentInternal(
   column: number,
   bias: Bias,
 ): number {
-  let index = memoizedBinarySearch(segments, column, memo, line);
+  let index = memoizedBinarySearchSegments(segments, column, memo, line);
   if (bsFound) {
+    // TODO: Chrome, Safari, and Firefox all return the upperBound. Make a breaking change.
     index = (bias === LEAST_UPPER_BOUND ? upperBound : lowerBound)(segments, column, index);
-  } else if (bias === LEAST_UPPER_BOUND) index++;
+  } else if (bias === LEAST_UPPER_BOUND) {
+    // If we didn't find it, the binary search ended at the last index checked.
+    // That index is lower than the needle, so we need to increment to give the
+    // upper bound.
+    index++;
+  }
 
   if (index === -1 || index === segments.length) return -1;
   return index;
 }
 
+/**
+ * Returns the indices of all segments that contain the given line and column.
+ */
 function sliceGeneratedPositions(
   segments: ReverseSegment[],
   memo: MemoState,
@@ -422,6 +459,7 @@ function sliceGeneratedPositions(
   column: number,
   bias: Bias,
 ): GeneratedMapping[] {
+  // TODO: What to even do here for ranges?
   let min = traceSegmentInternal(segments, memo, line, column, GREATEST_LOWER_BOUND);
 
   // We ignored the bias when tracing the segment so that we're guarnateed to find the first (in
@@ -451,6 +489,9 @@ function sliceGeneratedPositions(
   return result;
 }
 
+/**
+ * Finds the generated line/column position of the provided source/line/column source position.
+ */
 function generatedPosition(
   map: TraceMap,
   source: string,
@@ -475,9 +516,10 @@ function generatedPosition(
   bias: Bias,
   all: boolean,
 ): GeneratedMapping | InvalidGeneratedMapping | GeneratedMapping[] {
-  line--;
-  if (line < 0) throw new Error(LINE_GTR_ZERO);
+  if (line <= 0) throw new Error(LINE_GTR_ZERO);
   if (column < 0) throw new Error(COL_GTR_EQ_ZERO);
+
+  line--;
 
   const { sources, resolvedSources } = map;
   let sourceIndex = sources.indexOf(source);

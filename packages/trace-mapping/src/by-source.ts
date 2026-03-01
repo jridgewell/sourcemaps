@@ -5,8 +5,10 @@ import type { ReverseSegment, SourceMapSegment } from './sourcemap-segment';
 
 export type Source = ReverseSegment[][];
 
-// Rebuilds the original source files, with mappings that are ordered by source line/column instead
-// of generated line/column.
+/**
+ * Rebuilds the original source files, with mappings that are ordered by source
+ * line/column instead of generated line/column.
+ */
 export default function buildBySources(
   decoded: readonly SourceMapSegment[][],
   memos: unknown[],
