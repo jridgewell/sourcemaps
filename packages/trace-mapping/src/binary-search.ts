@@ -25,49 +25,38 @@ export let found = false;
  * assert.deepEqual(array, [1, 2, 3]);
  * ```
  */
-function binarySearchFactory<T>(
-  get: (item: T) => number,
-): (haystack: T[], needle: number, low: number, high: number) => number {
-  return (haystack, needle, low, high) => {
-    while (low <= high) {
-      const mid = low + ((high - low) >> 1);
-      const cmp = get(haystack[mid]) - needle;
+export function binarySearchSegments<T extends SourceMapSegment | ReverseSegment>(
+  haystack: T[],
+  needle: number,
+  low: number,
+  high: number,
+): number {
+  while (low <= high) {
+    const mid = low + ((high - low) >> 1);
+    const cmp = haystack[mid][COLUMN] - needle;
 
-      if (cmp === 0) {
-        found = true;
-        return mid;
-      }
-
-      if (cmp < 0) {
-        low = mid + 1;
-      } else {
-        high = mid - 1;
-      }
+    if (cmp === 0) {
+      found = true;
+      return mid;
     }
 
-    found = false;
-    return low - 1;
-  };
+    if (cmp < 0) {
+      low = mid + 1;
+    } else {
+      high = mid - 1;
+    }
+  }
+
+  found = false;
+  return low - 1;
 }
-
-/**
- * Binary searches segments by generated column.
- */
-export const binarySearchSegments = binarySearchFactory<SourceMapSegment | ReverseSegment>(
-  (item) => item[COLUMN],
-);
-
-/**
- * Binary searches numbers by value.
- */
-export const binarySearchNumbers = binarySearchFactory<number>((item) => item);
 
 /**
  * Given a sorted array of segments, return the index of the last segment that
  * matches the needle.
  */
-export function upperBound(
-  haystack: SourceMapSegment[] | ReverseSegment[],
+export function upperBound<T extends SourceMapSegment | ReverseSegment>(
+  haystack: T[],
   needle: number,
   index: number,
 ): number {
@@ -81,8 +70,8 @@ export function upperBound(
  * Given a sorted array of segments, return the index of the first segment that
  * matches the needle.
  */
-export function lowerBound(
-  haystack: SourceMapSegment[] | ReverseSegment[],
+export function lowerBound<T extends SourceMapSegment | ReverseSegment>(
+  haystack: T[],
   needle: number,
   index: number,
 ): number {
@@ -104,8 +93,8 @@ export function memoizedState(): MemoState {
  * This overly complicated beast is just to record the last tested line/column and the resulting
  * index, allowing us to skip a few tests if mappings are monotonically increasing.
  */
-export function memoizedBinarySearchSegments(
-  haystack: SourceMapSegment[] | ReverseSegment[],
+export function memoizedBinarySearchSegments<T extends SourceMapSegment | ReverseSegment>(
+  haystack: T[],
   needle: number,
   state: MemoState,
   key: number,

@@ -19,7 +19,7 @@ import {
   REV_GENERATED_LINE,
   REV_GENERATED_COLUMN,
 } from './sourcemap-segment';
-import { assertExhaustive, EMPTY, parse } from './util';
+import { assertExhaustive, parse } from './util';
 
 import type { SourceMapSegment, ReverseSegment } from './sourcemap-segment';
 import type {
@@ -75,6 +75,7 @@ interface PublicMap {
   _decodedMemo: TraceMap['_decodedMemo'];
   _bySources: TraceMap['_bySources'];
   _bySourceMemos: TraceMap['_bySourceMemos'];
+  _rangeSegments: TraceMap['_rangeSegments'];
 }
 
 const LINE_GTR_ZERO = '`line` must be greater than 0 (lines start at line 1)';
@@ -104,14 +105,49 @@ export class TraceMap implements SourceMap {
   declare ignoreList: SourceMapV3['ignoreList'];
   declare rangeMappings: SourceMapV3['rangeMappings'];
 
+  /**
+   * The fully resolved sources, relative to the mapUrl with sourceRoot
+   * prepended.
+   */
   declare resolvedSources: string[];
+
+  /**
+   * The mappings encoded as VLQ.
+   *
+   * This is either extracted from the source map on construction (for regular
+   * EncodedSourceMaps), or generated from the decoded mappings on demand.
+   */
   declare private _encoded: string | undefined;
 
+  /**
+   * The mappings decoded into SourceMapSegments.
+   *
+   * This is either extracted from the source map on construction (for
+   * DecodedSourceMaps), or generated from the encoded mappings on demand.
+   */
   declare private _decoded: SourceMapSegment[][] | undefined;
+
+  /**
+   * Memoization state for the decoded mappings, to perform slightly faster
+   * lookups.
+   */
   declare private _decodedMemo: MemoState;
 
+  /**
+   * The inverse mappings, from source to generated code positions.
+   */
   declare private _bySources: Source[] | undefined;
+
+  /**
+   * Memoization state for the inverse mappings, to perform slightly faster
+   * lookups.
+   */
   declare private _bySourceMemos: MemoState[] | undefined;
+
+  /**
+   * A set of segments that are range mappings.
+   */
+  declare private _rangeSegments: Set<SourceMapSegment> | undefined;
 
   constructor(map: Ro<SourceMapInput>, mapUrl?: string | null) {
     const isString = typeof map === 'string';
@@ -148,6 +184,7 @@ export class TraceMap implements SourceMap {
     this._decodedMemo = memoizedState();
     this._bySources = undefined;
     this._bySourceMemos = undefined;
+    this._rangeSegments = undefined;
   }
 }
 
@@ -183,21 +220,16 @@ export function traceSegment(
   column: number,
 ): Readonly<SourceMapSegment> | null {
   const decoded = decodedMappings(map);
+  const rangeSegments = initRangeSegments(map, decoded);
 
-  // It's common for parent source maps to have pointers to lines that have no
-  // mapping (like a "//# sourceMappingURL=") at the end of the child file.
-  if (line >= decoded.length) return null;
-
-  const segments = decoded[line];
-  const index = traceSegmentInternal(
-    segments,
+  return traceSegmentInternal(
+    decoded as SourceMapSegment[][],
+    rangeSegments,
     cast(map)._decodedMemo,
     line,
     column,
     GREATEST_LOWER_BOUND,
   );
-
-  return index === -1 ? null : segments[index];
 }
 
 /**
@@ -212,27 +244,21 @@ export function originalPositionFor(
   let { line, column, bias } = needle;
   if (line <= 0) throw new Error(LINE_GTR_ZERO);
   if (column < 0) throw new Error(COL_GTR_EQ_ZERO);
-
   line--;
 
   const decoded = decodedMappings(map);
+  const rangeSegments = initRangeSegments(map, decoded);
 
-  // It's common for parent source maps to have pointers to lines that have no
-  // mapping (like a "//# sourceMappingURL=") at the end of the child file.
-  if (line >= decoded.length) return OMapping(null, null, null, null);
-
-  const segments = decoded[line];
-  const index = traceSegmentInternal(
-    segments,
+  const segment = traceSegmentInternal(
+    decoded as SourceMapSegment[][],
+    rangeSegments,
     cast(map)._decodedMemo,
     line,
     column,
     bias || GREATEST_LOWER_BOUND,
   );
 
-  if (index === -1) return OMapping(null, null, null, null);
-
-  const segment = segments[index];
+  if (segment == null) return OMapping(null, null, null, null);
   if (segment.length === 1) return OMapping(null, null, null, null);
 
   const { names, resolvedSources } = map;
@@ -413,78 +439,156 @@ function GMapping(
   return { line, column } as any;
 }
 
-function traceSegmentInternal(
-  segments: SourceMapSegment[],
+/**
+ * Returns the segment that contains the given line and column.
+ */
+function traceSegmentInternal<T extends SourceMapSegment | ReverseSegment>(
+  lines: T[][],
+  rangeSegments: Set<T>,
   memo: MemoState,
   line: number,
   column: number,
   bias: Bias,
-): number;
-function traceSegmentInternal(
-  segments: ReverseSegment[],
+): T | null;
+function traceSegmentInternal<T extends SourceMapSegment | ReverseSegment>(
+  lines: T[][],
+  rangeSegments: Set<T>,
   memo: MemoState,
   line: number,
   column: number,
   bias: Bias,
-): number;
-function traceSegmentInternal(
-  segments: SourceMapSegment[] | ReverseSegment[],
+): T | null;
+function traceSegmentInternal<T extends SourceMapSegment | ReverseSegment>(
+  lines: T[][],
+  rangeSegments: Set<T>,
   memo: MemoState,
   line: number,
   column: number,
   bias: Bias,
-): number {
+): T | null {
+  const segments = line < lines.length ? lines[line] : [];
   let index = memoizedBinarySearchSegments(segments, column, memo, line);
   if (bsFound) {
     // TODO: Chrome, Safari, and Firefox all return the upperBound. Make a breaking change.
     index = (bias === LEAST_UPPER_BOUND ? upperBound : lowerBound)(segments, column, index);
-  } else if (bias === LEAST_UPPER_BOUND) {
+    return segments[index];
+  }
+
+  // We didn't get an exact match, but can we find a range mapping that covers
+  // our position?
+  if (rangeSegments.size > 0) {
+    const rangeLine = findPreviousSegmentLine(lines, line, index);
+    if (rangeLine > -1) {
+      const rangeLineSegs = lines[rangeLine];
+      const rangeIndex = rangeLine === line ? index : rangeLineSegs.length - 1;
+      const rangeSeg = rangeLineSegs[rangeIndex];
+      if (rangeSegments.has(rangeSeg)) return rangeOffset(rangeSeg, line, column);
+    }
+  }
+
+  if (bias === LEAST_UPPER_BOUND) {
     // If we didn't find it, the binary search ended at the last index checked.
     // That index is lower than the needle, so we need to increment to give the
     // upper bound.
     index++;
+    return index === segments.length ? null : segments[index];
   }
 
-  if (index === -1 || index === segments.length) return -1;
-  return index;
+  return index === -1 ? null : segments[index];
 }
 
 /**
  * Returns the indices of all segments that contain the given line and column.
  */
 function sliceGeneratedPositions(
-  segments: ReverseSegment[],
+  lines: ReverseSegment[][],
+  rangeSegments: Set<ReverseSegment>,
   memo: MemoState,
   line: number,
   column: number,
   bias: Bias,
 ): GeneratedMapping[] {
-  // TODO: What to even do here for ranges?
-  let min = traceSegmentInternal(segments, memo, line, column, GREATEST_LOWER_BOUND);
+  const segments = line < lines.length ? lines[line] : [];
+  const index = memoizedBinarySearchSegments(segments, column, memo, line);
 
-  // We ignored the bias when tracing the segment so that we're guarnateed to find the first (in
-  // insertion order) segment that matched. Even if we did respect the bias when tracing, we would
-  // still need to call `lowerBound()` to find the first segment, which is slower than just looking
-  // for the GREATEST_LOWER_BOUND to begin with. The only difference that matters for us is when the
-  // binary search didn't match, in which case GREATEST_LOWER_BOUND just needs to increment to
-  // match LEAST_UPPER_BOUND.
-  if (!bsFound && bias === LEAST_UPPER_BOUND) min++;
+  if (bsFound) {
+    const min = lowerBound(segments, column, index);
+    const max = upperBound(segments, column, index);
+    return sliceGeneratedPositionsExact(segments, min, max);
+  }
 
-  if (min === -1 || min === segments.length) return [];
+  // We didn't get an exact match, but can we find range mappings that covers
+  // our position?
+  if (rangeSegments.size > 0) {
+    const rangeLine = findPreviousSegmentLine(lines, line, index);
+    if (rangeLine > -1) {
+      const rangeLineSegs = lines[rangeLine];
+      const rangeIndex = rangeLine === line ? index : rangeLineSegs.length - 1;
+      const col = rangeLineSegs[rangeIndex][COLUMN];
+      // We're necessary at the upper bound of the range mappings, becuase the binary search
+      // ended without a match. We just need to see if there are range mapping
+      // that are exactly at this source column.
+      const min = lowerBound(rangeLineSegs, col, rangeIndex);
+      const ranges = sliceGeneratedPositionsRanges(
+        rangeLineSegs,
+        min,
+        rangeIndex,
+        rangeSegments,
+        line,
+        column,
+      );
+      // If we didn't find any range mappings, then we need to fall through to the
+      // default behaviors.
+      if (ranges.length > 0) return ranges;
+    }
+  }
 
-  // We may have found the segment that started at an earlier column. If this is the case, then we
-  // need to slice all generated segments that match _that_ column, because all such segments span
-  // to our desired column.
-  const matchedColumn = bsFound ? column : segments[min][COLUMN];
+  if (bias === LEAST_UPPER_BOUND) {
+    // If we didn't find it, the binary search ended at the last index checked.
+    // That index is lower than the needle, so we need to increment to give the
+    // upper bound.
+    const min = index + 1;
+    if (min === segments.length) return [];
+    const col = segments[min][COLUMN];
+    const max = upperBound(segments, col, min);
+    return sliceGeneratedPositionsExact(segments, min, max);
+  }
 
-  // The binary search is not guaranteed to find the lower bound when a match wasn't found.
-  if (!bsFound) min = lowerBound(segments, matchedColumn, min);
-  const max = upperBound(segments, matchedColumn, min);
+  if (index === -1) return [];
+  const col = segments[index][COLUMN];
+  const min = lowerBound(segments, col, index);
+  return sliceGeneratedPositionsExact(segments, min, index);
+}
 
+/**
+ * Maps all segments in the given range to GeneratedMappings.
+ */
+function sliceGeneratedPositionsExact(segments: ReverseSegment[], min: number, max: number) {
   const result = [];
   for (; min <= max; min++) {
     const segment = segments[min];
     result.push(GMapping(segment[REV_GENERATED_LINE] + 1, segment[REV_GENERATED_COLUMN]));
+  }
+  return result;
+}
+
+/**
+ * Maps all range segments in the given range to offset GeneratedMappings.
+ */
+function sliceGeneratedPositionsRanges(
+  segments: ReverseSegment[],
+  min: number,
+  max: number,
+  rangeSegments: Set<ReverseSegment>,
+  line: number,
+  column: number,
+) {
+  const result = [];
+  for (; min <= max; min++) {
+    const segment = segments[min];
+    if (!rangeSegments.has(segment)) continue;
+    const offset = rangeOffset(segment, line, column);
+    result.push(GMapping(offset[REV_GENERATED_LINE] + 1, offset[REV_GENERATED_COLUMN]));
   }
   return result;
 }
@@ -518,7 +622,6 @@ function generatedPosition(
 ): GeneratedMapping | InvalidGeneratedMapping | GeneratedMapping[] {
   if (line <= 0) throw new Error(LINE_GTR_ZERO);
   if (column < 0) throw new Error(COL_GTR_EQ_ZERO);
-
   line--;
 
   const { sources, resolvedSources } = map;
@@ -527,18 +630,96 @@ function generatedPosition(
   if (sourceIndex === -1) return all ? [] : GMapping(null, null);
 
   const bySourceMemos = (cast(map)._bySourceMemos ||= sources.map(memoizedState));
-  const generated = (cast(map)._bySources ||= buildBySources(decodedMappings(map), bySourceMemos));
+  let bySources = cast(map)._bySources;
+  if (bySources == null) {
+    const decoded = decodedMappings(map);
+    const rangeSegments = initRangeSegments(map, decoded);
+    bySources = buildBySources(decoded, bySourceMemos, rangeSegments);
+    cast(map)._bySources = bySources;
+  }
 
-  const segments = generated[sourceIndex][line];
-  if (segments == null) return all ? [] : GMapping(null, null);
-
+  const { lines, rangeSegments } = bySources[sourceIndex];
   const memo = bySourceMemos[sourceIndex];
 
-  if (all) return sliceGeneratedPositions(segments, memo, line, column, bias);
+  if (all) return sliceGeneratedPositions(lines, rangeSegments, memo, line, column, bias);
 
-  const index = traceSegmentInternal(segments, memo, line, column, bias);
-  if (index === -1) return GMapping(null, null);
-
-  const segment = segments[index];
+  const segment = traceSegmentInternal(lines, rangeSegments, memo, line, column, bias);
+  if (segment == null) return GMapping(null, null);
   return GMapping(segment[REV_GENERATED_LINE] + 1, segment[REV_GENERATED_COLUMN]);
+}
+
+/**
+ * Initializes the range segments for the map.
+ * 
+ * This is done on demand, since we cannot run this without first decoding the mappings.
+ */
+function initRangeSegments(map: TraceMap, decoded: readonly SourceMapSegment[][]) {
+  const existing = cast(map)._rangeSegments;
+  if (existing != null) return existing;
+
+  const set = new Set<SourceMapSegment>();
+  cast(map)._rangeSegments = set;
+  const rangeMappings = map.rangeMappings;
+  if (rangeMappings == null) return set;
+
+  for (let i = 0; i < rangeMappings.length; i++) {
+    const line = decoded[i];
+    const ranges = rangeMappings[i];
+    for (let j = 0; j < ranges.length; j++) {
+      const seg = line[ranges[j]];
+      set.add(seg);
+    }
+  }
+
+  return set;
+}
+
+/**
+ * If we didn't find a match on this line, back searches to find the previous
+ * line that has a segment.
+ */
+function findPreviousSegmentLine<T extends SourceMapSegment | ReverseSegment>(
+  lines: T[][],
+  line: number,
+  index: number,
+): number {
+  if (index === -1) {
+    while (--line >= 0) {
+      const segments = lines[line];
+      if (segments == null || segments.length === 0) continue;
+      break;
+    }
+  }
+
+  return line;
+}
+
+/**
+ * Calculates the relative offset between the range mapping's gen line/col, and
+ * adds those offsets to the source line/col.
+ */
+function rangeOffset<T extends SourceMapSegment | ReverseSegment>(
+  range: T,
+  line: number,
+  column: number,
+): T {
+  if (range.length === 1) return [column] as T;
+
+  const lineDelta = line - range[SOURCE_LINE];
+  const columnDelta = lineDelta === 0 ? column - range[SOURCE_COLUMN] : column;
+  if (range.length === 4) {
+    return [
+      column,
+      range[SOURCES_INDEX],
+      range[SOURCE_LINE] + lineDelta,
+      range[SOURCE_COLUMN] + columnDelta,
+    ] as T;
+  }
+  return [
+    column,
+    range[SOURCES_INDEX],
+    range[SOURCE_LINE] + lineDelta,
+    range[SOURCE_COLUMN] + columnDelta,
+    range[NAMES_INDEX],
+  ] as T;
 }

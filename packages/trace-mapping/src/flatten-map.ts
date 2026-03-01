@@ -6,7 +6,7 @@ import {
   SOURCE_COLUMN,
   NAMES_INDEX,
 } from './sourcemap-segment';
-import { assertExhaustive, parse, EMPTY } from './util';
+import { assertExhaustive, parse } from './util';
 
 import type {
   DecodedSourceMap,
@@ -161,10 +161,10 @@ function addSection(
   append(sources, resolvedSources);
   append(names, map.names);
 
-  if (contents) append(sourcesContent, contents);
+  if (contents != null) append(sourcesContent, contents);
   else for (let i = 0; i < resolvedSources.length; i++) sourcesContent.push(null);
 
-  if (ignores) for (let i = 0; i < ignores.length; i++) ignoreList.push(ignores[i] + sourcesOffset);
+  if (ignores != null) for (let i = 0; i < ignores.length; i++) ignoreList.push(ignores[i] + sourcesOffset);
 
   for (let i = 0; i < decoded.length; i++) {
     const lineI = lineOffset + i;
@@ -179,12 +179,12 @@ function addSection(
     // previous section). Or, we may have jumped ahead several lines to start this section.
     const out = getLine(mappings, lineI);
 
-    let rangeIn = EMPTY;
-    let rangeOut = EMPTY;
+    let rangesIn: number[] = [];
+    let rangesOut: number[] = [];
     let rIndex = 0;
-    if (ranges && i < ranges.length) {
-      rangeIn = ranges[i];
-      rangeOut = getLine(rangeMappings, lineI);
+    if (ranges != null && i < ranges.length) {
+      rangesIn = ranges[i];
+      rangesOut = getLine(rangeMappings, lineI);
     }
 
     // On the 0th loop, the section's column offset shifts us forward. On all other lines (since the
@@ -202,9 +202,9 @@ function addSection(
 
       // If the current segment is a range mapping, then we need to record the
       // flattened index as one too.
-      if (rIndex < rangeIn.length && j === rangeIn[rIndex]) {
+      if (rIndex < rangesIn.length && j === rangesIn[rIndex]) {
         rIndex++;
-        rangeOut.push(out.length);
+        rangesOut.push(out.length);
       }
 
       if (seg.length === 1) {

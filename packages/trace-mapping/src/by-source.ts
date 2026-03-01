@@ -3,7 +3,10 @@ import { sortComparator } from './sort';
 
 import type { ReverseSegment, SourceMapSegment } from './sourcemap-segment';
 
-export type Source = ReverseSegment[][];
+export type Source = {
+  lines: ReverseSegment[][];
+  rangeSegments: Set<ReverseSegment>;
+};
 
 /**
  * Rebuilds the original source files, with mappings that are ordered by source
@@ -12,8 +15,9 @@ export type Source = ReverseSegment[][];
 export default function buildBySources(
   decoded: readonly SourceMapSegment[][],
   memos: unknown[],
+  rangeSegments: Set<SourceMapSegment>,
 ): Source[] {
-  const sources: Source[] = memos.map(() => []);
+  const sources: Source[] = memos.map(() => ({ lines: [], rangeSegments: new Set() }));
 
   for (let i = 0; i < decoded.length; i++) {
     const line = decoded[i];
@@ -26,18 +30,28 @@ export default function buildBySources(
       const sourceColumn = seg[SOURCE_COLUMN];
 
       const source = sources[sourceIndex];
-      const segs = (source[sourceLine] ||= []);
-      segs.push([sourceColumn, i, seg[COLUMN]]);
+      const segs = getLine(source.lines, sourceLine);
+      const s: ReverseSegment = [sourceColumn, sourceIndex, i, seg[COLUMN]];
+      segs.push(s);
+
+      if (rangeSegments.has(seg)) source.rangeSegments.add(s);
     }
   }
 
   for (let i = 0; i < sources.length; i++) {
-    const source = sources[i];
-    for (let j = 0; j < source.length; j++) {
-      const line = source[j];
-      if (line) line.sort(sortComparator);
+    const { lines } = sources[i];
+    for (let j = 0; j < lines.length; j++) {
+      const line = lines[j];
+      if (line != null) line.sort(sortComparator);
     }
   }
 
   return sources;
+}
+
+function getLine<T>(arr: T[][], index: number): T[] {
+  for (let i = arr.length; i <= index; i++) {
+    arr[i] = [];
+  }
+  return arr[index];
 }
