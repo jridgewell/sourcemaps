@@ -482,7 +482,7 @@ function traceSegmentInternal<T extends SourceMapSegment | ReverseSegment>(
       const rangeLineSegs = lines[rangeLine];
       const rangeIndex = rangeLine === line ? index : rangeLineSegs.length - 1;
       const rangeSeg = rangeLineSegs[rangeIndex];
-      if (rangeSegments.has(rangeSeg)) return rangeOffset(rangeSeg, line, column);
+      if (rangeSegments.has(rangeSeg)) return rangeOffset(rangeSeg, rangeLine, line, column);
     }
   }
 
@@ -534,6 +534,7 @@ function sliceGeneratedPositions(
         min,
         rangeIndex,
         rangeSegments,
+        rangeLine,
         line,
         column,
       );
@@ -580,6 +581,7 @@ function sliceGeneratedPositionsRanges(
   min: number,
   max: number,
   rangeSegments: Set<ReverseSegment>,
+  rangeLine: number,
   line: number,
   column: number,
 ) {
@@ -587,7 +589,7 @@ function sliceGeneratedPositionsRanges(
   for (; min <= max; min++) {
     const segment = segments[min];
     if (!rangeSegments.has(segment)) continue;
-    const offset = rangeOffset(segment, line, column);
+    const offset = rangeOffset(segment, rangeLine, line, column);
     result.push(GMapping(offset[REV_GENERATED_LINE] + 1, offset[REV_GENERATED_COLUMN]));
   }
   return result;
@@ -700,13 +702,14 @@ function findPreviousSegmentLine<T extends SourceMapSegment | ReverseSegment>(
  */
 function rangeOffset<T extends SourceMapSegment | ReverseSegment>(
   range: T,
+  rangeLine: number,
   line: number,
   column: number,
 ): T {
   if (range.length === 1) return [column] as T;
 
-  const lineDelta = line - range[SOURCE_LINE];
-  const columnDelta = lineDelta === 0 ? column - range[SOURCE_COLUMN] : column;
+  const lineDelta = line - rangeLine;
+  const columnDelta = lineDelta === 0 ? column - range[COLUMN] : column;
   if (range.length === 4) {
     return [
       column,
