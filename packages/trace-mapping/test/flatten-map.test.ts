@@ -5,6 +5,8 @@ import {
   FlattenMap,
   encodedMappings,
   decodedMappings,
+  decodedRangeMappings,
+  encodedRangeMappings,
   type SectionedSourceMap,
   type SourceMapSegment,
 } from '../src/trace-mapping';
@@ -57,7 +59,7 @@ describe('FlattenMap', () => {
                 sourcesContent: ['thirdsource'],
                 sourceRoot: 'nested',
                 mappings: 'AAAAA,CAAA;AAAA',
-                rangeMappings: [[0]],
+                rangeMappings: 'B',
               },
             },
             {
@@ -141,7 +143,8 @@ describe('FlattenMap', () => {
 
     it('rangeMappings', () => {
       const tracer = new FlattenMap(map);
-      assert.deepEqual(tracer.rangeMappings, [[], [], [0, 1]]);
+      assert.deepEqual(decodedRangeMappings(tracer), [[], [], [0, 1]]);
+      assert.deepEqual(encodedRangeMappings(tracer), ';;BB');
     });
   });
 

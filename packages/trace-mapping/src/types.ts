@@ -9,15 +9,16 @@ export interface SourceMapV3 {
   sourcesContent?: (string | null)[];
   version: 3;
   ignoreList?: number[];
-  rangeMappings?: number[][];
 }
 
 export interface EncodedSourceMap extends SourceMapV3 {
   mappings: string;
+  rangeMappings?: string;
 }
 
 export interface DecodedSourceMap extends SourceMapV3 {
   mappings: SourceMapSegment[][];
+  rangeMappings?: number[][];
 }
 
 export interface Section {
@@ -99,7 +100,6 @@ export abstract class SourceMap {
   declare sourcesContent: SourceMapV3['sourcesContent'];
   declare resolvedSources: SourceMapV3['sources'];
   declare ignoreList: SourceMapV3['ignoreList'];
-  declare rangeMappings: SourceMapV3['rangeMappings'];
 }
 
 export type Ro<T> =

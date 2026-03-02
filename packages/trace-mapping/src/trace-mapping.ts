@@ -1,4 +1,4 @@
-import { encode, decode } from '@jridgewell/sourcemap-codec';
+import { encode, decode, encodeRangeMappings, decodeRangeMappings } from '@jridgewell/sourcemap-codec';
 
 import resolver from './resolve';
 import maybeSort from './sort';
@@ -75,6 +75,8 @@ interface PublicMap {
   _decodedMemo: TraceMap['_decodedMemo'];
   _bySources: TraceMap['_bySources'];
   _bySourceMemos: TraceMap['_bySourceMemos'];
+  _encodedRangeMappings: TraceMap['_encodedRangeMappings'];
+  _decodedRangeMappings: TraceMap['_decodedRangeMappings'];
   _rangeSegments: TraceMap['_rangeSegments'];
 }
 
@@ -103,7 +105,6 @@ export class TraceMap implements SourceMap {
   declare sources: SourceMapV3['sources'];
   declare sourcesContent: SourceMapV3['sourcesContent'];
   declare ignoreList: SourceMapV3['ignoreList'];
-  declare rangeMappings: SourceMapV3['rangeMappings'];
 
   /**
    * The fully resolved sources, relative to the mapUrl with sourceRoot
@@ -145,6 +146,16 @@ export class TraceMap implements SourceMap {
   declare private _bySourceMemos: MemoState[] | undefined;
 
   /**
+   * The range mappings encoded as VLQ.
+   */
+  declare private _encodedRangeMappings: string | undefined;
+
+  /**
+   * The range mappings decoded into indexes per line.
+   */
+  declare private _decodedRangeMappings: number[][] | undefined;
+
+  /**
    * A set of segments that are range mappings.
    */
   declare private _rangeSegments: Set<SourceMapSegment> | undefined;
@@ -163,12 +174,11 @@ export class TraceMap implements SourceMap {
     this.sources = sources;
     this.sourcesContent = sourcesContent;
     this.ignoreList = parsed.ignoreList || (parsed as XInput).x_google_ignoreList;
-    this.rangeMappings = parsed.rangeMappings;
 
     const resolve = resolver(mapUrl, sourceRoot);
     this.resolvedSources = sources.map(resolve);
 
-    const { mappings } = parsed;
+    const { mappings, rangeMappings } = parsed;
     if (typeof mappings === 'string') {
       this._encoded = mappings;
       this._decoded = undefined;
@@ -184,6 +194,14 @@ export class TraceMap implements SourceMap {
     this._decodedMemo = memoizedState();
     this._bySources = undefined;
     this._bySourceMemos = undefined;
+
+    if (typeof rangeMappings === 'string') {
+      this._encodedRangeMappings = rangeMappings;
+      this._decodedRangeMappings = undefined;
+    } else {
+      this._encodedRangeMappings = undefined;
+      this._decodedRangeMappings = rangeMappings || undefined;
+    }
     this._rangeSegments = undefined;
   }
 }
@@ -204,10 +222,32 @@ export function encodedMappings(map: TraceMap): EncodedSourceMap['mappings'] {
 }
 
 /**
+ * Returns the encoded (VLQ string) form of the SourceMap's rangeMappings field.
+ */
+export function encodedRangeMappings(map: TraceMap): EncodedSourceMap['rangeMappings'] {
+  let { _encodedRangeMappings: encoded, _decodedRangeMappings: decoded } = cast(map);
+  if (encoded != null) return encoded;
+  if (decoded == null) return encoded;
+  encoded = encodeRangeMappings(decoded);
+  return (cast(map)._encodedRangeMappings = encoded);
+}
+
+/**
  * Returns the decoded (array of lines of segments) form of the SourceMap's mappings field.
  */
 export function decodedMappings(map: TraceMap): Readonly<DecodedSourceMap['mappings']> {
   return (cast(map)._decoded ||= decode(cast(map)._encoded!));
+}
+
+/**
+ * Returns the decoded (array of lines of indexes) form of the SourceMap's rangeMappings field.
+ */
+export function decodedRangeMappings(map: TraceMap): DecodedSourceMap['rangeMappings'] {
+  let { _encodedRangeMappings: encoded, _decodedRangeMappings: decoded } = cast(map);
+  if (decoded != null) return decoded;
+  if (encoded == null) return decoded;
+  decoded = decodeRangeMappings(encoded);
+  return (cast(map)._decodedRangeMappings = decoded);
 }
 
 /**
@@ -362,7 +402,7 @@ export function isIgnored(map: TraceMap, source: string): boolean {
  * maps.
  */
 export function presortedDecodedMap(map: DecodedSourceMap, mapUrl?: string): TraceMap {
-  const tracer = new TraceMap(clone(map, []), mapUrl);
+  const tracer = new TraceMap(clone(map, [], map.rangeMappings), mapUrl);
   cast(tracer)._decoded = map.mappings;
   return tracer;
 }
@@ -374,7 +414,7 @@ export function presortedDecodedMap(map: DecodedSourceMap, mapUrl?: string): Tra
 export function decodedMap(
   map: TraceMap,
 ): Omit<DecodedSourceMap, 'mappings'> & { mappings: readonly SourceMapSegment[][] } {
-  return clone(map, decodedMappings(map));
+  return clone(map, decodedMappings(map), decodedRangeMappings(map));
 }
 
 /**
@@ -382,7 +422,7 @@ export function decodedMap(
  * a sourcemap, or to JSON.stringify.
  */
 export function encodedMap(map: TraceMap): EncodedSourceMap {
-  return clone(map, encodedMappings(map));
+  return clone(map, encodedMappings(map), encodedRangeMappings(map));
 }
 
 /**
@@ -392,6 +432,7 @@ export function encodedMap(map: TraceMap): EncodedSourceMap {
 function clone<T extends string | readonly SourceMapSegment[][]>(
   map: TraceMap | DecodedSourceMap,
   mappings: T,
+  rangeMappings: (T extends string ? EncodedSourceMap['rangeMappings'] : DecodedSourceMap['rangeMappings']) | undefined,
 ): T extends string ? EncodedSourceMap : DecodedSourceMap {
   const clone = {
     version: map.version,
@@ -402,7 +443,7 @@ function clone<T extends string | readonly SourceMapSegment[][]>(
     sourcesContent: map.sourcesContent,
     mappings: mappings as any,
     ignoreList: map.ignoreList || (map as XInput).x_google_ignoreList,
-    rangeMappings: map.rangeMappings,
+    rangeMappings: rangeMappings as any,
   } satisfies DecodedSourceMap | EncodedSourceMap;
   assertExhaustive(undefined as Exclude<keyof DecodedSourceMap, keyof typeof clone>);
   return clone;
@@ -661,7 +702,7 @@ function initRangeSegments(map: TraceMap, decoded: readonly SourceMapSegment[][]
 
   const set = new Set<SourceMapSegment>();
   cast(map)._rangeSegments = set;
-  const rangeMappings = map.rangeMappings;
+  const rangeMappings = decodedRangeMappings(map);
   if (rangeMappings == null) return set;
 
   for (let i = 0; i < rangeMappings.length; i++) {

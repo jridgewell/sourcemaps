@@ -1,4 +1,4 @@
-import { TraceMap, presortedDecodedMap, decodedMappings } from './trace-mapping';
+import { TraceMap, presortedDecodedMap, decodedMappings, decodedRangeMappings } from './trace-mapping';
 import {
   COLUMN,
   SOURCES_INDEX,
@@ -149,11 +149,11 @@ function addSection(
   const sourcesOffset = sources.length;
   const namesOffset = names.length;
   const decoded = decodedMappings(map);
+  const ranges = decodedRangeMappings(map);
   const {
     resolvedSources,
     sourcesContent: contents,
     ignoreList: ignores,
-    rangeMappings: ranges,
   } = map;
 
   append(sources, resolvedSources);

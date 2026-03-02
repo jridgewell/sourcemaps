@@ -575,4 +575,312 @@ describe('TraceMap', () => {
       new TraceMap(decodedMap);
     });
   });
+
+  describe('rangeMappings', () => {
+    const rangeDecodedMap: DecodedSourceMap = {
+      version: 3,
+      sources: ['input.js'],
+      sourceRoot: 'https://astexplorer.net/',
+      names: ['foo'],
+      mappings: [
+        [
+          [0, 0, 0, 0], // (0,0) -> input.js:(0,0), RANGE
+          [20, 0, 0, 20], // (0,20) -> input.js:(0,20), NORMAL
+        ],
+        [], // empty line, should be NORMAL because L0 ended with NORMAL
+        [
+          [0, 0, 1, 0, 0], // (2,0) -> input.js:(1,0), RANGE
+        ],
+        [], // empty line, should be RANGE because L2 ended with RANGE
+        [
+          [20, 0, 0, 20, 0], // (4,20) -> input.js:(0,20), NORMAL.
+          [30, 0, 2, 15], // (4, 30) -> input.js:(2,15), NORMAL
+        ],
+      ],
+      rangeMappings: [
+        [0], // line 0, segment 0 is range
+        [],
+        [0], // line 2, segment 0 is range
+        [],
+        [],
+      ],
+    };
+
+    function rangeTestSuite(map: DecodedSourceMap | EncodedSourceMap | string) {
+      return () => {
+        it('traceSegment', () => {
+          const tracer = new TraceMap(map);
+
+          // Exact match
+          assert.deepEqual(traceSegment(tracer, 0, 0), [0, 0, 0, 0]);
+          // Range offset on same line
+          assert.deepEqual(traceSegment(tracer, 0, 10), [10, 0, 0, 10]);
+          // Non-range segment match
+          assert.deepEqual(traceSegment(tracer, 0, 20), [20, 0, 0, 20]);
+          // Non-range segment, tracing after the segment
+          assert.deepEqual(traceSegment(tracer, 0, 25), [20, 0, 0, 20]);
+
+          // Range offset on next line (empty, but L0 ended with NORMAL)
+          assert.equal(traceSegment(tracer, 1, 5), null);
+
+          // Exact match on line 2
+          assert.deepEqual(traceSegment(tracer, 2, 0), [0, 0, 1, 0, 0]);
+          // Range offset on line 2
+          assert.deepEqual(traceSegment(tracer, 2, 10), [10, 0, 1, 10, 0]);
+
+          // Range offset on line 3 (empty, L2 ended with RANGE)
+          assert.deepEqual(traceSegment(tracer, 3, 5), [5, 0, 2, 5, 0]);
+
+          // Line 4 column 10 (before NORMAL segment at 20, continues RANGE from L3)
+          assert.deepEqual(traceSegment(tracer, 4, 10), [10, 0, 3, 10, 0]);
+          // Line 4 column 20 (exact match for NORMAL segment)
+          assert.deepEqual(traceSegment(tracer, 4, 20), [20, 0, 0, 20, 0]);
+          // Line 4 column 25 (after NORMAL segment)
+          assert.deepEqual(traceSegment(tracer, 4, 25), [20, 0, 0, 20, 0]);
+        });
+
+        it('originalPositionFor', () => {
+          const tracer = new TraceMap(map);
+
+          // Exact match L0
+          assert.deepEqual(originalPositionFor(tracer, { line: 1, column: 0 }), {
+            source: 'https://astexplorer.net/input.js',
+            line: 1,
+            column: 0,
+            name: null,
+          });
+          // Range offset L0
+          assert.deepEqual(originalPositionFor(tracer, { line: 1, column: 10 }), {
+            source: 'https://astexplorer.net/input.js',
+            line: 1,
+            column: 10,
+            name: null,
+          });
+          // Normal segment match L0
+          assert.deepEqual(originalPositionFor(tracer, { line: 1, column: 20 }), {
+            source: 'https://astexplorer.net/input.js',
+            line: 1,
+            column: 20,
+            name: null,
+          });
+          // After normal segment L0
+          assert.deepEqual(originalPositionFor(tracer, { line: 1, column: 25 }), {
+            source: 'https://astexplorer.net/input.js',
+            line: 1,
+            column: 20,
+            name: null,
+          });
+
+          // Unmapped line (L1 empty, L0 ended with NORMAL)
+          assert.deepEqual(originalPositionFor(tracer, { line: 2, column: 5 }), {
+            source: null,
+            line: null,
+            column: null,
+            name: null,
+          });
+
+          // Exact match L2
+          assert.deepEqual(originalPositionFor(tracer, { line: 3, column: 0 }), {
+            source: 'https://astexplorer.net/input.js',
+            line: 2,
+            column: 0,
+            name: 'foo',
+          });
+          // Range offset L2
+          assert.deepEqual(originalPositionFor(tracer, { line: 3, column: 10 }), {
+            source: 'https://astexplorer.net/input.js',
+            line: 2,
+            column: 10,
+            name: 'foo',
+          });
+
+          // Range offset L3 (empty, L2 ended with RANGE)
+          assert.deepEqual(originalPositionFor(tracer, { line: 4, column: 5 }), {
+            source: 'https://astexplorer.net/input.js',
+            line: 3,
+            column: 5,
+            name: 'foo',
+          });
+
+          // L4 before NORMAL segment (continues RANGE from L3)
+          assert.deepEqual(originalPositionFor(tracer, { line: 5, column: 10 }), {
+            source: 'https://astexplorer.net/input.js',
+            line: 4,
+            column: 10,
+            name: 'foo',
+          });
+          // L4 NORMAL segment match
+          assert.deepEqual(originalPositionFor(tracer, { line: 5, column: 20 }), {
+            source: 'https://astexplorer.net/input.js',
+            line: 1,
+            column: 20,
+            name: 'foo',
+          });
+          // L4 after NORMAL segment
+          assert.deepEqual(originalPositionFor(tracer, { line: 5, column: 25 }), {
+            source: 'https://astexplorer.net/input.js',
+            line: 1,
+            column: 20,
+            name: 'foo',
+          });
+        });
+
+        it('generatedPositionFor', () => {
+          const tracer = new TraceMap(map);
+
+          // Exact match
+          assert.deepEqual(
+            generatedPositionFor(tracer, { source: 'input.js', line: 1, column: 0 }),
+            { line: 1, column: 0 },
+          );
+          // Range offset on same line
+          assert.deepEqual(
+            generatedPositionFor(tracer, { source: 'input.js', line: 1, column: 10 }),
+            { line: 1, column: 10 },
+          );
+          // Non-range segment match
+          assert.deepEqual(
+            generatedPositionFor(tracer, { source: 'input.js', line: 1, column: 20 }),
+            { line: 1, column: 20 },
+          );
+          // Conflicting original position from 5th line
+          assert.deepEqual(
+            generatedPositionFor(tracer, { source: 'input.js', line: 1, column: 25 }),
+            { line: 5, column: 20 },
+          );
+
+          // Exact match
+          assert.deepEqual(
+            generatedPositionFor(tracer, { source: 'input.js', line: 2, column: 0 }),
+            { line: 3, column: 0 },
+          );
+          // Range offset on same line
+          assert.deepEqual(
+            generatedPositionFor(tracer, { source: 'input.js', line: 2, column: 10 }),
+            { line: 3, column: 10 },
+          );
+          // Range offset continuing on next line
+          assert.deepEqual(
+            generatedPositionFor(tracer, { source: 'input.js', line: 3, column: 5 }),
+            { line: 4, column: 5 },
+          );
+          // Range offset continuing on next line
+          assert.deepEqual(
+            generatedPositionFor(tracer, { source: 'input.js', line: 3, column: 5 }),
+            { line: 4, column: 5 },
+          );
+          // Non-range segment match
+          assert.deepEqual(
+            generatedPositionFor(tracer, { source: 'input.js', line: 3, column: 15 }),
+            { line: 5, column: 30 },
+          );
+          // Non-range segment match, tracing after the segment
+          assert.deepEqual(
+            generatedPositionFor(tracer, { source: 'input.js', line: 3, column: 20 }),
+            { line: 5, column: 30 },
+          );
+        });
+
+        it('allGeneratedPositionsFor', () => {
+          const tracer = new TraceMap(map);
+
+          // Exact match L0 (Range segment)
+          assert.deepEqual(
+            allGeneratedPositionsFor(tracer, { source: 'input.js', line: 1, column: 0 }),
+            [{ line: 1, column: 0 }],
+          );
+          // Range offset L0
+          assert.deepEqual(
+            allGeneratedPositionsFor(tracer, { source: 'input.js', line: 1, column: 10 }),
+            [{ line: 1, column: 10 }],
+          );
+          // Normal segment match L0
+          assert.deepEqual(
+            allGeneratedPositionsFor(tracer, { source: 'input.js', line: 1, column: 20 }),
+            [
+              { line: 1, column: 20 },
+              { line: 5, column: 20 },
+            ],
+          );
+          // Conflicting original position from 5th line
+          assert.deepEqual(
+            allGeneratedPositionsFor(tracer, { source: 'input.js', line: 1, column: 25 }),
+            [],
+          );
+
+          // Exact match L2 (Range segment)
+          assert.deepEqual(
+            allGeneratedPositionsFor(tracer, { source: 'input.js', line: 2, column: 0 }),
+            [{ line: 3, column: 0 }],
+          );
+          // Range offset L2
+          assert.deepEqual(
+            allGeneratedPositionsFor(tracer, { source: 'input.js', line: 2, column: 10 }),
+            [{ line: 3, column: 10 }],
+          );
+
+          // Range offset L3 (empty, L2 ended with RANGE)
+          assert.deepEqual(
+            allGeneratedPositionsFor(tracer, { source: 'input.js', line: 3, column: 5 }),
+            [{ line: 4, column: 5 }],
+          );
+
+          // Test with bias
+          assert.deepEqual(
+            allGeneratedPositionsFor(tracer, {
+              source: 'input.js',
+              line: 1,
+              column: 14,
+              bias: LEAST_UPPER_BOUND,
+            }),
+            [{ line: 1, column: 14 }], // Range mapping covers it, and it ignores bias
+          );
+        });
+      };
+    }
+
+    const rangeEncodedMap: EncodedSourceMap = {
+      ...rangeDecodedMap,
+      mappings: encode(rangeDecodedMap.mappings),
+    };
+    describe('decoded source map', rangeTestSuite(rangeDecodedMap));
+    describe('json decoded source map', rangeTestSuite(JSON.stringify(rangeDecodedMap)));
+    describe('encoded source map', rangeTestSuite(rangeEncodedMap));
+    describe('json encoded source map', rangeTestSuite(JSON.stringify(rangeEncodedMap)));
+    describe('conflicting range and normal mappings', () => {
+      const map: DecodedSourceMap = {
+        version: 3,
+        sources: ['input.js'],
+        names: [],
+        mappings: [
+          [
+            [0, 0, 0, 0], // (0,0) -> (0,0), RANGE
+            [10, 0, 0, 10], // (0,10) -> (0,10), NORMAL
+            [10, 0, 0, 10], // (0,10) -> (0,10), RANGE
+          ],
+        ],
+        rangeMappings: [[0, 2]],
+      };
+
+      it('allGeneratedPositionsFor', () => {
+        const tracer = new TraceMap(map);
+
+        // Exact match at column 10 returns both
+        assert.deepEqual(
+          allGeneratedPositionsFor(tracer, { source: 'input.js', line: 1, column: 10 }),
+          [
+            { line: 1, column: 10 },
+            { line: 1, column: 10 },
+          ],
+        );
+
+        // Trailing match at column 15 only returns the RANGE mapping at col 10
+        // (because NORMAL mapping at col 10 is ignored for ranges)
+        assert.deepEqual(
+          allGeneratedPositionsFor(tracer, { source: 'input.js', line: 1, column: 15 }),
+          [{ line: 1, column: 15 }],
+        );
+      });
+    });
+  });
 });
