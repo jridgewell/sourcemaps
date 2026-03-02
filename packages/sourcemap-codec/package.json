@@ -47,7 +47,7 @@
     "test:format": "prettier --check '{src,test}/**/*.ts'",
     "test:only": "mocha",
     "test:types": "eslint '{src,test}/**/*.ts'",
-    "test:watch": "mocha --watch --watch-files 'src/**/*.ts,test/**/*.ts'",
+    "test:watch": "mocha --watch",
     "lint": "run-s -n lint:types lint:format",
     "lint:format": "npm run test:format -- --write",
     "lint:types": "npm run test:types -- --fix",
