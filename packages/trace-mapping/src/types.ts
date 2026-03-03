@@ -91,6 +91,12 @@ export type EachMapping =
       name: string | null;
     };
 
+export type RangeInfo = {
+  line: number;
+  endLine: number | null;
+  endSegment: Readonly<SourceMapSegment> | null;
+};
+
 export abstract class SourceMap {
   declare version: SourceMapV3['version'];
   declare file: SourceMapV3['file'];

@@ -1,4 +1,9 @@
-import { encode, decode, encodeRangeMappings, decodeRangeMappings } from '@jridgewell/sourcemap-codec';
+import {
+  encode,
+  decode,
+  encodeRangeMappings,
+  decodeRangeMappings,
+} from '@jridgewell/sourcemap-codec';
 
 import resolver from './resolve';
 import maybeSort from './sort';
@@ -39,6 +44,7 @@ import type {
   XInput,
   SectionedSourceMap,
   Ro,
+  RangeInfo,
 } from './types';
 import type { Source } from './by-source';
 import type { MemoState } from './binary-search';
@@ -156,9 +162,9 @@ export class TraceMap implements SourceMap {
   declare private _decodedRangeMappings: number[][] | undefined;
 
   /**
-   * A set of segments that are range mappings.
+   * A map of segments that are range mappings to info about the range.
    */
-  declare private _rangeSegments: Set<SourceMapSegment> | undefined;
+  declare private _rangeSegments: Map<SourceMapSegment, RangeInfo> | undefined;
 
   constructor(map: Ro<SourceMapInput>, mapUrl?: string | null) {
     const isString = typeof map === 'string';
@@ -270,6 +276,77 @@ export function traceSegment(
     column,
     GREATEST_LOWER_BOUND,
   );
+}
+
+/**
+ * Find all the segments that are in a given range. Used to find
+ * segments that are relevant for composing a range mapping with
+ * another range.
+ */
+export function traceSegmentsInRange(
+  map: TraceMap,
+  startLine: number,
+  startColumn: number,
+  endLine: number,
+  endColumn: number,
+): Readonly<SourceMapSegment>[] {
+  const lines = decodedMappings(map);
+  const segments = startLine < lines.length ? lines[startLine] : [];
+  const memo = cast(map)._decodedMemo;
+
+  if (startLine >= lines.length || endLine >= lines.length) return [];
+
+  const segmentsInRange = [];
+
+  let startIndex = memoizedBinarySearchSegments(segments, startColumn, memo, startLine);
+  if (bsFound) {
+    startIndex = lowerBound(segments, startColumn, startIndex);
+  } else {
+    startIndex++;
+  }
+  if (startIndex === segments.length) return [];
+
+  const range = (start: number, end: number) => {
+    return Array.from({ length: end - start + 1 }, (_, i: number) => i + start);
+  };
+  const gen = (line: number) => (index: number) => {
+    return lines[line][index];
+  };
+
+  function previousPosition(line: number, column: number) {
+    if (column === 0) {
+      line--;
+      column = Infinity;
+    } else {
+      column--;
+    }
+
+    return { line, column };
+  }
+
+  if (startLine == endLine) {
+    // We need to use the position decremented by one position because we
+    // want the index of a true lower bound, not an equal position. That is,
+    // the end point of the range should be exclusive and not inclusive.
+    const { line, column } = previousPosition(endLine, endColumn);
+    let endIndex = memoizedBinarySearchSegments(segments, column, memo, line);
+    if (bsFound) {
+      endIndex = upperBound(segments, column, endIndex);
+    }
+    segmentsInRange.push(...range(startIndex, endIndex).map(gen(startLine)));
+  } else {
+    segmentsInRange.push(...range(startIndex, segments.length - 1).map(gen(startLine)));
+    for (let i = startLine + 1; i < endLine; i++) {
+      segmentsInRange.push(...range(0, lines[i].length - 1).map(gen(i)));
+    }
+    let endIndex = memoizedBinarySearchSegments(lines[endLine], endColumn, memo, endLine);
+    if (bsFound) {
+      endIndex = upperBound(lines[endLine], endColumn, endIndex);
+    }
+    segmentsInRange.push(...range(0, endIndex).map(gen(endLine)));
+  }
+
+  return segmentsInRange;
 }
 
 /**
@@ -398,6 +475,16 @@ export function isIgnored(map: TraceMap, source: string): boolean {
 }
 
 /**
+ * Determines if a segment is for a range mapping, and if so returns
+ * some metadata about the range.
+ */
+export function isRange(map: TraceMap, segment: Readonly<SourceMapSegment>): RangeInfo | false {
+  const decoded = decodedMappings(map);
+  const rangeSegments = initRangeSegments(map, decoded);
+  return rangeSegments.get(segment as SourceMapSegment) || false;
+}
+
+/**
  * A helper that skips sorting of the input map's mappings array, which can be expensive for larger
  * maps.
  */
@@ -485,7 +572,7 @@ function GMapping(
  */
 function traceSegmentInternal<T extends SourceMapSegment | ReverseSegment>(
   lines: readonly T[][],
-  rangeSegments: Set<T>,
+  rangeSegments: Set<T> | Map<T, RangeInfo>,
   memo: MemoState,
   line: number,
   column: number,
@@ -493,7 +580,7 @@ function traceSegmentInternal<T extends SourceMapSegment | ReverseSegment>(
 ): T | null;
 function traceSegmentInternal<T extends SourceMapSegment | ReverseSegment>(
   lines: readonly T[][],
-  rangeSegments: Set<T>,
+  rangeSegments: Set<T> | Map<T, RangeInfo>,
   memo: MemoState,
   line: number,
   column: number,
@@ -501,7 +588,7 @@ function traceSegmentInternal<T extends SourceMapSegment | ReverseSegment>(
 ): T | null;
 function traceSegmentInternal<T extends SourceMapSegment | ReverseSegment>(
   lines: readonly T[][],
-  rangeSegments: Set<T>,
+  rangeSegments: Set<T> | Map<T, RangeInfo>,
   memo: MemoState,
   line: number,
   column: number,
@@ -700,7 +787,7 @@ function initRangeSegments(map: TraceMap, decoded: readonly SourceMapSegment[][]
   const existing = cast(map)._rangeSegments;
   if (existing != null) return existing;
 
-  const set = new Set<SourceMapSegment>();
+  const set = new Map<SourceMapSegment, RangeInfo>();
   cast(map)._rangeSegments = set;
   const rangeMappings = decodedRangeMappings(map);
   if (rangeMappings == null) return set;
@@ -710,11 +797,35 @@ function initRangeSegments(map: TraceMap, decoded: readonly SourceMapSegment[][]
     const ranges = rangeMappings[i];
     for (let j = 0; j < ranges.length; j++) {
       const seg = line[ranges[j]];
-      set.add(seg);
+      const { line: endLine, index: endIndex } = findNextSegment(decoded, i, ranges[j]);
+      const endSegment = endLine && endIndex ? decoded[endLine][endIndex] : null;
+      set.set(seg, { line: i, endLine, endSegment });
     }
   }
 
   return set;
+}
+
+/**
+ * Find the index of the next segment in this line or in subsequent lines.
+ * Return null if there was no next segment.
+ */
+function findNextSegment<T extends SourceMapSegment>(
+  lines: readonly T[][],
+  line: number,
+  index: number,
+): { line: number | null; index: number | null } {
+  if (index + 1 < lines[line].length) {
+    return { line, index: index + 1 };
+  } else {
+    for (let i = line + 1; i < lines.length; i++) {
+      for (let j = 0; j < lines[i].length; j++) {
+        return { line: i, index: j };
+      }
+    }
+  }
+
+  return { line: null, index: null };
 }
 
 /**

@@ -8,6 +8,7 @@ import {
   encodedMappings,
   decodedMappings,
   traceSegment,
+  traceSegmentsInRange,
   originalPositionFor,
   generatedPositionFor,
   presortedDecodedMap,
@@ -445,6 +446,25 @@ describe('TraceMap', () => {
           allGeneratedPositionsFor(tracer, { source: 'input.js', line: 1, column: 10 }),
           [{ line: 1, column: 13 }],
         );
+      });
+      describe('rangeMappings operations', () => {
+        // 2nd line, 5th mapping is a range mapping
+        const mapWithRangeMappings = replaceField(map, 'rangeMappings', ';F;');
+
+        it('traceSegmentsInRange', () => {
+          const tracer = new TraceMap(mapWithRangeMappings);
+          assert.deepEqual(traceSegmentsInRange(tracer, 0, 9, 0, 16), [
+            [9, 0, 0, 9, 0],
+            [12, 0, 0, 0],
+            [13, 0, 0, 13, 1],
+          ]);
+          assert.deepEqual(traceSegmentsInRange(tracer, 0, 16, 1, 9), [
+            [16, 0, 0, 0],
+            [18, 0, 0, 33],
+            [4, 0, 1, 4],
+            [8, 0, 1, 10],
+          ]);
+        });
       });
     };
   }
