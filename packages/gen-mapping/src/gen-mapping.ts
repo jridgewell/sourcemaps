@@ -1,5 +1,5 @@
 import { SetArray, put, remove } from './set-array';
-import { encode } from '@jridgewell/sourcemap-codec';
+import { encode, encodeRangeMappings } from '@jridgewell/sourcemap-codec';
 import { TraceMap, decodedMappings } from '@jridgewell/trace-mapping';
 
 import {
@@ -290,6 +290,7 @@ export function toEncodedMap(map: GenMapping): EncodedSourceMap {
   const decoded = toDecodedMap(map);
   const encoded = decoded as unknown as EncodedSourceMap;
   encoded.mappings = encode(decoded.mappings as SourceMapSegment[][]);
+  encoded.rangeMappings = encodeRangeMappings((decoded.rangeMappings || []) as number[][]);
   return encoded;
 }
 

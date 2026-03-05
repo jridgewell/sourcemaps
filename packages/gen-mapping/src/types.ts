@@ -41,12 +41,6 @@ export interface SourceMapV3 {
    * An optional array of indices of sources that should be ignored.
    */
   ignoreList?: readonly number[];
-
-  /**
-   * An optional array of mapping indicies which cover a range of generated
-   * code and source code.
-   */
-  rangeMappings?: MappingIndex[][];
 }
 
 /**
@@ -57,6 +51,11 @@ export interface EncodedSourceMap extends SourceMapV3 {
    * The mappings for the sourcemap, encoded as a VLQ string.
    */
   mappings: string;
+
+  /**
+   * An optional VLQ encoded string for the range mapping indices.
+   */
+  rangeMappings?: string;
 }
 
 /**
@@ -68,6 +67,12 @@ export interface DecodedSourceMap extends SourceMapV3 {
    * The mappings for the sourcemap, decoded into our internal format.
    */
   mappings: readonly SourceMapSegment[][];
+
+  /**
+   * An optional array of mapping indicies which cover a range of generated
+   * code and source code.
+   */
+  rangeMappings?: MappingIndex[][];
 }
 
 /**
