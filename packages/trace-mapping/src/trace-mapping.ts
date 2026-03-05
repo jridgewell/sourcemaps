@@ -289,7 +289,7 @@ export function traceSegmentsInRange(
   startColumn: number,
   endLine: number,
   endColumn: number,
-): Readonly<SourceMapSegment>[] {
+): [number, Readonly<SourceMapSegment>][] {
   const lines = decodedMappings(map);
   const segments = startLine < lines.length ? lines[startLine] : [];
   const memo = cast(map)._decodedMemo;
@@ -309,9 +309,11 @@ export function traceSegmentsInRange(
   const range = (start: number, end: number) => {
     return Array.from({ length: end - start + 1 }, (_, i: number) => i + start);
   };
-  const gen = (line: number) => (index: number) => {
-    return lines[line][index];
-  };
+  function gen(line: number) {
+    return (index: number) : [number, Readonly<SourceMapSegment>] => {
+      return [line, lines[line][index]];
+    };
+  }
 
   function previousPosition(line: number, column: number) {
     if (column === 0) {

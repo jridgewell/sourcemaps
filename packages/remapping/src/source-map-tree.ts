@@ -262,7 +262,7 @@ export function originalPositionFor(
   // If we couldn't find a segment, then this doesn't exist in the sourcemap.
   if (segment == null) return null;
   const maybeRange = isRange(source.map, segment);
-  let startLine = 0; // FIXME this should be the line of the segment
+  let startLine = line;
   if (maybeRange) {
     startLine = maybeRange.line;
   }
@@ -320,7 +320,7 @@ function originalPositionsForRange(
     ];
   }
 
-  // We additional trace the start position of the range to because we may need to
+  // We additionally trace the start position of the range to because we may need to
   // intersect with a range that starts before the given position, or map the start
   // of the range to it if there aren't any exact hits.
   const initialSegment = traceSegment(source.map, line, column);
@@ -328,19 +328,17 @@ function originalPositionsForRange(
 
   // If tracing the start of the range hits a mapping that isn't in the segmenObjects list,
   // add it to the list to process first.
-  if (initialSegment !== null && (segments.length === 0 || initialSegment !== segments[0])) {
-    segments.splice(0, 0, initialSegment);
+  if (initialSegment !== null && (segments.length === 0 || initialSegment !== segments[0][1])) {
+    segments.splice(0, 0, [line, initialSegment]);
   }
 
   const originalPositions = [];
-  for (const segment of segments) {
+  for (const [startLine, segment] of segments) {
     if (segment == null) continue;
 
-    let startLine = 0; // FIXME this should be the line of the segment
     let childEndLine, endSegment;
     const maybeRange = isRange(source.map, segment);
     if (maybeRange) {
-      startLine = maybeRange.line;
       childEndLine = maybeRange.endLine;
       endSegment = maybeRange.endSegment;
     }
