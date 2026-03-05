@@ -1,4 +1,4 @@
-import { toDecodedMap } from '@jridgewell/gen-mapping';
+import { toDecodedMap, toEncodedMap } from '@jridgewell/gen-mapping';
 import { TraceMap } from '@jridgewell/trace-mapping';
 import assert from 'node:assert/strict';
 
@@ -31,7 +31,9 @@ describe('MapSource', () => {
             [4, 0, 1, 1],
           ], // line 0
           [[1, 0, 0, 0, 0], [6]], // line 1
+          [[3, 0, 3, 7], [9]], // line 2
         ],
+        rangeMappings: [[], [], [0]],
         names: ['child'],
         sources: ['original.js'],
         version: 3,
@@ -215,6 +217,141 @@ describe('MapSource', () => {
         assert.deepEqual(traced.mappings, [[[0, 0, 0, 0]], [[0, 0, 0, 0]]]);
       });
     });
+
+    describe('range mappings', () => {
+      it('range mapping in base maps into normal mappings', () => {
+        const map: DecodedSourceMap = {
+          ...baseMap,
+          mappings: [[[5, 0, 0, 1], [9]]],
+          rangeMappings: [[0]],
+        };
+
+        const tree = MapSource(new TraceMap(map), [child]);
+        const traced = toDecodedMap(traceMappings(tree));
+        // This doesn't have mappings at column 6 or 7 because they don't
+        // add more info (they'd map to the same original location).
+        assert.deepEqual(traced.mappings, [[[5, 0, 0, 0], [8, 0, 1, 1], [9]]]);
+      });
+
+      it('multi-line range mapping in base maps into normal mappings', () => {
+        const map: DecodedSourceMap = {
+          ...baseMap,
+          // range from [(1,5), (2,7)] maps to [(0,3), (1,7)]
+          mappings: [[], [[5, 0, 0, 3]], [[7, 0, 1, 7]]],
+          rangeMappings: [[], [0], []],
+        };
+
+        const tree = MapSource(new TraceMap(map), [child]);
+        const traced = toDecodedMap(traceMappings(tree));
+        assert.deepEqual(traced.mappings, [
+          [],
+          [
+            [5, 0, 0, 0],
+            [6, 0, 1, 1],
+          ],
+          [[1, 0, 0, 0, 0], [6]],
+        ]);
+      });
+
+      it('multi-line range mapping in base maps into range mappings', () => {
+        const map: DecodedSourceMap = {
+          ...baseMap,
+          // range from [(0,2), (1,5)] maps to [(1,0), (2,5)]
+          mappings: [[[2, 0, 1, 0]], [[5, 0, 2, 5]]],
+          rangeMappings: [[0], []],
+        };
+
+        const tree = MapSource(new TraceMap(map), [child]);
+        const traced = toDecodedMap(traceMappings(tree));
+        assert.deepEqual(traced.mappings, [
+          [[3, 0, 0, 0, 0], [8]],
+          [
+            [3, 0, 3, 7],
+            [5, 0, 3, 9],
+          ],
+        ]);
+        assert.deepEqual(traced.rangeMappings, [[], [0]]);
+      });
+
+      it('normal mapping in base maps into range mappings', () => {
+        const map: DecodedSourceMap = {
+          ...baseMap,
+          // child range mapping maps line 2, columns 3-9
+          // so line 2, col 3 and line 2, col 5 are in the range
+          mappings: [
+            [],
+            [],
+            [
+              [5, 0, 2, 3],
+              [19, 0, 2, 5],
+            ],
+          ],
+        };
+
+        const tree = MapSource(new TraceMap(map), [child]);
+        const traced = toDecodedMap(traceMappings(tree));
+        assert.deepEqual(traced.mappings, [
+          [],
+          [],
+          [
+            [5, 0, 3, 7],
+            [19, 0, 3, 9],
+          ],
+        ]);
+      });
+
+      it('range mapping in base maps into range mappings in child', () => {
+        const map: DecodedSourceMap = {
+          ...baseMap,
+          mappings: [
+            [],
+            [],
+            [
+              [5, 0, 2, 3],
+              [7, 0, 2, 5],
+              [15, 0, 2, 7],
+              [17, 0, 2, 9],
+            ],
+          ],
+          rangeMappings: [[], [], [0, 2]],
+        };
+
+        const tree = MapSource(new TraceMap(map), [child]);
+        const traced = traceMappings(tree);
+        const decoded = toDecodedMap(traced);
+        assert.deepEqual(decoded.mappings, [
+          [],
+          [],
+          [[5, 0, 3, 7], [7, 0, 3, 9], [15, 0, 3, 11], [17]],
+        ]);
+        assert.deepEqual(decoded.rangeMappings, [[], [], [0, 2]]);
+        const encoded = toEncodedMap(traced);
+        assert.deepEqual(encoded.rangeMappings, ';;BC');
+      });
+
+      it('range mapping in base maps into sub-ranges in child', () => {
+        const map: DecodedSourceMap = {
+          ...baseMap,
+          mappings: [
+            [],
+            [],
+            [
+              // base range has length 10, child range has length 6
+              [15, 0, 2, 0],
+              [25, 0, 2, 10],
+            ],
+          ],
+          rangeMappings: [[], [], [0]],
+        };
+
+        const tree = MapSource(new TraceMap(map), [child]);
+        const traced = toDecodedMap(traceMappings(tree));
+        assert.deepEqual(traced.mappings, [[], [], [[18, 0, 3, 7], [24]]]);
+        assert.deepEqual(traced.rangeMappings, [[], [], [0]]);
+        const encoded = toEncodedMap(traceMappings(tree));
+        assert.deepEqual(encoded.rangeMappings, ';;B');
+      });
+    });
   });
 
   describe('originalPositionFor()', () => {
@@ -340,4 +477,34 @@ describe('MapSource', () => {
       });
     });
   });
+
+  //describe('traceMappings() with range mappings', () => {
+  //  const sourceRoot = 'foo';
+  //  const baseMap: DecodedSourceMap = {
+  //    mappings: [],
+  //    rangeMappings: [],
+  //    names: ['name'],
+  //    sourceRoot,
+  //    sources: ['child.js'],
+  //    version: 3,
+  //  };
+  //  const child = MapSource(
+  //    new TraceMap({
+  //      mappings: [
+  //        [
+  //          [0, 0, 0, 0],
+  //          [1, 0, 0, 0],
+  //          [2, 0, 0, 0],
+  //          [4, 0, 1, 1],
+  //        ], // line 0
+  //        [[1, 0, 0, 0, 0], [6]], // line 1
+  //      ],
+  //      rangeMappings: [[]],
+  //      names: ['child'],
+  //      sources: ['original.js'],
+  //      version: 3,
+  //    }),
+  //    [OriginalSource(`${sourceRoot}/original.js`, '', false)],
+  //  );
+  //});
 });
