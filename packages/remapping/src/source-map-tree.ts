@@ -232,7 +232,8 @@ export function traceMappings(tree: MapSource): GenMapping {
               ? genCol + rangeMappingOffset.column
               : rangeMappingOffset.column;
           maybeAddSegment(gen, genLine, genColumn, source, line, column, name, null);
-          setRangeSegment(gen, genLine, genColumn, isRangeMapping);
+          if (isRangeMapping)
+            setRangeSegment(gen, genLine, genColumn);
           if (source && content != null) setSourceContent(gen, source, content);
           if (ignore) setIgnore(gen, source, true);
         }
