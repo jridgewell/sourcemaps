@@ -24,7 +24,7 @@ import type { SourceMapSegment } from './sourcemap-segment';
 
 // A utility type that allows FlattenMap to be called or new'd.
 type FlattenMap = {
-  new(map: Ro<SectionedSourceMapInput>, mapUrl?: string | null): TraceMap;
+  new (map: Ro<SectionedSourceMapInput>, mapUrl?: string | null): TraceMap;
   (map: Ro<SectionedSourceMapInput>, mapUrl?: string | null): TraceMap;
 };
 

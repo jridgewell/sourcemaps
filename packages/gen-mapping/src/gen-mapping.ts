@@ -469,7 +469,7 @@ function getRangeIndex(ranges: MappingIndex[], index: MappingIndex): number {
   for (let i = ranges.length; i > 0; i--) {
     const range = ranges[i - 1];
     if (range === index) return i - 1;
-    if (range < index) return ~i
+    if (range < index) return ~i;
   }
   return ~0;
 }
@@ -485,7 +485,6 @@ function adjustRangeMappings(rangeMappings: MappingIndex[][], genLine: number, i
     line[i]++;
   }
 }
-
 
 /**
  * Returns true if we should skip adding a sourceless segment at the given index.

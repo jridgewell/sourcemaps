@@ -894,37 +894,37 @@ describe('TraceMap', () => {
         });
 
         // Inside range
-        assert.deepEqual(
-          generatedPositionFor(tracer, { source: 'input.js', line: 1, column: 0 }),
-          { line: 1, column: 0 }
-        );
-        assert.deepEqual(
-          generatedPositionFor(tracer, { source: 'input.js', line: 1, column: 1 }),
-          { line: 1, column: 1 }
-        );
-        assert.deepEqual(
-          generatedPositionFor(tracer, { source: 'input.js', line: 2, column: 0 }),
-          { line: 2, column: 0 }
-        );
-        assert.deepEqual(
-          generatedPositionFor(tracer, { source: 'input.js', line: 2, column: 1 }),
-          { line: 2, column: 1 }
-        );
+        assert.deepEqual(generatedPositionFor(tracer, { source: 'input.js', line: 1, column: 0 }), {
+          line: 1,
+          column: 0,
+        });
+        assert.deepEqual(generatedPositionFor(tracer, { source: 'input.js', line: 1, column: 1 }), {
+          line: 1,
+          column: 1,
+        });
+        assert.deepEqual(generatedPositionFor(tracer, { source: 'input.js', line: 2, column: 0 }), {
+          line: 2,
+          column: 0,
+        });
+        assert.deepEqual(generatedPositionFor(tracer, { source: 'input.js', line: 2, column: 1 }), {
+          line: 2,
+          column: 1,
+        });
 
         // Outside range limit [0, 2)
-        assert.deepEqual(
-          generatedPositionFor(tracer, { source: 'input.js', line: 2, column: 2 }),
-          { column: null, line: null }
-        );
-        assert.deepEqual(
-          generatedPositionFor(tracer, { source: 'input.js', line: 3, column: 1 }),
-          { column: null, line: null }
-        );
+        assert.deepEqual(generatedPositionFor(tracer, { source: 'input.js', line: 2, column: 2 }), {
+          column: null,
+          line: null,
+        });
+        assert.deepEqual(generatedPositionFor(tracer, { source: 'input.js', line: 3, column: 1 }), {
+          column: null,
+          line: null,
+        });
 
         // Second segment
         assert.deepEqual(
           generatedPositionFor(tracer, { source: 'input.js', line: 16, column: 16 }),
-          { column: 2, line: 2 }
+          { column: 2, line: 2 },
         );
       });
 
@@ -951,7 +951,7 @@ describe('TraceMap', () => {
           rangeMappings: [
             [0], // Line 0: Segment 0 is a range mapping
             [0], // Line 1: Segment 0 is a range mapping
-            [],  // Line 2: No range mappings
+            [], // Line 2: No range mappings
           ],
         });
 
@@ -963,7 +963,7 @@ describe('TraceMap', () => {
             { line: 1, column: 0 },
             { line: 2, column: 0 },
             { line: 3, column: 0 },
-          ]
+          ],
         );
 
         // Test querying an offset inside RANGE 1 and RANGE 2 (Src Line 0, Col 2 -> line: 1, column: 2).
@@ -975,7 +975,7 @@ describe('TraceMap', () => {
           [
             { line: 1, column: 2 },
             { line: 2, column: 2 },
-          ]
+          ],
         );
 
         // Test querying an offset past RANGE 1 but inside RANGE 2 (Src Line 0, Col 10 -> line: 1, column: 10).
@@ -984,18 +984,14 @@ describe('TraceMap', () => {
         // NORMAL: Does not offset.
         assert.deepEqual(
           allGeneratedPositionsFor(tracer, { source: 'input.js', line: 1, column: 10 }),
-          [
-            { line: 2, column: 10 },
-          ]
+          [{ line: 2, column: 10 }],
         );
 
         // Test querying the normal segment that ends RANGE 1 (Src Line 10, Col 10 -> line: 11, column: 10).
         // NORMAL at Gen Line 0, Col 5.
         assert.deepEqual(
           allGeneratedPositionsFor(tracer, { source: 'input.js', line: 11, column: 10 }),
-          [
-            { line: 1, column: 5 },
-          ]
+          [{ line: 1, column: 5 }],
         );
       });
     });
