@@ -10,6 +10,7 @@ import type { DecodedSourceMap, EncodedSourceMap, Options } from './types';
 export default class SourceMap {
   declare file?: string | null;
   declare mappings: EncodedSourceMap['mappings'] | DecodedSourceMap['mappings'];
+  declare rangeMappings?: EncodedSourceMap['rangeMappings'] | DecodedSourceMap['rangeMappings'];
   declare sourceRoot?: string;
   declare names: string[];
   declare sources: (string | null)[];
@@ -22,6 +23,7 @@ export default class SourceMap {
     this.version = out.version; // SourceMap spec says this should be first.
     this.file = out.file;
     this.mappings = out.mappings as SourceMap['mappings'];
+    this.rangeMappings = out.rangeMappings as SourceMap['rangeMappings'];
     this.names = out.names as SourceMap['names'];
     this.ignoreList = out.ignoreList as SourceMap['ignoreList'];
     this.sourceRoot = out.sourceRoot;

@@ -15,7 +15,7 @@ export type Source = {
 export default function buildBySources(
   decoded: readonly SourceMapSegment[][],
   memos: unknown[],
-  rangeSegments: Set<SourceMapSegment>,
+  rangeSegments: Map<SourceMapSegment, any>,
 ): Source[] {
   const sources: Source[] = memos.map(() => ({ lines: [], rangeSegments: new Set() }));
 
