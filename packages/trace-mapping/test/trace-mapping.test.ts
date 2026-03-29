@@ -882,5 +882,122 @@ describe('TraceMap', () => {
         );
       });
     });
+
+    describe('reverse range mappings (bakkot/matrixlogs 2026-03-02)', () => {
+      it('generatedPositionFor respects range mapping bounds', () => {
+        const tracer = new TraceMap({
+          version: 3,
+          sources: ['input.js'],
+          names: [],
+          mappings: 'AAAA;EAee', // (0,0) -> (0,0) RANGE; (1,2) -> (15,15) NORMAL
+          rangeMappings: 'B', // first segment is range
+        });
+
+        // Inside range
+        assert.deepEqual(
+          generatedPositionFor(tracer, { source: 'input.js', line: 1, column: 0 }),
+          { line: 1, column: 0 }
+        );
+        assert.deepEqual(
+          generatedPositionFor(tracer, { source: 'input.js', line: 1, column: 1 }),
+          { line: 1, column: 1 }
+        );
+        assert.deepEqual(
+          generatedPositionFor(tracer, { source: 'input.js', line: 2, column: 0 }),
+          { line: 2, column: 0 }
+        );
+        assert.deepEqual(
+          generatedPositionFor(tracer, { source: 'input.js', line: 2, column: 1 }),
+          { line: 2, column: 1 }
+        );
+
+        // Outside range limit [0, 2)
+        assert.deepEqual(
+          generatedPositionFor(tracer, { source: 'input.js', line: 2, column: 2 }),
+          { column: null, line: null }
+        );
+        assert.deepEqual(
+          generatedPositionFor(tracer, { source: 'input.js', line: 3, column: 1 }),
+          { column: null, line: null }
+        );
+
+        // Second segment
+        assert.deepEqual(
+          generatedPositionFor(tracer, { source: 'input.js', line: 16, column: 16 }),
+          { column: 2, line: 2 }
+        );
+      });
+
+      it('allGeneratedPositionsFor handles multiple range mappings to the same source location', () => {
+        const tracer = new TraceMap({
+          version: 3,
+          sources: ['input.js'],
+          names: [],
+          mappings: [
+            // Gen Line 1: Range mapping starting at Gen(0,0)->Src(0,0), then Normal mapping at Gen(0,5)->Src(10,10)
+            [
+              [0, 0, 0, 0], // RANGE 1. src 0:0. Range ends at col 5.
+              [5, 0, 10, 10], // NORMAL. Ends RANGE 1 at col 5.
+            ],
+            // Gen Line 2: Range mapping starting at Gen(1,0)->Src(0,0), continues indefinitely.
+            [
+              [0, 0, 0, 0], // RANGE 2. src 0:0.
+            ],
+            // Gen Line 3: Normal mapping starting at Gen(2,0)->Src(0,0).
+            [
+              [0, 0, 0, 0], // NORMAL. src 0:0.
+            ],
+          ],
+          rangeMappings: [
+            [0], // Line 0: Segment 0 is a range mapping
+            [0], // Line 1: Segment 0 is a range mapping
+            [],  // Line 2: No range mappings
+          ],
+        });
+
+        // Test querying exact start (Src Line 0, Col 0 -> line: 1, column: 0).
+        // Matches start of RANGE 1, RANGE 2, and NORMAL mappings exactly.
+        assert.deepEqual(
+          allGeneratedPositionsFor(tracer, { source: 'input.js', line: 1, column: 0 }),
+          [
+            { line: 1, column: 0 },
+            { line: 2, column: 0 },
+            { line: 3, column: 0 },
+          ]
+        );
+
+        // Test querying an offset inside RANGE 1 and RANGE 2 (Src Line 0, Col 2 -> line: 1, column: 2).
+        // RANGE 1: Gen Line 0, Col 0 -> ends at Col 5. Matches Src Col 2 at Gen Col 2.
+        // RANGE 2: Gen Line 1, Col 0 -> continues. Matches Src Col 2 at Gen Col 2.
+        // NORMAL: Does not offset.
+        assert.deepEqual(
+          allGeneratedPositionsFor(tracer, { source: 'input.js', line: 1, column: 2 }),
+          [
+            { line: 1, column: 2 },
+            { line: 2, column: 2 },
+          ]
+        );
+
+        // Test querying an offset past RANGE 1 but inside RANGE 2 (Src Line 0, Col 10 -> line: 1, column: 10).
+        // RANGE 1: Ends at Gen Col 5. Outside bounds.
+        // RANGE 2: Continues. Matches Src Col 10 at Gen Col 10.
+        // NORMAL: Does not offset.
+        assert.deepEqual(
+          allGeneratedPositionsFor(tracer, { source: 'input.js', line: 1, column: 10 }),
+          [
+            { line: 2, column: 10 },
+          ]
+        );
+
+        // Test querying the normal segment that ends RANGE 1 (Src Line 10, Col 10 -> line: 11, column: 10).
+        // NORMAL at Gen Line 0, Col 5.
+        assert.deepEqual(
+          allGeneratedPositionsFor(tracer, { source: 'input.js', line: 11, column: 10 }),
+          [
+            { line: 1, column: 5 },
+          ]
+        );
+      });
+    });
   });
 });

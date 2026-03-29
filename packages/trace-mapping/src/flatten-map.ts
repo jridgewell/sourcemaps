@@ -1,4 +1,9 @@
-import { TraceMap, presortedDecodedMap, decodedMappings, decodedRangeMappings } from './trace-mapping';
+import {
+  TraceMap,
+  presortedDecodedMap,
+  decodedMappings,
+  decodedRangeMappings,
+} from './trace-mapping';
 import {
   COLUMN,
   SOURCES_INDEX,
@@ -19,7 +24,7 @@ import type { SourceMapSegment } from './sourcemap-segment';
 
 // A utility type that allows FlattenMap to be called or new'd.
 type FlattenMap = {
-  new (map: Ro<SectionedSourceMapInput>, mapUrl?: string | null): TraceMap;
+  new(map: Ro<SectionedSourceMapInput>, mapUrl?: string | null): TraceMap;
   (map: Ro<SectionedSourceMapInput>, mapUrl?: string | null): TraceMap;
 };
 
@@ -150,11 +155,7 @@ function addSection(
   const namesOffset = names.length;
   const decoded = decodedMappings(map);
   const ranges = decodedRangeMappings(map);
-  const {
-    resolvedSources,
-    sourcesContent: contents,
-    ignoreList: ignores,
-  } = map;
+  const { resolvedSources, sourcesContent: contents, ignoreList: ignores } = map;
 
   append(sources, resolvedSources);
   append(names, map.names);

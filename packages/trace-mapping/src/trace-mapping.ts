@@ -1,4 +1,9 @@
-import { encode, decode, encodeRangeMappings, decodeRangeMappings } from '@jridgewell/sourcemap-codec';
+import {
+  encode,
+  decode,
+  encodeRangeMappings,
+  decodeRangeMappings,
+} from '@jridgewell/sourcemap-codec';
 
 import resolver from './resolve';
 import maybeSort from './sort';
@@ -18,6 +23,8 @@ import {
   NAMES_INDEX,
   REV_GENERATED_LINE,
   REV_GENERATED_COLUMN,
+  REV_RANGE_END_LINE,
+  REV_RANGE_END_COLUMN,
 } from './sourcemap-segment';
 import { assertExhaustive, parse } from './util';
 
@@ -432,7 +439,9 @@ export function encodedMap(map: TraceMap): EncodedSourceMap {
 function clone<T extends string | readonly SourceMapSegment[][]>(
   map: TraceMap | DecodedSourceMap,
   mappings: T,
-  rangeMappings: (T extends string ? EncodedSourceMap['rangeMappings'] : DecodedSourceMap['rangeMappings']) | undefined,
+  rangeMappings:
+    | (T extends string ? EncodedSourceMap['rangeMappings'] : DecodedSourceMap['rangeMappings'])
+    | undefined,
 ): T extends string ? EncodedSourceMap : DecodedSourceMap {
   const clone = {
     version: map.version,
@@ -518,7 +527,7 @@ function traceSegmentInternal<T extends SourceMapSegment | ReverseSegment>(
   // We didn't get an exact match, but can we find a range mapping that covers
   // our position?
   if (rangeSegments.size > 0) {
-    const rangeLine = findPreviousSegmentLine(lines, line, index);
+    const rangeLine = previousSegmentLine(lines, line, index);
     if (rangeLine > -1) {
       const rangeLineSegs = lines[rangeLine];
       const rangeIndex = rangeLine === line ? index : rangeLineSegs.length - 1;
@@ -561,7 +570,7 @@ function sliceGeneratedPositions(
   // We didn't get an exact match, but can we find range mappings that covers
   // our position?
   if (rangeSegments.size > 0) {
-    const rangeLine = findPreviousSegmentLine(lines, line, index);
+    const rangeLine = previousSegmentLine(lines, line, index);
     if (rangeLine > -1) {
       const rangeLineSegs = lines[rangeLine];
       const rangeIndex = rangeLine === line ? index : rangeLineSegs.length - 1;
@@ -631,7 +640,9 @@ function sliceGeneratedPositionsRanges(
     const segment = segments[min];
     if (!rangeSegments.has(segment)) continue;
     const offset = rangeOffset(segment, rangeLine, line, column);
-    result.push(GMapping(offset[REV_GENERATED_LINE] + 1, offset[REV_GENERATED_COLUMN]));
+    if (offset) {
+      result.push(GMapping(offset[REV_GENERATED_LINE] + 1, offset[REV_GENERATED_COLUMN]));
+    }
   }
   return result;
 }
@@ -721,7 +732,7 @@ function initRangeSegments(map: TraceMap, decoded: readonly SourceMapSegment[][]
  * If we didn't find a match on this line, back searches to find the previous
  * line that has a segment.
  */
-function findPreviousSegmentLine<T extends SourceMapSegment | ReverseSegment>(
+function previousSegmentLine<T extends SourceMapSegment | ReverseSegment>(
   lines: readonly T[][],
   line: number,
   index: number,
@@ -746,17 +757,22 @@ function rangeOffset<T extends SourceMapSegment | ReverseSegment>(
   rangeLine: number,
   line: number,
   column: number,
-): T {
+): T | null {
   if (range.length === 1) return [column] as T;
 
   const lineDelta = line - rangeLine;
   const columnDelta = lineDelta === 0 ? column - range[COLUMN] : column;
-  if (range.length === 4) {
+  if (range.length === 6) {
+    if (line > range[REV_RANGE_END_LINE]) return null;
+    if (line === range[REV_RANGE_END_LINE] && column >= range[REV_RANGE_END_COLUMN]) return null;
+  }
+  if (range.length === 5) {
     return [
       column,
       range[SOURCES_INDEX],
       range[SOURCE_LINE] + lineDelta,
       range[SOURCE_COLUMN] + columnDelta,
+      range[NAMES_INDEX],
     ] as T;
   }
   return [
@@ -764,6 +780,5 @@ function rangeOffset<T extends SourceMapSegment | ReverseSegment>(
     range[SOURCES_INDEX],
     range[SOURCE_LINE] + lineDelta,
     range[SOURCE_COLUMN] + columnDelta,
-    range[NAMES_INDEX],
   ] as T;
 }

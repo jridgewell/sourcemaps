@@ -57,7 +57,7 @@ smc.mappings; // AAAA
 
 ```typescript
 const smc = new SourceMapConsumer(map);
-smc.allGeneratedpositionsfor({ line: 1, column: 5, source: "baz.ts" });
+smc.allGeneratedPositionsFor({ line: 1, column: 5, source: "baz.ts" });
 // [
 //   { line: 2, column: 8 }
 // ]
