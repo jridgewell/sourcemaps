@@ -290,7 +290,7 @@ export function toEncodedMap(map: GenMapping): EncodedSourceMap {
   const decoded = toDecodedMap(map);
   const encoded = decoded as unknown as EncodedSourceMap;
   encoded.mappings = encode(decoded.mappings as SourceMapSegment[][]);
-  encoded.rangeMappings = encodeRangeMappings((decoded.rangeMappings || []) as number[][]);
+  if (decoded.rangeMappings) encoded.rangeMappings = encodeRangeMappings(decoded.rangeMappings);
   return encoded;
 }
 

@@ -69,6 +69,26 @@ describe('GenMapping', () => {
 
       assert.deepEqual(toDecodedMap(map).ignoreList, [0]);
     });
+
+    it('excludes ignoreList when empty', () => {
+      const map = new GenMapping();
+
+      assert.deepEqual(toDecodedMap(map).ignoreList, undefined);
+    });
+
+    it('has rangeMappings', () => {
+      const map = new GenMapping();
+      addSegment(map, 0, 1, 'input.js', 2, 3, 'foo');
+      setRangeSegment(map, 0, 1);
+
+      assert.deepEqual(toDecodedMap(map).rangeMappings, [[0]]);
+    });
+
+    it('excludes rangeMappings when empty', () => {
+      const map = new GenMapping();
+
+      assert.deepEqual(toDecodedMap(map).rangeMappings, undefined);
+    });
   });
 
   describe('toEncodedMap', () => {
@@ -122,13 +142,13 @@ describe('GenMapping', () => {
       const map = new GenMapping();
       setIgnore(map, 'input.js');
 
-      assert.deepEqual(toDecodedMap(map).ignoreList, [0]);
+      assert.deepEqual(toEncodedMap(map).ignoreList, [0]);
     });
 
     it('excludes ignoreList when empty', () => {
       const map = new GenMapping();
 
-      assert.deepEqual(toDecodedMap(map).ignoreList, undefined);
+      assert.deepEqual(toEncodedMap(map).ignoreList, undefined);
     });
 
     it('has rangeMappings', () => {
@@ -136,13 +156,13 @@ describe('GenMapping', () => {
       addSegment(map, 0, 1, 'input.js', 2, 3, 'foo');
       setRangeSegment(map, 0, 1);
 
-      assert.deepEqual(toDecodedMap(map).rangeMappings, [[0]]);
+      assert.deepEqual(toEncodedMap(map).rangeMappings, 'B');
     });
 
     it('excludes rangeMappings when empty', () => {
       const map = new GenMapping();
 
-      assert.deepEqual(toDecodedMap(map).rangeMappings, undefined);
+      assert.deepEqual(toEncodedMap(map).rangeMappings, undefined);
     });
   });
 
