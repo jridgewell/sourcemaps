@@ -3,15 +3,6 @@ import { traceSegment, decodedMappings } from '@jridgewell/trace-mapping';
 
 import type { TraceMap } from '@jridgewell/trace-mapping';
 
-export type SourceMapSegmentObject = {
-  column: number;
-  line: number;
-  name: string;
-  source: string;
-  content: string | null;
-  ignore: boolean;
-};
-
 export type OriginalSource = {
   map: null;
   sources: Sources[];
@@ -30,19 +21,7 @@ export type MapSource = {
 
 export type Sources = OriginalSource | MapSource;
 
-const SOURCELESS_MAPPING = /* #__PURE__ */ SegmentObject('', -1, -1, '', null, false);
 const EMPTY_SOURCES: Sources[] = [];
-
-function SegmentObject(
-  source: string,
-  line: number,
-  column: number,
-  name: string,
-  content: string | null,
-  ignore: boolean,
-): SourceMapSegmentObject {
-  return { source, line, column, name, content, ignore };
-}
 
 function Source(
   map: TraceMap,
@@ -112,29 +91,24 @@ export function traceMappings(tree: MapSource): GenMapping {
     for (let j = 0; j < segments.length; j++) {
       const segment = segments[j];
       const genCol = segment[0];
-      let traced: SourceMapSegmentObject | null = SOURCELESS_MAPPING;
 
       // 1-length segments only move the current generated column, there's no source information
       // to gather from it.
-      if (segment.length !== 1) {
-        const source = rootSources[segment[1]];
-        traced = originalPositionFor(
-          source,
-          segment[2],
-          segment[3],
-          segment.length === 5 ? rootNames[segment[4]] : '',
-        );
-
-        // If the trace is invalid, then the trace ran into a sourcemap that doesn't contain a
-        // respective segment into an original source.
-        if (traced == null) continue;
+      if (segment.length === 1) {
+        maybeAddSegment(gen, i, genCol);
+        continue;
       }
 
-      const { column, line, name, content, source, ignore } = traced;
-
-      maybeAddSegment(gen, i, genCol, source, line, column, name);
-      if (source && content != null) setSourceContent(gen, source, content);
-      if (ignore) setIgnore(gen, source, true);
+      const source = rootSources[segment[1]];
+      originalPositionFor(
+        gen,
+        i,
+        genCol,
+        source,
+        segment[2],
+        segment[3],
+        segment.length === 5 ? rootNames[segment[4]] : '',
+      );
     }
   }
 
@@ -146,24 +120,36 @@ export function traceMappings(tree: MapSource): GenMapping {
  * child SourceMapTrees, until we find the original source map.
  */
 export function originalPositionFor(
+  gen: GenMapping,
+  genLine: number,
+  genCol: number,
   source: Sources,
   line: number,
   column: number,
   name: string,
-): SourceMapSegmentObject | null {
+): void {
   if (!source.map) {
-    return SegmentObject(source.source, line, column, name, source.content, source.ignore);
+    maybeAddSegment(gen, genLine, genCol, source.source, line, column, name);
+    if (source.content != null) setSourceContent(gen, source.source, source.content);
+    if (source.ignore) setIgnore(gen, source.source, true);
+    return;
   }
 
   const segment = traceSegment(source.map, line, column);
 
   // If we couldn't find a segment, then this doesn't exist in the sourcemap.
-  if (segment == null) return null;
+  if (segment == null) return;
   // 1-length segments only move the current generated column, there's no source information
   // to gather from it.
-  if (segment.length === 1) return SOURCELESS_MAPPING;
+  if (segment.length === 1) {
+    maybeAddSegment(gen, genLine, genCol);
+    return;
+  }
 
-  return originalPositionFor(
+  originalPositionFor(
+    gen,
+    genLine,
+    genCol,
     source.sources[segment[1]],
     segment[2],
     segment[3],

@@ -1,4 +1,4 @@
-import { toDecodedMap } from '@jridgewell/gen-mapping';
+import { toDecodedMap, toEncodedMap, GenMapping } from '@jridgewell/gen-mapping';
 import { TraceMap } from '@jridgewell/trace-mapping';
 import assert from 'node:assert/strict';
 
@@ -31,7 +31,9 @@ describe('MapSource', () => {
             [4, 0, 1, 1],
           ], // line 0
           [[1, 0, 0, 0, 0], [6]], // line 1
+          [[3, 0, 3, 7], [9]], // line 2
         ],
+        rangeMappings: [[], [], [0]],
         names: ['child'],
         sources: ['original.js'],
         version: 3,
@@ -241,101 +243,110 @@ describe('MapSource', () => {
     };
     const tree = MapSource(new TraceMap(map), [OriginalSource('child.js', '', false)]);
 
+    function tracePosition(source: any, line: number, col: number, name: string) {
+      const gen = new GenMapping();
+      originalPositionFor(gen, 0, 0, source, line, col, name);
+      return toDecodedMap(gen);
+    }
+
     it('traces LineSegments to the segment with matching generated column', () => {
-      const trace = originalPositionFor(tree, 0, 4, '');
-      assertMatchObject(trace, { line: 1, column: 1 });
+      const { mappings } = tracePosition(tree, 0, 4, '');
+      assert.deepEqual(mappings, [[[0, 0, 1, 1]]]);
     });
 
     it('traces all generated cols on a line back to their source when source had characters removed', () => {
       const expectedCols = [0, 0, 0, 0, 0, 6, 6, 6, 6];
       for (let genCol = 0; genCol < expectedCols.length; genCol++) {
-        const trace = originalPositionFor(tree, 4, genCol, '');
-        assertMatchObject(trace, { line: 4, column: expectedCols[genCol] });
+        const { mappings } = tracePosition(tree, 4, genCol, '');
+        assert.deepEqual(mappings, [[[0, 0, 4, expectedCols[genCol]]]]);
       }
     });
 
     it('traces all generated cols on a line back to their source when source had characters added', () => {
       const expectedCols = [0, 0, 0, 0, 0, null, 5, 5, 5, 5, 5];
       for (let genCol = 0; genCol < expectedCols.length; genCol++) {
-        const trace = originalPositionFor(tree, 5, genCol, '');
+        const { mappings } = tracePosition(tree, 5, genCol, '');
         if (expectedCols[genCol] == null) {
-          assertMatchObject(trace, { source: '' });
+          assert.deepEqual(mappings, [[[0]]]);
         } else {
-          assertMatchObject(trace, { line: 5, column: expectedCols[genCol] });
+          assert.deepEqual(mappings, [[[0, 0, 5, expectedCols[genCol]]]]);
         }
       }
     });
 
-    it('returns null if line is longer than mapping lines', () => {
-      const trace = originalPositionFor(tree, 10, 0, '');
-      assert.equal(trace, null);
+    it('returns empty mappings if line is longer than mapping lines', () => {
+      const { mappings } = tracePosition(tree, 10, 0, '');
+      assert.deepEqual(mappings, []);
     });
 
-    it('returns null if no matching segment column', () => {
+    it('returns empty mappings if no matching segment column', () => {
       //line 1 col 0 of generated doesn't exist in the original source
-      const trace = originalPositionFor(tree, 1, 0, '');
-      assert.equal(trace, null);
+      const { mappings } = tracePosition(tree, 1, 0, '');
+      assert.deepEqual(mappings, []);
     });
 
     it('returns sourceless segment object if segment is 1-length', () => {
-      const trace = originalPositionFor(tree, 2, 0, '');
-      assertMatchObject(trace, { source: '' });
+      const { mappings } = tracePosition(tree, 2, 0, '');
+      assert.deepEqual(mappings, [[[0]]]);
     });
 
     it('passes in outer name to trace', () => {
-      const trace = originalPositionFor(tree, 0, 0, 'foo');
-      assertMatchObject(trace, { name: 'foo' });
+      const { mappings, names } = tracePosition(tree, 0, 0, 'foo');
+      assert.deepEqual(mappings, [[[0, 0, 0, 0, 0]]]);
+      assert.deepEqual(names, ['foo']);
     });
 
     it('overrides name if segment is 5-length', () => {
-      const trace = originalPositionFor(tree, 3, 0, 'foo');
-      assertMatchObject(trace, { name: 'name' });
+      const { mappings, names } = tracePosition(tree, 3, 0, 'foo');
+      assert.deepEqual(mappings, [[[0, 0, 0, 0, 0]]]);
+      assert.deepEqual(names, ['name']);
     });
 
     describe('tracing same line multiple times', () => {
       describe('later column', () => {
         it('returns matching segment after match', () => {
-          assert.notEqual(originalPositionFor(tree, 0, 1, ''), null);
-          const trace = originalPositionFor(tree, 0, 4, '');
-          assertMatchObject(trace, { line: 1, column: 1 });
+          tracePosition(tree, 0, 1, '');
+          const { mappings } = tracePosition(tree, 0, 4, '');
+          assert.deepEqual(mappings, [[[0, 0, 1, 1]]]);
         });
 
         it('returns matching segment after null match', () => {
-          assert.equal(originalPositionFor(tree, 1, 0, ''), null);
-          const trace = originalPositionFor(tree, 1, 2, '');
-          assertMatchObject(trace, { line: 0, column: 0 });
+          const { mappings: emptyMappings } = tracePosition(tree, 1, 0, '');
+          assert.deepEqual(emptyMappings, []);
+          const { mappings } = tracePosition(tree, 1, 2, '');
+          assert.deepEqual(mappings, [[[0, 0, 0, 0]]]);
         });
 
         it('returns null segment segment after null match', () => {
-          assert.equal(originalPositionFor(tree, 1, 0, ''), null);
-          const trace = originalPositionFor(tree, 1, 1, '');
-          assert.equal(trace, null);
+          tracePosition(tree, 1, 0, '');
+          const { mappings } = tracePosition(tree, 1, 1, '');
+          assert.deepEqual(mappings, []);
         });
 
         it('returns matching segment after almost match', () => {
-          assert.notEqual(originalPositionFor(tree, 4, 2, ''), null);
-          const trace = originalPositionFor(tree, 4, 5, '');
-          assertMatchObject(trace, { line: 4, column: 6 });
+          tracePosition(tree, 4, 2, '');
+          const { mappings } = tracePosition(tree, 4, 5, '');
+          assert.deepEqual(mappings, [[[0, 0, 4, 6]]]);
         });
       });
 
       describe('earlier column', () => {
         it('returns matching segment after match', () => {
-          assert.notEqual(originalPositionFor(tree, 0, 4, ''), null);
-          const trace = originalPositionFor(tree, 0, 1, '');
-          assertMatchObject(trace, { line: 0, column: 0 });
+          tracePosition(tree, 0, 4, '');
+          const { mappings } = tracePosition(tree, 0, 1, '');
+          assert.deepEqual(mappings, [[[0, 0, 0, 0]]]);
         });
 
         it('returns null segment segment after null match', () => {
-          assert.equal(originalPositionFor(tree, 1, 1, ''), null);
-          const trace = originalPositionFor(tree, 1, 0, '');
-          assert.equal(trace, null);
+          tracePosition(tree, 1, 1, '');
+          const { mappings } = tracePosition(tree, 1, 0, '');
+          assert.deepEqual(mappings, []);
         });
 
         it('returns matching segment after almost match', () => {
-          assert.notEqual(originalPositionFor(tree, 4, 2, ''), null);
-          const trace = originalPositionFor(tree, 4, 0, '');
-          assertMatchObject(trace, { line: 4, column: 0 });
+          tracePosition(tree, 4, 2, '');
+          const { mappings } = tracePosition(tree, 4, 0, '');
+          assert.deepEqual(mappings, [[[0, 0, 4, 0]]]);
         });
       });
     });
