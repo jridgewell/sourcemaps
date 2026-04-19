@@ -1,6 +1,6 @@
 import { COLUMN, SOURCES_INDEX, SOURCE_LINE, SOURCE_COLUMN } from './sourcemap-segment';
 import { sortComparator } from './sort';
-import { nextSegmentLine } from './utils';
+import { nextSegmentLine } from './ranges';
 
 import type { ReverseSegment, SourceMapSegment } from './sourcemap-segment';
 

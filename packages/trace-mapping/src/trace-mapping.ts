@@ -8,7 +8,7 @@ import {
 import resolver from './resolve';
 import maybeSort from './sort';
 import buildBySources from './by-source';
-import { previousSegmentLine, nextSegmentLine } from './utils';
+import { previousSegmentLine, nextSegmentLine } from './ranges';
 import {
   memoizedState,
   memoizedBinarySearchSegments,
@@ -50,8 +50,10 @@ import type {
 } from './types';
 import type { Source } from './by-source';
 import type { MemoState } from './binary-search';
+import type { RangeBounds } from './ranges';
 
 export type { SourceMapSegment } from './sourcemap-segment';
+export type { RangeBounds } from './ranges';
 export type {
   SourceMap,
   DecodedSourceMap,
@@ -289,7 +291,7 @@ export function traceRange(
   segment: SourceMapSegment,
   genLine: number,
   genCol: number,
-): [number, number, number, number] | null {
+): RangeBounds | null {
   const decoded = decodedMappings(map);
   const rangeSegments = initRangeSegments(map, decoded);
 
