@@ -1,7 +1,7 @@
 /// <reference lib="esnext" />
 
 import assert from 'node:assert/strict';
-import { encode, decode } from '@jridgewell/sourcemap-codec';
+import { encode, decode, encodeRangeMappings } from '@jridgewell/sourcemap-codec';
 
 import {
   TraceMap,
@@ -17,6 +17,7 @@ import {
   LEAST_UPPER_BOUND,
   allGeneratedPositionsFor,
   isIgnored,
+  traceRange,
   type SourceMapInput,
   type EncodedSourceMap,
   type DecodedSourceMap,
@@ -25,8 +26,9 @@ import {
 } from '../src/trace-mapping';
 
 describe('TraceMap', () => {
-  const decodedMap: DecodedSourceMap = {
+  const decodedMap = {
     version: 3,
+    file: 'output.js',
     sources: ['input.js'],
     sourceRoot: 'https://astexplorer.net/',
     names: ['foo', 'bar', 'Error'],
@@ -54,15 +56,16 @@ describe('TraceMap', () => {
         [0, 0, 3, 0, 0],
         [3, 0, 3, 3],
       ],
+      [[0]],
     ],
     sourcesContent: [
       "function foo(bar: number): never {\n    throw new Error('Intentional.');\n}\nfoo();",
     ],
-  };
-  const encodedMap: EncodedSourceMap = {
+  } satisfies DecodedSourceMap;
+  const encodedMap = {
     ...decodedMap,
     mappings: encode(decodedMap.mappings),
-  };
+  } satisfies EncodedSourceMap;
   function replaceField(
     map: DecodedSourceMap | EncodedSourceMap | string,
     field: keyof (DecodedSourceMap | EncodedSourceMap),
@@ -577,7 +580,7 @@ describe('TraceMap', () => {
   });
 
   describe('rangeMappings', () => {
-    const rangeDecodedMap: DecodedSourceMap = {
+    const rangeDecodedMap = {
       version: 3,
       sources: ['input.js'],
       sourceRoot: 'https://astexplorer.net/',
@@ -596,6 +599,9 @@ describe('TraceMap', () => {
           [20, 0, 0, 20, 0], // (4,20) -> input.js:(0,20), NORMAL.
           [30, 0, 2, 15], // (4, 30) -> input.js:(2,15), NORMAL
         ],
+        [
+          [0, 0, 5, 0], // (5,0) -> input.js:(5,0), RANGE
+        ],
       ],
       rangeMappings: [
         [0], // line 0, segment 0 is range
@@ -603,8 +609,9 @@ describe('TraceMap', () => {
         [0], // line 2, segment 0 is range
         [],
         [],
+        [0], // line 5, segment 0 is range
       ],
-    };
+    } satisfies DecodedSourceMap;
 
     function rangeTestSuite(map: DecodedSourceMap | EncodedSourceMap | string) {
       return () => {
@@ -613,8 +620,8 @@ describe('TraceMap', () => {
 
           // Exact match
           assert.deepEqual(traceSegment(tracer, 0, 0), [0, 0, 0, 0]);
-          // Range offset on same line
-          assert.deepEqual(traceSegment(tracer, 0, 10), [10, 0, 0, 10]);
+          // Range offset on same line -> Returns raw segment
+          assert.deepEqual(traceSegment(tracer, 0, 10), [0, 0, 0, 0]);
           // Non-range segment match
           assert.deepEqual(traceSegment(tracer, 0, 20), [20, 0, 0, 20]);
           // Non-range segment, tracing after the segment
@@ -625,14 +632,14 @@ describe('TraceMap', () => {
 
           // Exact match on line 2
           assert.deepEqual(traceSegment(tracer, 2, 0), [0, 0, 1, 0, 0]);
-          // Range offset on line 2
-          assert.deepEqual(traceSegment(tracer, 2, 10), [10, 0, 1, 10, 0]);
+          // Range offset on line 2 -> Returns raw segment
+          assert.deepEqual(traceSegment(tracer, 2, 10), [0, 0, 1, 0, 0]);
 
-          // Range offset on line 3 (empty, L2 ended with RANGE)
-          assert.deepEqual(traceSegment(tracer, 3, 5), [5, 0, 2, 5, 0]);
+          // Range offset on line 3 (empty, L2 ended with RANGE) -> Returns raw segment from L2
+          assert.deepEqual(traceSegment(tracer, 3, 5), [0, 0, 1, 0, 0]);
 
-          // Line 4 column 10 (before NORMAL segment at 20, continues RANGE from L3)
-          assert.deepEqual(traceSegment(tracer, 4, 10), [10, 0, 3, 10, 0]);
+          // Line 4 column 10 (before NORMAL segment at 20, continues RANGE from L3) -> Returns raw segment from L2
+          assert.deepEqual(traceSegment(tracer, 4, 10), [0, 0, 1, 0, 0]);
           // Line 4 column 20 (exact match for NORMAL segment)
           assert.deepEqual(traceSegment(tracer, 4, 20), [20, 0, 0, 20, 0]);
           // Line 4 column 25 (after NORMAL segment)
@@ -836,13 +843,35 @@ describe('TraceMap', () => {
             [{ line: 1, column: 14 }], // Range mapping covers it, and it ignores bias
           );
         });
+
+        it('traceRange', () => {
+          const tracer = new TraceMap(map);
+
+          // Find segment by backtracking from line 3 to line 2
+          const segment = traceSegment(tracer, 3, 5);
+          assert.deepEqual(segment, [0, 0, 1, 0, 0]);
+
+          // traceRange should bound the start to genLine/genCol
+          assert.deepEqual(traceRange(tracer, segment, 3, 5), [3, 5, 4, 20]);
+
+          // Last segment in file should have infinite bounds
+          const segment5 = traceSegment(tracer, 5, 0);
+          assert.deepEqual(segment5, [0, 0, 5, 0]);
+          assert.deepEqual(traceRange(tracer, segment5, 5, 0), [5, 0, Infinity, Infinity]);
+ 
+          // Normal segment should return null for traceRange
+          const normalSegment = traceSegment(tracer, 0, 20);
+          assert.deepEqual(normalSegment, [20, 0, 0, 20]);
+          assert.equal(traceRange(tracer, normalSegment, 0, 20), null);
+        });
       };
     }
 
-    const rangeEncodedMap: EncodedSourceMap = {
+    const rangeEncodedMap = {
       ...rangeDecodedMap,
+      rangeMappings: encodeRangeMappings(rangeDecodedMap.rangeMappings),
       mappings: encode(rangeDecodedMap.mappings),
-    };
+    } satisfies EncodedSourceMap;
     describe('decoded source map', rangeTestSuite(rangeDecodedMap));
     describe('json decoded source map', rangeTestSuite(JSON.stringify(rangeDecodedMap)));
     describe('encoded source map', rangeTestSuite(rangeEncodedMap));

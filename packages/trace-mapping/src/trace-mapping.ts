@@ -8,6 +8,7 @@ import {
 import resolver from './resolve';
 import maybeSort from './sort';
 import buildBySources from './by-source';
+import { previousSegmentLine, nextSegmentLine } from './utils';
 import {
   memoizedState,
   memoizedBinarySearchSegments,
@@ -163,9 +164,9 @@ export class TraceMap implements SourceMap {
   declare private _decodedRangeMappings: number[][] | undefined;
 
   /**
-   * A set of segments that are range mappings.
+   * A map of segments that are range mappings to their generated line.
    */
-  declare private _rangeSegments: Set<SourceMapSegment> | undefined;
+  declare private _rangeSegments: Map<SourceMapSegment, number> | undefined;
 
   constructor(map: Ro<SourceMapInput>, mapUrl?: string | null) {
     const isString = typeof map === 'string';
@@ -280,6 +281,33 @@ export function traceSegment(
 }
 
 /**
+ * Returns the range bounds (start line/column and end line/column) if the
+ * segment is a range segment. Note, this is NOT a SourceMapSegment.
+ */
+export function traceRange(
+  map: TraceMap,
+  segment: SourceMapSegment,
+  genLine: number,
+  genCol: number,
+): [number, number, number, number] | null {
+  const decoded = decodedMappings(map);
+  const rangeSegments = initRangeSegments(map, decoded);
+
+  const rangeLine = rangeSegments.get(segment);
+  if (rangeLine === undefined) return null;
+
+  const line = decoded[rangeLine];
+  const index = line.indexOf(segment);
+
+  const nextLine = nextSegmentLine(decoded, rangeLine, index + 1);
+  if (nextLine === -1) return [genLine, genCol, Infinity, Infinity];
+
+  const nextIndex = nextLine === rangeLine ? index + 1 : 0;
+  const nextSeg = decoded[nextLine][nextIndex];
+  return [genLine, genCol, nextLine, nextSeg[0]];
+}
+
+/**
  * A higher-level API to find the source/line/column associated with a generated line/column
  * (think, from a stack trace). Line is 1-based, but column is 0-based, due to legacy behavior in
  * `source-map` library.
@@ -296,7 +324,7 @@ export function originalPositionFor(
   const decoded = decodedMappings(map);
   const rangeSegments = initRangeSegments(map, decoded);
 
-  const segment = traceSegmentInternal(
+  let segment = traceSegmentInternal(
     decoded,
     rangeSegments,
     cast(map)._decodedMemo,
@@ -307,6 +335,12 @@ export function originalPositionFor(
 
   if (segment == null) return OMapping(null, null, null, null);
   if (segment.length === 1) return OMapping(null, null, null, null);
+
+  const rangeLine = rangeSegments.get(segment);
+  if (rangeLine !== undefined) {
+    segment = rangeOffset(segment, rangeLine, line, column);
+    if (segment == null) return OMapping(null, null, null, null);
+  }
 
   const { names, resolvedSources } = map;
   return OMapping(
@@ -494,7 +528,7 @@ function GMapping(
  */
 function traceSegmentInternal<T extends SourceMapSegment | ReverseSegment>(
   lines: readonly T[][],
-  rangeSegments: Set<T>,
+  rangeSegments: Map<T, number>,
   memo: MemoState,
   line: number,
   column: number,
@@ -502,7 +536,7 @@ function traceSegmentInternal<T extends SourceMapSegment | ReverseSegment>(
 ): T | null;
 function traceSegmentInternal<T extends SourceMapSegment | ReverseSegment>(
   lines: readonly T[][],
-  rangeSegments: Set<T>,
+  rangeSegments: Map<T, number>,
   memo: MemoState,
   line: number,
   column: number,
@@ -510,7 +544,7 @@ function traceSegmentInternal<T extends SourceMapSegment | ReverseSegment>(
 ): T | null;
 function traceSegmentInternal<T extends SourceMapSegment | ReverseSegment>(
   lines: readonly T[][],
-  rangeSegments: Set<T>,
+  rangeSegments: Map<T, number>,
   memo: MemoState,
   line: number,
   column: number,
@@ -532,7 +566,7 @@ function traceSegmentInternal<T extends SourceMapSegment | ReverseSegment>(
       const rangeLineSegs = lines[rangeLine];
       const rangeIndex = rangeLine === line ? index : rangeLineSegs.length - 1;
       const rangeSeg = rangeLineSegs[rangeIndex];
-      if (rangeSegments.has(rangeSeg)) return rangeOffset(rangeSeg, rangeLine, line, column);
+      if (rangeSegments.has(rangeSeg)) return rangeSeg;
     }
   }
 
@@ -552,7 +586,7 @@ function traceSegmentInternal<T extends SourceMapSegment | ReverseSegment>(
  */
 function sliceGeneratedPositions(
   lines: ReverseSegment[][],
-  rangeSegments: Set<ReverseSegment>,
+  rangeSegments: Map<ReverseSegment, number>,
   memo: MemoState,
   line: number,
   column: number,
@@ -630,7 +664,7 @@ function sliceGeneratedPositionsRanges(
   segments: ReverseSegment[],
   min: number,
   max: number,
-  rangeSegments: Set<ReverseSegment>,
+  rangeSegments: Map<ReverseSegment, number>,
   rangeLine: number,
   line: number,
   column: number,
@@ -697,8 +731,14 @@ function generatedPosition(
 
   if (all) return sliceGeneratedPositions(lines, rangeSegments, memo, line, column, bias);
 
-  const segment = traceSegmentInternal(lines, rangeSegments, memo, line, column, bias);
+  let segment = traceSegmentInternal(lines, rangeSegments, memo, line, column, bias);
   if (segment == null) return GMapping(null, null);
+
+  const rangeLine = rangeSegments.get(segment);
+  if (rangeLine !== undefined) {
+    segment = rangeOffset(segment, rangeLine, line, column);
+    if (segment == null) return GMapping(null, null);
+  }
   return GMapping(segment[REV_GENERATED_LINE] + 1, segment[REV_GENERATED_COLUMN]);
 }
 
@@ -711,42 +751,24 @@ function initRangeSegments(map: TraceMap, decoded: readonly SourceMapSegment[][]
   const existing = cast(map)._rangeSegments;
   if (existing != null) return existing;
 
-  const set = new Set<SourceMapSegment>();
-  cast(map)._rangeSegments = set;
+  const rangeSegs = new Map<SourceMapSegment, number>();
+  cast(map)._rangeSegments = rangeSegs;
   const rangeMappings = decodedRangeMappings(map);
-  if (rangeMappings == null) return set;
+  if (rangeMappings == null) return rangeSegs;
 
   for (let i = 0; i < rangeMappings.length; i++) {
     const line = decoded[i];
     const ranges = rangeMappings[i];
     for (let j = 0; j < ranges.length; j++) {
       const seg = line[ranges[j]];
-      set.add(seg);
+      rangeSegs.set(seg, i);
     }
   }
 
-  return set;
+  return rangeSegs;
 }
 
-/**
- * If we didn't find a match on this line, back searches to find the previous
- * line that has a segment.
- */
-function previousSegmentLine<T extends SourceMapSegment | ReverseSegment>(
-  lines: readonly T[][],
-  line: number,
-  index: number,
-): number {
-  if (index === -1) {
-    while (--line >= 0) {
-      const segments = lines[line];
-      if (segments == null || segments.length === 0) continue;
-      break;
-    }
-  }
 
-  return line;
-}
 
 /**
  * Calculates the relative offset between the range mapping's gen line/col, and

@@ -1,11 +1,12 @@
 import { COLUMN, SOURCES_INDEX, SOURCE_LINE, SOURCE_COLUMN } from './sourcemap-segment';
 import { sortComparator } from './sort';
+import { nextSegmentLine } from './utils';
 
 import type { ReverseSegment, SourceMapSegment } from './sourcemap-segment';
 
 export type Source = {
   lines: ReverseSegment[][];
-  rangeSegments: Set<ReverseSegment>;
+  rangeSegments: Map<ReverseSegment, number>;
 };
 
 /**
@@ -15,9 +16,9 @@ export type Source = {
 export default function buildBySources(
   decoded: readonly SourceMapSegment[][],
   memos: unknown[],
-  rangeSegments: Set<SourceMapSegment>,
+  rangeSegments: Map<SourceMapSegment, number>,
 ): Source[] {
-  const sources: Source[] = memos.map(() => ({ lines: [], rangeSegments: new Set() }));
+  const sources: Source[] = memos.map(() => ({ lines: [], rangeSegments: new Map() }));
 
   for (let i = 0; i < decoded.length; i++) {
     const line = decoded[i];
@@ -45,7 +46,7 @@ export default function buildBySources(
           const nextSeg = decoded[nextSegLine][index];
           rev = [sourceColumn, 0, i, seg[COLUMN], nextSegLine, nextSeg[COLUMN]];
         }
-        source.rangeSegments.add(rev);
+        source.rangeSegments.set(rev, seg[SOURCE_LINE]);
       } else {
         rev = [sourceColumn, 0, i, seg[COLUMN]];
       }
@@ -62,14 +63,6 @@ export default function buildBySources(
   }
 
   return sources;
-}
-
-function nextSegmentLine(decoded: readonly SourceMapSegment[][], line: number, index: number) {
-  for (let i = line; i < decoded.length; i++) {
-    if (index < decoded[i].length) return i;
-    index = 0;
-  }
-  return -1;
 }
 
 function getLine<T>(arr: T[][], index: number): T[] {
