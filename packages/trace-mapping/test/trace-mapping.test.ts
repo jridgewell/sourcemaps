@@ -858,7 +858,7 @@ describe('TraceMap', () => {
           const segment5 = traceSegment(tracer, 5, 0);
           assert.deepEqual(segment5, [0, 0, 5, 0]);
           assert.deepEqual(traceRange(tracer, segment5, 5, 0), [5, 0, Infinity, Infinity]);
- 
+
           // Normal segment should return null for traceRange
           const normalSegment = traceSegment(tracer, 0, 20);
           assert.deepEqual(normalSegment, [20, 0, 0, 20]);

@@ -768,8 +768,6 @@ function initRangeSegments(map: TraceMap, decoded: readonly SourceMapSegment[][]
   return rangeSegs;
 }
 
-
-
 /**
  * Calculates the relative offset between the range mapping's gen line/col, and
  * adds those offsets to the source line/col.
