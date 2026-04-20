@@ -59,7 +59,7 @@ describe('FlattenMap', () => {
                 sourcesContent: ['thirdsource'],
                 sourceRoot: 'nested',
                 mappings: 'AAAAA,CAAA;AAAA',
-                rangeMappings: 'B',
+                rangeMappings: 'A',
               },
             },
             {
@@ -144,7 +144,7 @@ describe('FlattenMap', () => {
     it('rangeMappings', () => {
       const tracer = new FlattenMap(map);
       assert.deepEqual(decodedRangeMappings(tracer), [[], [], [0, 1]]);
-      assert.deepEqual(encodedRangeMappings(tracer), ';;BB');
+      assert.deepEqual(encodedRangeMappings(tracer), ';;AB');
     });
   });
 

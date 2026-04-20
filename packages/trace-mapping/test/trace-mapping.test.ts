@@ -919,7 +919,7 @@ describe('TraceMap', () => {
           sources: ['input.js'],
           names: [],
           mappings: 'AAAA;EAee', // (0,0) -> (0,0) RANGE; (1,2) -> (15,15) NORMAL
-          rangeMappings: 'B', // first segment is range
+          rangeMappings: 'A', // first segment is range
         });
 
         // Inside range

@@ -156,7 +156,7 @@ describe('GenMapping', () => {
       addSegment(map, 0, 1, 'input.js', 2, 3, 'foo');
       setRangeSegment(map, 0, 1);
 
-      assert.deepEqual(toEncodedMap(map).rangeMappings, 'B');
+      assert.deepEqual(toEncodedMap(map).rangeMappings, 'A');
     });
 
     it('excludes rangeMappings when empty', () => {
