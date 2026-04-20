@@ -16,7 +16,7 @@ export function previousSegmentLine<T extends SourceMapSegment | ReverseSegment>
   line: number,
   index: number,
 ): number {
-  if (index === -1) {
+  if (index < 0) {
     while (--line >= 0) {
       const segments = lines[line];
       if (segments && segments.length > 0) break;

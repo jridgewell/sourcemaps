@@ -653,6 +653,17 @@ describe('GenMapping', () => {
         assert.deepEqual(toDecodedMap(map).mappings, [[[1, 0, 0, 0]]]);
       });
 
+      it('always adds sourceless segment first on line when range is open', () => {
+        const map = new GenMapping();
+
+        maybeAddSegment(map, 0, 1, 'input.js', 0, 0);
+        setRangeSegment(map, 0, 1);
+        maybeAddSegment(map, 1, 1);
+
+        assert.deepEqual(toDecodedMap(map).mappings, [[[1, 0, 0, 0]], [[1]]]);
+        assert.deepEqual(toDecodedMap(map).rangeMappings, [[0]]);
+      });
+
       it('skips sourceless segment sorted first in line', () => {
         const map = new GenMapping();
 
@@ -672,6 +683,18 @@ describe('GenMapping', () => {
         assert.deepEqual(toDecodedMap(map).mappings, [[[0, 0, 0, 0], [1]]]);
       });
 
+      it('always adds equivalent sourceless segment when range is open', () => {
+        const map = new GenMapping();
+
+        maybeAddSegment(map, 0, 0, 'input.js', 0, 0);
+        maybeAddSegment(map, 0, 1);
+        setRangeSegment(map, 0, 1);
+        maybeAddSegment(map, 0, 1);
+
+        assert.deepEqual(toDecodedMap(map).mappings, [[[0, 0, 0, 0], [1], [1]]]);
+        assert.deepEqual(toDecodedMap(map).rangeMappings, [[1]]);
+      });
+
       it('skips runs of sourceless segment', () => {
         const map = new GenMapping();
 
@@ -680,6 +703,18 @@ describe('GenMapping', () => {
         maybeAddSegment(map, 0, 2);
 
         assert.deepEqual(toDecodedMap(map).mappings, [[[0, 0, 0, 0], [1]]]);
+      });
+
+      it('always adds runs of sourceless segment when range is open', () => {
+        const map = new GenMapping();
+
+        maybeAddSegment(map, 0, 0, 'input.js', 0, 0);
+        maybeAddSegment(map, 0, 1);
+        setRangeSegment(map, 0, 1);
+        maybeAddSegment(map, 0, 2);
+
+        assert.deepEqual(toDecodedMap(map).mappings, [[[0, 0, 0, 0], [1], [2]]]);
+        assert.deepEqual(toDecodedMap(map).rangeMappings, [[1]]);
       });
 
       it('does not skip sourcless segment sorted before sourceless segment', () => {
@@ -710,6 +745,22 @@ describe('GenMapping', () => {
         maybeAddSegment(map, 0, 0, 'input.js', 0, 0);
 
         assert.deepEqual(toDecodedMap(map).mappings, [[[0, 0, 0, 0]]]);
+      });
+
+      it('always adds source segment when range is open', () => {
+        const map = new GenMapping();
+
+        maybeAddSegment(map, 0, 0, 'input.js', 0, 0);
+        setRangeSegment(map, 0, 0);
+        maybeAddSegment(map, 0, 0, 'input.js', 0, 0);
+
+        assert.deepEqual(toDecodedMap(map).mappings, [
+          [
+            [0, 0, 0, 0],
+            [0, 0, 0, 0],
+          ],
+        ]);
+        assert.deepEqual(toDecodedMap(map).rangeMappings, [[0]]);
       });
 
       it('keeps source segment after matching named segment', () => {
@@ -777,6 +828,22 @@ describe('GenMapping', () => {
         assert.deepEqual(toDecodedMap(map).mappings, [[[0, 0, 0, 0]]]);
       });
 
+      it('always adds runs of matching source segment when range is open', () => {
+        const map = new GenMapping();
+
+        maybeAddSegment(map, 0, 0, 'input.js', 0, 0);
+        setRangeSegment(map, 0, 0);
+        maybeAddSegment(map, 0, 1, 'input.js', 0, 0);
+
+        assert.deepEqual(toDecodedMap(map).mappings, [
+          [
+            [0, 0, 0, 0],
+            [1, 0, 0, 0],
+          ],
+        ]);
+        assert.deepEqual(toDecodedMap(map).rangeMappings, [[0]]);
+      });
+
       it('skips runs of matching named segment', () => {
         const map = new GenMapping();
 
@@ -784,6 +851,22 @@ describe('GenMapping', () => {
         maybeAddSegment(map, 0, 1, 'input.js', 0, 0, 'foo');
 
         assert.deepEqual(toDecodedMap(map).mappings, [[[0, 0, 0, 0, 0]]]);
+      });
+
+      it('always adds runs of matching named segment when range is open', () => {
+        const map = new GenMapping();
+
+        maybeAddSegment(map, 0, 0, 'input.js', 0, 0, 'foo');
+        setRangeSegment(map, 0, 0);
+        maybeAddSegment(map, 0, 1, 'input.js', 0, 0, 'foo');
+
+        assert.deepEqual(toDecodedMap(map).mappings, [
+          [
+            [0, 0, 0, 0, 0],
+            [1, 0, 0, 0, 0],
+          ],
+        ]);
+        assert.deepEqual(toDecodedMap(map).rangeMappings, [[0]]);
       });
 
       it('keeps source segment pointing to different source file', () => {

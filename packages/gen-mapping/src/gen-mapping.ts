@@ -370,7 +370,12 @@ function addSegmentInternal<S extends string | null | undefined>(
   if (!source) {
     // If this sourceless segment doesn't end a source segment, then it provides
     // no value.
-    if (skipable && skipSourceless(line, index)) return;
+    if (
+      skipable &&
+      skipSourceless(line, index) &&
+      !isRangeOpen(mappings, rangeMappings, genLine, index - 1)
+    )
+      return;
     if (index < line.length) adjustRangeMappings(rangeMappings, genLine, index);
     insert(line, index, [genColumn]);
     return;
@@ -390,7 +395,11 @@ function addSegmentInternal<S extends string | null | undefined>(
   // If this source segment isn't different from the previous source segment, or
   // start a source segment after a sourceless segment, then it provides no
   // value.
-  if (skipable && skipSource(line, index, sourcesIndex, sourceLine, sourceColumn, namesIndex)) {
+  if (
+    skipable &&
+    skipSource(line, index, sourcesIndex, sourceLine, sourceColumn, namesIndex) &&
+    !isRangeOpen(mappings, rangeMappings, genLine, index - 1)
+  ) {
     return;
   }
 
@@ -432,6 +441,31 @@ function getSegmentIndex(line: SourceMapSegment[], genColumn: number): number {
     if (genColumn >= current[COLUMN]) return i;
   }
   return 0;
+}
+
+function isRangeOpen(
+  mappings: SourceMapSegment[][],
+  rangeMappings: MappingIndex[][],
+  genLine: number,
+  index: number,
+): boolean {
+  if (rangeMappings.length === 0) return false;
+
+  if (index < 0) {
+    while (--genLine >= 0) {
+      const segments = mappings[genLine];
+      if (segments.length > 0) {
+        index = segments.length - 1;
+        break;
+      }
+    }
+  }
+
+  if (genLine < 0) return false;
+  if (genLine >= rangeMappings.length) return false;
+  const ranges = rangeMappings[genLine];
+
+  return getRangeIndex(ranges, index) >= 0;
 }
 
 /**

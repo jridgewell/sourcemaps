@@ -288,18 +288,18 @@ export function traceSegment(
  */
 export function traceRange(
   map: TraceMap,
-  segment: SourceMapSegment,
+  segment: Ro<SourceMapSegment>,
   genLine: number,
   genCol: number,
 ): RangeBounds | null {
   const decoded = decodedMappings(map);
   const rangeSegments = initRangeSegments(map, decoded);
 
-  const rangeLine = rangeSegments.get(segment);
+  const rangeLine = rangeSegments.get(segment as SourceMapSegment);
   if (rangeLine === undefined) return null;
 
   const line = decoded[rangeLine];
-  const index = line.indexOf(segment);
+  const index = line.indexOf(segment as SourceMapSegment);
 
   const nextLine = nextSegmentLine(decoded, rangeLine, index + 1);
   if (nextLine === -1) return [genLine, genCol, Infinity, Infinity];
