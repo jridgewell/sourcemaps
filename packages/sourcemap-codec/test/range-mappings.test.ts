@@ -13,19 +13,19 @@ describe('range mappings proposal', () => {
         decoded: [[]],
       },
       {
-        encoded: 'B',
+        encoded: 'A',
         decoded: [[0]],
       },
       {
-        encoded: ';BC;',
+        encoded: ';AC;',
         decoded: [[], [0, 2], []],
       },
       {
-        encoded: 'C;BC;E',
+        encoded: 'B;AC;D',
         decoded: [[1], [0, 2], [3]],
       },
       {
-        encoded: 'nF;BPP;9I',
+        encoded: 'mF;APP;8I',
         decoded: [[166], [0, 15, 30], [284]],
       },
     ];

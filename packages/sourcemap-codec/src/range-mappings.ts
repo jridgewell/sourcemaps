@@ -12,7 +12,7 @@ export function decodeRangeMappings(input: string): RangeMappings {
   do {
     const semi = reader.indexOf(';');
     const indices: MappingIndex[] = [];
-    let index = -1;
+    let index = 0;
 
     while (reader.pos < semi) {
       index += decodeInteger(reader);
@@ -35,7 +35,7 @@ export function encodeRangeMappings(decoded: RangeMappings): string {
     const indices = decoded[i];
     if (i > 0) writer.write(semicolon);
 
-    let index = -1;
+    let index = 0;
     for (let j = 0; j < indices.length; j++) {
       const offset = indices[j];
       encodeInteger(writer, offset - index);
