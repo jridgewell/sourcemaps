@@ -8,7 +8,7 @@
     "clean": "turbo run clean",
     "lint": "turbo run lint",
     "test": "turbo run test --parallel",
-    "postinstall": "degit tc39/source-map-tests/decoding decoding-tests"
+    "postinstall": "degit --force tc39/source-map-tests/decoding decoding-tests"
   },
   "workspaces": [
     "packages/*"

@@ -6,3 +6,4 @@ coverage
 .idea
 .turbo
 *.tsbuildinfo
+decoding-tests

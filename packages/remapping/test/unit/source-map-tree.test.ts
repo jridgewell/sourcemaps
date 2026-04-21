@@ -1,4 +1,4 @@
-import { toDecodedMap, toEncodedMap, GenMapping } from '@jridgewell/gen-mapping';
+import { toDecodedMap, GenMapping } from '@jridgewell/gen-mapping';
 import { TraceMap } from '@jridgewell/trace-mapping';
 import assert from 'node:assert/strict';
 
@@ -267,7 +267,7 @@ describe('MapSource', () => {
       for (let genCol = 0; genCol < expectedCols.length; genCol++) {
         const { mappings } = tracePosition(tree, 5, genCol, '');
         if (expectedCols[genCol] == null) {
-          assert.deepEqual(mappings, [[[0]]]);
+          assert.deepEqual(mappings, []);
         } else {
           assert.deepEqual(mappings, [[[0, 0, 5, expectedCols[genCol]]]]);
         }
@@ -285,9 +285,9 @@ describe('MapSource', () => {
       assert.deepEqual(mappings, []);
     });
 
-    it('returns sourceless segment object if segment is 1-length', () => {
+    it('returns empty mappings if segment is 1-length', () => {
       const { mappings } = tracePosition(tree, 2, 0, '');
-      assert.deepEqual(mappings, [[[0]]]);
+      assert.deepEqual(mappings, []);
     });
 
     it('passes in outer name to trace', () => {
@@ -317,7 +317,7 @@ describe('MapSource', () => {
           assert.deepEqual(mappings, [[[0, 0, 0, 0]]]);
         });
 
-        it('returns null segment segment after null match', () => {
+        it('returns empty mappings after null match', () => {
           tracePosition(tree, 1, 0, '');
           const { mappings } = tracePosition(tree, 1, 1, '');
           assert.deepEqual(mappings, []);
@@ -337,7 +337,7 @@ describe('MapSource', () => {
           assert.deepEqual(mappings, [[[0, 0, 0, 0]]]);
         });
 
-        it('returns null segment segment after null match', () => {
+        it('returns empty mappings after null match', () => {
           tracePosition(tree, 1, 1, '');
           const { mappings } = tracePosition(tree, 1, 0, '');
           assert.deepEqual(mappings, []);
