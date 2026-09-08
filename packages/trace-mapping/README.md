@@ -78,7 +78,8 @@ assert.deepEqual(traced, [5, 0, 41, 4, 0]);
 
 The sourcemap spec defines a special `sections` field that's designed to handle concatenation of
 output code with associated sourcemaps. This type of sourcemap is rarely used (no major build tool
-produces it), but if you are hand coding a concatenation you may need it. We provide an `AnyMap`
+produces it, except [Turbopack](https://github.com/vercel/next.js/blob/665d3458b616accd6e0ae942d794eb223273d616/turbopack/crates/turbopack-core/src/source_map/mod.rs#L296-L351)),
+but if you are hand coding a concatenation you may need it. We provide an `AnyMap`
 helper that can receive either a regular sourcemap or a `SectionedSourceMap` and returns a
 `TraceMap` instance:
 
