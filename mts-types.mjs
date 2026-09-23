@@ -12,9 +12,7 @@ for (const file of readdirSync(typesDir)) {
   const path = `${typesDir}/${file}`;
   const contents = readFileSync(path, 'utf8');
 
-  const cts = contents
-    .replace(/^export default/gm, 'export =      ')
-    .replace(from, 'from $1$2.cts$1;');
+  const cts = contents.replace(from, 'from $1$2.cts$1;');
   const mts = contents.replace(from, 'from $1$2.mts$1;');
 
   unlinkSync(path);
