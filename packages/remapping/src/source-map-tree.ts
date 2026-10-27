@@ -1,7 +1,7 @@
 import { GenMapping, maybeAddSegment, setIgnore, setSourceContent } from '@jridgewell/gen-mapping';
-import { traceSegment, decodedMappings } from '@jridgewell/trace-mapping';
+import { traceSegment, decodedMappings, traceRange } from '@jridgewell/trace-mapping';
 
-import type { TraceMap, SourceMapSegment } from '@jridgewell/trace-mapping';
+import type { TraceMap, SourceMapSegment, RangeBounds } from '@jridgewell/trace-mapping';
 
 export type OriginalSource = {
   map: null;
@@ -89,7 +89,9 @@ export function traceMappings(tree: MapSource): GenMapping {
 
     for (let j = 0; j < segments.length; j++) {
       const segment = segments[j];
-      originalPositionForSegment(gen, i, segment[0], tree, '', segment);
+      const genCol = segment[0];
+      const range = traceRange(map, segment, i, genCol);
+      originalPositionForSegment(gen, i, genCol, tree, '', segment, range, range == null);
     }
   }
 
@@ -103,6 +105,8 @@ function originalPositionForSegment(
   source: MapSource,
   parentName: string,
   segment: Readonly<SourceMapSegment> | null,
+  range: RangeBounds | null,
+  isPoint: boolean,
 ): void {
   // 1-length segments only move the current generated column, there's no source information
   // to gather from it.
@@ -111,14 +115,21 @@ function originalPositionForSegment(
     return;
   }
 
+  const childSource = source.sources[segment[1]];
+  const childLine = segment[2];
+  const childCol = segment[3];
+  const childName = segment.length === 5 ? source.map.names[segment[4]] : parentName;
+
   return originalPositionFor(
     gen,
     genLine,
     genCol,
-    source.sources[segment[1]],
-    segment[2],
-    segment[3],
-    segment.length === 5 ? source.map.names[segment[4]] : parentName,
+    childSource,
+    childLine,
+    childCol,
+    childName,
+    range,
+    isPoint,
   );
 }
 
@@ -130,14 +141,31 @@ export function originalPositionFor(
   line: number,
   column: number,
   name: string,
+  range: RangeBounds | null,
+  isPoint: boolean,
 ): void {
-  if (!source.map) {
+  const { map } = source;
+  if (!map) {
+    if (range) {
+      line += range[0];
+      column += range[1];
+    }
     maybeAddSegment(gen, genLine, genCol, source.source, line, column, name);
     if (source.content != null) setSourceContent(gen, source.source, source.content);
     if (source.ignore) setIgnore(gen, source.source, true);
     return;
   }
 
-  const segment = traceSegment(source.map, line, column);
-  return originalPositionForSegment(gen, genLine, genCol, source, name, segment);
+  const segment = traceSegment(map, line, column);
+  const childRange = segment && traceRange(map, segment, line, column);
+  return originalPositionForSegment(
+    gen,
+    genLine,
+    genCol,
+    source,
+    name,
+    segment,
+    childRange,
+    isPoint || childRange == null,
+  );
 }

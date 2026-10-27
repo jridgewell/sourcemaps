@@ -299,14 +299,15 @@ export function traceRange(
   if (rangeLine === undefined) return null;
 
   const line = decoded[rangeLine];
-  const index = line.indexOf(segment as SourceMapSegment);
+  const rangeIndex = line.indexOf(segment as SourceMapSegment);
+  const lineOffset = genLine - rangeLine;
+  const colOffset = genLine === rangeLine ? genCol - segment[0] : 0;
 
-  const nextLine = nextSegmentLine(decoded, rangeLine, index + 1);
-  if (nextLine === -1) return [genLine, genCol, Infinity, Infinity];
+  const nextLine = nextSegmentLine(decoded, rangeLine, rangeIndex + 1);
+  if (nextLine === -1) return [lineOffset, colOffset, rangeLine, rangeIndex, -1, -1];
 
-  const nextIndex = nextLine === rangeLine ? index + 1 : 0;
-  const nextSeg = decoded[nextLine][nextIndex];
-  return [genLine, genCol, nextLine, nextSeg[0]];
+  const nextIndex = nextLine === rangeLine ? rangeIndex + 1 : 0;
+  return [lineOffset, colOffset, rangeLine, rangeIndex, nextLine, nextIndex];
 }
 
 /**
@@ -784,7 +785,7 @@ function rangeOffset<T extends SourceMapSegment | ReverseSegment>(
 
   const lineDelta = line - rangeLine;
   const columnDelta = lineDelta === 0 ? column - range[COLUMN] : column;
-  if (range.length === 6) {
+  if (range.length === 6 && range[REV_RANGE_END_LINE] !== -1) {
     if (line > range[REV_RANGE_END_LINE]) return null;
     if (line === range[REV_RANGE_END_LINE] && column >= range[REV_RANGE_END_COLUMN]) return null;
   }

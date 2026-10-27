@@ -1,11 +1,13 @@
 import type { ReverseSegment, SourceMapSegment } from './sourcemap-segment';
 
+type LineOffset = number;
+type ColumnOffset = number;
 type StartLine = number;
-type StartColumn = number;
+type StartIndex = number;
 type EndLine = number;
-type EndColumn = number;
+type EndIndex = number;
 
-export type RangeBounds = [StartLine, StartColumn, EndLine, EndColumn];
+export type RangeBounds = [LineOffset, ColumnOffset, StartLine, StartIndex, EndLine, EndIndex];
 
 /**
  * Looks backwards to find the previous line that has a segment at or before

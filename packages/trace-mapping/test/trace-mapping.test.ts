@@ -852,12 +852,12 @@ describe('TraceMap', () => {
           assert.deepEqual(segment, [0, 0, 1, 0, 0]);
 
           // traceRange should bound the start to genLine/genCol
-          assert.deepEqual(traceRange(tracer, segment, 3, 5), [3, 5, 4, 20]);
+          assert.deepEqual(traceRange(tracer, segment, 3, 5), [3, 5, 0, 4, 20, 0]);
 
           // Last segment in file should have infinite bounds
           const segment5 = traceSegment(tracer, 5, 0);
           assert.deepEqual(segment5, [0, 0, 5, 0]);
-          assert.deepEqual(traceRange(tracer, segment5, 5, 0), [5, 0, Infinity, Infinity]);
+          assert.deepEqual(traceRange(tracer, segment5, 5, 0), [5, 0, 0, -1, -1, -1]);
 
           // Normal segment should return null for traceRange
           const normalSegment = traceSegment(tracer, 0, 20);

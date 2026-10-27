@@ -40,7 +40,7 @@ export default function buildBySources(
         // that cross over the next segment.
         const nextSegLine = nextSegmentLine(decoded, i, j + 1);
         if (nextSegLine === -1) {
-          rev = [sourceColumn, 0, i, seg[COLUMN], Infinity, Infinity];
+          rev = [sourceColumn, 0, i, seg[COLUMN], -1, -1];
         } else {
           const index = nextSegLine === i ? j + 1 : 0;
           const nextSeg = decoded[nextSegLine][index];

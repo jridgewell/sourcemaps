@@ -233,6 +233,270 @@ describe('MapSource', () => {
         assert.deepEqual(traced.mappings, [[[0, 0, 0, 0]], [[0, 0, 0, 0]]]);
       });
     });
+
+    describe('range mappings', () => {
+      // https://docs.google.com/presentation/d/1xMlkgiE-4PoFyqqJYw5XgZVmb6gMc8gSGqe7JWEC71k/edit?usp=sharing
+      it('Regular -> Range (Slide 14)', () => {
+        const map = {
+          ...baseMap,
+          mappings: [[], [[1, 0, 0, 4]]],
+        } satisfies DecodedSourceMap;
+
+        const childMap = {
+          ...baseMap,
+          sources: ['original.js'],
+          mappings: [
+            [
+              [0, 0, 0, 10],
+              [8, 0, 0, 20],
+            ],
+          ],
+          rangeMappings: [[0]],
+        } satisfies DecodedSourceMap;
+
+        const childTree = MapSource(new TraceMap(childMap), [
+          OriginalSource(`${sourceRoot}/original.js`, '', false),
+        ]);
+
+        const tree = MapSource(new TraceMap(map), [childTree]);
+        const traced = toDecodedMap(traceMappings(tree));
+        assert.deepEqual(traced.mappings, [[], [[1, 0, 0, 14]]]);
+        assert.deepEqual(traced.rangeMappings, undefined);
+      });
+
+      it('Range -> Regular (Multiple) (Slide 19)', () => {
+        const map = {
+          ...baseMap,
+          mappings: [[], [[1, 0, 2, 2], [6]]],
+          rangeMappings: [[], [0]],
+        } satisfies DecodedSourceMap;
+
+        const childMap = {
+          ...baseMap,
+          sources: ['original.js'],
+          mappings: [
+            [],
+            [],
+            [
+              [3, 0, 0, 10],
+              [4, 0, 0, 20],
+              [5, 0, 0, 30],
+            ],
+          ],
+        } satisfies DecodedSourceMap;
+
+        const childTree = MapSource(new TraceMap(childMap), [
+          OriginalSource(`${sourceRoot}/original.js`, '', false),
+        ]);
+
+        const tree = MapSource(new TraceMap(map), [childTree]);
+        const traced = toDecodedMap(traceMappings(tree));
+        assert.deepEqual(traced.mappings, [
+          [],
+          [
+            [3, 0, 0, 10],
+            [4, 0, 0, 20],
+            [5, 0, 0, 30],
+          ],
+        ]);
+        assert.deepEqual(traced.rangeMappings, undefined);
+      });
+
+      it('Multiple Range -> Range (Slide 24)', () => {
+        const map = {
+          ...baseMap,
+          mappings: [[[1, 0, 0, 2], [3], [6, 0, 0, 13], [9]]],
+          rangeMappings: [[0, 2]],
+        } satisfies DecodedSourceMap;
+
+        const childMap = {
+          ...baseMap,
+          sources: ['original.js'],
+          mappings: [[[0, 0, 0, 100], [20]]],
+          rangeMappings: [[0]],
+        } satisfies DecodedSourceMap;
+
+        const childTree = MapSource(new TraceMap(childMap), [
+          OriginalSource(`${sourceRoot}/original.js`, '', false),
+        ]);
+
+        const tree = MapSource(new TraceMap(map), [childTree]);
+        const traced = toDecodedMap(traceMappings(tree));
+        assert.deepEqual(traced.mappings, [[[1, 0, 0, 102], [3], [6, 0, 0, 113], [9]]]);
+        assert.deepEqual(traced.rangeMappings, [[0, 2]]);
+      });
+
+      it('Range -> Mix of Regular and Ranges', () => {
+        const map = {
+          ...baseMap,
+          mappings: [[[0, 0, 0, 0], [10]]],
+          rangeMappings: [[0]],
+        } satisfies DecodedSourceMap;
+
+        const childMap = {
+          ...baseMap,
+          sources: ['original.js'],
+          mappings: [[[2, 0, 0, 10], [4], [6, 0, 0, 20], [8, 0, 0, 30], [9]]],
+          rangeMappings: [[0, 3]],
+        } satisfies DecodedSourceMap;
+
+        const childTree = MapSource(new TraceMap(childMap), [
+          OriginalSource(`${sourceRoot}/original.js`, '', false),
+        ]);
+
+        const tree = MapSource(new TraceMap(map), [childTree]);
+        const traced = toDecodedMap(traceMappings(tree));
+        assert.deepEqual(traced.mappings, [
+          [[2, 0, 0, 10], [4], [6, 0, 0, 20], [8, 0, 0, 30], [9]],
+        ]);
+        assert.deepEqual(traced.rangeMappings, [[0, 3]]);
+      });
+
+      it('3 Levels Deep: Case 1 (Regular -> Range)', () => {
+        const map1 = {
+          ...baseMap,
+          mappings: [[[0, 0, 0, 0], [10]]],
+          rangeMappings: [[0]],
+        } satisfies DecodedSourceMap;
+
+        const map2 = {
+          ...baseMap,
+          sources: ['level3.js'],
+          mappings: [[[0, 0, 0, 0]]],
+        } satisfies DecodedSourceMap;
+
+        const map3 = {
+          ...baseMap,
+          mappings: [
+            [
+              [0, 0, 0, 10],
+              [8, 0, 0, 20],
+            ],
+          ],
+          rangeMappings: [[0]],
+          sources: ['helloworld.js'],
+        } satisfies DecodedSourceMap;
+
+        const source3 = MapSource(new TraceMap(map3), [
+          OriginalSource(`${sourceRoot}/helloworld.js`, '', false),
+        ]);
+        const source2 = MapSource(new TraceMap(map2), [source3]);
+        const tree = MapSource(new TraceMap(map1), [source2]);
+
+        const traced = toDecodedMap(traceMappings(tree));
+        assert.deepEqual(traced.mappings, [[[0, 0, 0, 10]]]);
+        assert.deepEqual(traced.rangeMappings, [[]]);
+      });
+
+      it('3 Levels Deep: Case 2 (Range -> Regular)', () => {
+        const map1 = {
+          ...baseMap,
+          mappings: [[[0, 0, 0, 0], [10]]],
+          rangeMappings: [[0]],
+        } satisfies DecodedSourceMap;
+
+        const map2 = {
+          ...baseMap,
+          sources: ['level3.js'],
+          mappings: [[[0, 0, 0, 0], [4]]],
+          rangeMappings: [[0]],
+        } satisfies DecodedSourceMap;
+
+        const map3 = {
+          ...baseMap,
+          mappings: [
+            [
+              [2, 0, 0, 10],
+              [3, 0, 0, 20],
+              [4, 0, 0, 30],
+            ],
+          ],
+          sources: ['helloworld.js'],
+        } satisfies DecodedSourceMap;
+
+        const source3 = MapSource(new TraceMap(map3), [
+          OriginalSource(`${sourceRoot}/helloworld.js`, '', false),
+        ]);
+        const source2 = MapSource(new TraceMap(map2), [source3]);
+        const tree = MapSource(new TraceMap(map1), [source2]);
+
+        const traced = toDecodedMap(traceMappings(tree));
+        assert.deepEqual(traced.mappings, [
+          [
+            [2, 0, 0, 10],
+            [3, 0, 0, 20],
+            [4, 0, 0, 30],
+          ],
+        ]);
+        assert.deepEqual(traced.rangeMappings, [[]]);
+      });
+
+      it('3 Levels Deep: Case 3 (Multiple Range -> Range)', () => {
+        const map1 = {
+          ...baseMap,
+          mappings: [[[0, 0, 0, 0], [10]]],
+          rangeMappings: [[0]],
+        } satisfies DecodedSourceMap;
+
+        const map2 = {
+          ...baseMap,
+          sources: ['level3.js'],
+          mappings: [[[1, 0, 0, 2], [3], [6, 0, 0, 13], [9]]],
+          rangeMappings: [[0, 2]],
+        } satisfies DecodedSourceMap;
+
+        const map3 = {
+          ...baseMap,
+          mappings: [[[0, 0, 0, 100], [20]]],
+          rangeMappings: [[0]],
+          sources: ['helloworld.js'],
+        } satisfies DecodedSourceMap;
+
+        const source3 = MapSource(new TraceMap(map3), [
+          OriginalSource(`${sourceRoot}/helloworld.js`, '', false),
+        ]);
+        const source2 = MapSource(new TraceMap(map2), [source3]);
+        const tree = MapSource(new TraceMap(map1), [source2]);
+
+        const traced = toDecodedMap(traceMappings(tree));
+        assert.deepEqual(traced.mappings, [[[1, 0, 0, 102], [3], [6, 0, 0, 113], [9]]]);
+        assert.deepEqual(traced.rangeMappings, [[0, 2]]);
+      });
+
+      it('3 Levels Deep: Case 4 (Range -> Mix)', () => {
+        const map1 = {
+          ...baseMap,
+          mappings: [[[0, 0, 0, 0], [10]]],
+          rangeMappings: [[0]],
+        } satisfies DecodedSourceMap;
+
+        const map2 = {
+          ...baseMap,
+          sources: ['level3.js'],
+          mappings: [[[0, 0, 0, 0], [10]]],
+          rangeMappings: [[0]],
+        } satisfies DecodedSourceMap;
+
+        const map3 = {
+          ...baseMap,
+          mappings: [[[2, 0, 0, 10], [4], [6, 0, 0, 20], [8, 0, 0, 30], [9]]],
+          rangeMappings: [[0, 3]],
+          sources: ['helloworld.js'],
+        } satisfies DecodedSourceMap;
+
+        const source3 = MapSource(new TraceMap(map3), [
+          OriginalSource(`${sourceRoot}/helloworld.js`, '', false),
+        ]);
+        const source2 = MapSource(new TraceMap(map2), [source3]);
+        const tree = MapSource(new TraceMap(map1), [source2]);
+
+        const traced = toDecodedMap(traceMappings(tree));
+        assert.deepEqual(traced.mappings, [
+          [[2, 0, 0, 10], [4], [6, 0, 0, 20], [8, 0, 0, 30], [9]],
+        ]);
+        assert.deepEqual(traced.rangeMappings, [[0, 3]]);
+      });
+    });
   });
 
   describe('originalPositionFor()', () => {
@@ -259,9 +523,15 @@ describe('MapSource', () => {
     } satisfies DecodedSourceMap;
     const tree = MapSource(new TraceMap(map), [OriginalSource('child.js', '', false)]);
 
-    function tracePosition(source: any, line: number, col: number, name: string) {
+    function tracePosition(
+      source: any,
+      line: number,
+      col: number,
+      name: string,
+      rangeBounds?: [number, number, number, number],
+    ) {
       const gen = new GenMapping();
-      originalPositionFor(gen, 0, 0, source, line, col, name);
+      originalPositionFor(gen, 0, 0, source, line, col, name, rangeBounds);
       return toDecodedMap(gen);
     }
 
