@@ -39,10 +39,10 @@ export const FlattenMap: FlattenMap = function (map, mapUrl) {
   }
 
   const mappings: SourceMapSegment[][] = [];
-  const sources: string[] = [];
+  const sources = new Map<string, number>();
   const sourcesContent: (string | null)[] = [];
   const names: string[] = [];
-  const ignoreList: number[] = [];
+  const ignoreList = new Set<number>();
   const rangeMappings: number[][] = [];
 
   recurse(
@@ -64,10 +64,10 @@ export const FlattenMap: FlattenMap = function (map, mapUrl) {
     version: 3,
     file: parsed.file,
     names,
-    sources,
+    sources: Array.from(sources.keys()),
     sourcesContent,
     mappings,
-    ignoreList,
+    ignoreList: Array.from(ignoreList),
     rangeMappings,
   } satisfies DecodedSourceMap;
   assertExhaustive(
@@ -84,10 +84,10 @@ function recurse(
   input: SectionedSourceMapXInput,
   mapUrl: string | null | undefined,
   mappings: SourceMapSegment[][],
-  sources: string[],
+  sources: Map<string, number>,
   sourcesContent: (string | null)[],
   names: string[],
-  ignoreList: number[],
+  ignoreList: Set<number>,
   rangeMappings: number[][],
   lineOffset: number,
   columnOffset: number,
@@ -137,10 +137,10 @@ function addSection(
   input: SectionXInput['map'],
   mapUrl: string | null | undefined,
   mappings: SourceMapSegment[][],
-  sources: string[],
+  sources: Map<string, number>,
   sourcesContent: (string | null)[],
   names: string[],
-  ignoreList: number[],
+  ignoreList: Set<number>,
   rangeMappings: number[][],
   lineOffset: number,
   columnOffset: number,
@@ -151,20 +151,26 @@ function addSection(
   if ('sections' in parsed) return recurse(...(arguments as unknown as Parameters<typeof recurse>));
 
   const map = new TraceMap(parsed, mapUrl);
-  const sourcesOffset = sources.length;
   const namesOffset = names.length;
   const decoded = decodedMappings(map);
   const ranges = decodedRangeMappings(map);
   const { resolvedSources, sourcesContent: contents, ignoreList: ignores } = map;
 
-  append(sources, resolvedSources);
+  const sourceIndexes: number[] = [];
+  for (let i = 0; i < resolvedSources.length; i++) {
+    const source = resolvedSources[i];
+    let index = sources.get(source);
+    if (index === undefined) {
+      index = sources.size;
+      sources.set(source, index);
+      sourcesContent.push(contents != null ? contents[i] : null);
+    }
+    sourceIndexes.push(index);
+  }
   append(names, map.names);
 
-  if (contents != null) append(sourcesContent, contents);
-  else for (let i = 0; i < resolvedSources.length; i++) sourcesContent.push(null);
-
   if (ignores != null) {
-    for (let i = 0; i < ignores.length; i++) ignoreList.push(ignores[i] + sourcesOffset);
+    for (let i = 0; i < ignores.length; i++) ignoreList.add(sourceIndexes[ignores[i]]);
   }
 
   for (let i = 0; i < decoded.length; i++) {
@@ -213,7 +219,7 @@ function addSection(
         continue;
       }
 
-      const sourcesIndex = sourcesOffset + seg[SOURCES_INDEX];
+      const sourcesIndex = sourceIndexes[seg[SOURCES_INDEX]];
       const sourceLine = seg[SOURCE_LINE];
       const sourceColumn = seg[SOURCE_COLUMN];
       out.push(
