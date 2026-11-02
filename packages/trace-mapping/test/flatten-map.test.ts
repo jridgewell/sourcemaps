@@ -7,6 +7,8 @@ import {
   decodedMappings,
   decodedRangeMappings,
   encodedRangeMappings,
+  originalPositionFor,
+  generatedPositionFor,
   type SectionedSourceMap,
   type SourceMapSegment,
 } from '../src/trace-mapping';
@@ -160,6 +162,175 @@ describe('FlattenMap', () => {
       };
 
       new FlattenMap(decodedMap);
+    });
+  });
+
+  describe('nested section offsets', () => {
+    for (const line of [0, 1]) {
+      it(`applies the parent column only to the first line (child line ${line})`, () => {
+        const input: SectionedSourceMap = {
+          version: 3,
+          sections: [
+            {
+              offset: { line: 2, column: 7 },
+              map: {
+                version: 3,
+                sections: [
+                  {
+                    offset: { line, column: 3 },
+                    map: {
+                      version: 3,
+                      sources: ['input.js'],
+                      names: [],
+                      mappings: 'AAAA;EACA',
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        };
+        const tracer = new FlattenMap(input);
+        const column = line === 0 ? 10 : 3;
+        const expected: SourceMapSegment[][] = Array.from({ length: 2 + line }, () => []);
+        expected.push([[column, 0, 0, 0]], [[2, 0, 1, 0]]);
+        assert.deepEqual(decodedMappings(tracer), expected);
+        assert.deepEqual(originalPositionFor(tracer, { line: 3 + line, column }), {
+          source: 'input.js',
+          line: 1,
+          column: 0,
+          name: null,
+        });
+        assert.deepEqual(generatedPositionFor(tracer, { source: 'input.js', line: 1, column: 0 }), {
+          line: 3 + line,
+          column,
+        });
+      });
+    }
+
+    it('clips a preceding map at a nested section on a later line', () => {
+      const tracer = new FlattenMap({
+        version: 3,
+        sections: [
+          {
+            offset: { line: 0, column: 5 },
+            map: {
+              version: 3,
+              sections: [
+                {
+                  offset: { line: 0, column: 0 },
+                  map: {
+                    version: 3,
+                    sources: ['first.js'],
+                    names: [],
+                    mappings: [
+                      [[0, 0, 0, 0]],
+                      [
+                        [0, 0, 1, 0],
+                        [2, 0, 1, 2],
+                        [4, 0, 1, 4],
+                        [7, 0, 1, 7],
+                      ],
+                    ],
+                    rangeMappings: [[], [1]],
+                  },
+                },
+                {
+                  offset: { line: 1, column: 3 },
+                  map: {
+                    version: 3,
+                    sources: ['second.js'],
+                    names: [],
+                    mappings: [
+                      [
+                        [0, 0, 0, 0],
+                        [2, 0, 0, 2],
+                      ],
+                    ],
+                    rangeMappings: [[0]],
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      });
+      assert.deepEqual(decodedMappings(tracer), [
+        [[5, 0, 0, 0]],
+        [
+          [0, 0, 1, 0],
+          [2, 0, 1, 2],
+          [3, 1, 0, 0],
+          [5, 1, 0, 2],
+        ],
+      ]);
+      assert.deepEqual(decodedRangeMappings(tracer), [[], [1, 2]]);
+      assert.deepEqual(originalPositionFor(tracer, { line: 2, column: 3 }), {
+        source: 'second.js',
+        line: 1,
+        column: 0,
+        name: null,
+      });
+    });
+
+    it('resets the column through multiple nested line offsets and respects an outer stop', () => {
+      const tracer = new FlattenMap({
+        version: 3,
+        sections: [
+          {
+            offset: { line: 1, column: 9 },
+            map: {
+              version: 3,
+              sections: [
+                {
+                  offset: { line: 1, column: 4 },
+                  map: {
+                    version: 3,
+                    sections: [
+                      {
+                        offset: { line: 1, column: 2 },
+                        map: {
+                          version: 3,
+                          sources: ['first.js'],
+                          names: [],
+                          mappings: [
+                            [
+                              [0, 0, 0, 0],
+                              [2, 0, 0, 2],
+                              [4, 0, 0, 4],
+                            ],
+                            [[0, 0, 1, 0]],
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+          {
+            offset: { line: 3, column: 5 },
+            map: { version: 3, sources: ['second.js'], names: [], mappings: 'AAAA' },
+          },
+        ],
+      });
+      assert.deepEqual(decodedMappings(tracer), [
+        [],
+        [],
+        [],
+        [
+          [2, 0, 0, 0],
+          [4, 0, 0, 2],
+          [5, 1, 0, 0],
+        ],
+      ]);
+      assert.deepEqual(originalPositionFor(tracer, { line: 4, column: 2 }), {
+        source: 'first.js',
+        line: 1,
+        column: 0,
+        name: null,
+      });
     });
   });
 });

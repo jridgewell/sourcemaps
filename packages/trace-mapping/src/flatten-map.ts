@@ -106,7 +106,7 @@ function recurse(
     if (i + 1 < sections.length) {
       const nextOffset = sections[i + 1].offset;
       sl = Math.min(stopLine, lineOffset + nextOffset.line);
-      sc = columnOffset + nextOffset.column;
+      sc = (nextOffset.line === 0 ? columnOffset : 0) + nextOffset.column;
 
       // If the next section starts on the same line as the recursive stopLine, then we need to
       // constrain the next stopColumn to be within the recusrive stopColumn.
@@ -123,7 +123,8 @@ function recurse(
       ignoreList,
       rangeMappings,
       lineOffset + offset.line,
-      columnOffset + offset.column,
+      // The parent's column offset only applies to its first generated line.
+      (offset.line === 0 ? columnOffset : 0) + offset.column,
       sl,
       sc,
     );
