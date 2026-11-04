@@ -327,6 +327,9 @@ function _encodeGeneratedRanges(
       let bindingStartColumn = startColumn;
       for (let i = 1; i < binding.length; i++) {
         const expRange = binding[i];
+        if (expRange[1] !== bindingStartLine) {
+          bindingStartColumn = 0;
+        }
         encodeInteger(writer, encodeSign(expRange[1]! - bindingStartLine));
         bindingStartLine = expRange[1]!;
         encodeInteger(writer, encodeSign(expRange[2]! - bindingStartColumn));
