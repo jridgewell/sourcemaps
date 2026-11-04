@@ -119,6 +119,49 @@ describe('scopes proposal', () => {
   describe('generated ranges', () => {
     let tests: { encoded: string; decoded: GeneratedRange[]; only?: true }[] = [
       {
+        encoded: 'AAHAEKAESA;;;;U',
+        decoded: [
+          init([0, 0, 4, 10], {
+            isScope: false,
+            callsite: null,
+            bindings: [[[0], [0, 2, 5], [0, 4, 9]]],
+          }),
+        ],
+      },
+      {
+        encoded: ';OALAAICCGEAKGEEI;;;U',
+        decoded: [
+          init([1, 7, 4, 10], {
+            isScope: false,
+            callsite: null,
+            bindings: [[[0], [1, 1, 11], [2, 2, 3], [3, 2, 8], [4, 4, 2]]],
+          }),
+        ],
+      },
+      {
+        encoded: 'KAFACECHEAGGGWI;;;Y',
+        decoded: [
+          init([0, 5, 3, 12], {
+            isScope: false,
+            callsite: null,
+            bindings: [
+              [[0], [1, 1, 2]],
+              [[2], [3, 0, 8], [4, 3, 11]],
+            ],
+          }),
+        ],
+      },
+      {
+        encoded: 'KAHEAIGAMI,e',
+        decoded: [
+          init([0, 5, 0, 20], {
+            isScope: false,
+            callsite: null,
+            bindings: [[[2], [3, 0, 9], [4, 0, 15]]],
+          }),
+        ],
+      },
+      {
         encoded: 'AKAADD,AGAEAOAG,AGADAHEI,2B;8B;2C',
         decoded: [
           init([0, 0, 2, 43, 0, 0], { isScope: true, callsite: null, bindings: [[[-1]], [[-1]]] }),
