@@ -61,6 +61,29 @@ describe('remapping', () => {
     assert.deepEqual(stripUndefined(map), translatedMap);
   });
 
+  it('treats a negative source line in a transformation as unmapped', () => {
+    const map = remapping(
+      [
+        {
+          ...rawMap,
+          mappings: [
+            [
+              [0, 0, 1, 1, 0],
+              [1, 0, -1, -1],
+              [2, 0, 1, 1, 0],
+            ],
+          ],
+        },
+        transpiledMap,
+      ],
+      () => null,
+      { decodedMappings: true },
+    );
+
+    assert.deepEqual(map.mappings, [[[0, 0, 2, 2, 0], [1], [2, 0, 2, 2, 0]]]);
+    assert.deepEqual(map.sources, translatedMap.sources);
+  });
+
   it('resolves sourcemaps realtive to sourceRoot', () => {
     const sourceRoot = 'foo/';
     const map = remapping(

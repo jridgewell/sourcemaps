@@ -269,6 +269,8 @@ export function traceSegment(
   line: number,
   column: number,
 ): Readonly<SourceMapSegment> | null {
+  if (line < 0) return null;
+
   const decoded = decodedMappings(map);
   const rangeSegments = initRangeSegments(map, decoded);
 

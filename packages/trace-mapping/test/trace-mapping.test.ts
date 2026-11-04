@@ -224,6 +224,11 @@ describe('TraceMap', () => {
         });
       });
 
+      it('returns null when tracing a negative line', () => {
+        const tracer = new TraceMap(map);
+        assert.equal(traceSegment(tracer, -1, 0), null);
+      });
+
       it('traceSegment', () => {
         const { mappings } = decodedMap;
         const tracer = new TraceMap(map);
