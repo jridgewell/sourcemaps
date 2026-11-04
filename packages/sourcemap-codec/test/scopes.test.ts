@@ -7,7 +7,7 @@ import {
   encodeOriginalScopes,
   type GeneratedRange,
   type OriginalScope,
-} from '../src/scopes';
+} from '../src/sourcemap-codec';
 import assert from 'node:assert/strict';
 
 describe('scopes proposal', () => {
@@ -20,6 +20,17 @@ describe('scopes proposal', () => {
   }
 
   describe('original scopes', () => {
+    it('round-trips multiple top-level scopes', () => {
+      const scopes: OriginalScope[] = [
+        init([0, 0, 5, 10, 1], { vars: [] }),
+        init([6, 0, 10, 10, 1], { vars: [] }),
+      ];
+
+      const encoded = encodeOriginalScopes(scopes);
+      assert.deepEqual(decodeOriginalScopes(encoded), scopes);
+      assert.equal(encoded, 'AACA,KU,CACA,IU');
+    });
+
     let tests: { encoded: string[]; decoded: OriginalScope[][]; only?: true }[] = [
       {
         encoded: ['AACAAC,AAECAE,EC,CAECCE,GC,E2C'],
