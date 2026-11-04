@@ -87,9 +87,10 @@ export function decodeOriginalScopes(input: string): OriginalScope[] {
 
 export function encodeOriginalScopes(scopes: OriginalScope[]): string {
   const writer = new StringWriter();
+  const state: [number] = [0];
 
   for (let i = 0; i < scopes.length; ) {
-    i = _encodeOriginalScopes(scopes, i, writer, [0]);
+    i = _encodeOriginalScopes(scopes, i, writer, state);
   }
 
   return writer.flush();
@@ -100,7 +101,7 @@ function _encodeOriginalScopes(
   index: number,
   writer: StringWriter,
   state: [
-    number, // GenColumn
+    number, // Original line
   ],
 ): number {
   const scope = scopes[index];
