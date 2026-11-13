@@ -12,6 +12,12 @@ describe('resolve', () => {
     assert.equal(resolve('input.js'), 'foo/input.js');
   });
 
+  it('preserves drive-absolute sources relative to a POSIX map URL', () => {
+    const resolve = resolver('../dist/transformed.js', undefined);
+    assert.equal(resolve('c:\\src\\input.js'), 'c:\\src\\input.js');
+    assert.equal(resolve('C:/src/input.js'), 'C:/src/input.js');
+  });
+
   it('relative to sourceRoot', () => {
     const resolve = resolver(undefined, 'foo');
     assert.equal(resolve('input.js'), 'foo/input.js');

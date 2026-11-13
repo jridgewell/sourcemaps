@@ -17,5 +17,9 @@ export default function resolver(
   // https://github.com/chromium/chromium/blob/da4adbb3/third_party/blink/renderer/devtools/front_end/sdk/SourceMap.js#L400-L401
   const prefix = sourceRoot ? sourceRoot + '/' : '';
 
-  return (source) => resolveUri(prefix + (source || ''), from);
+  return (source) => {
+    const path = prefix + (source || '');
+    if (/^[a-z]:[\\/]/i.test(path)) return path;
+    return resolveUri(path, from);
+  };
 }
